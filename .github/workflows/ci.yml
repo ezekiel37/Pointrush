@@ -1,0 +1,37 @@
+name: CI
+on:
+  push:
+    branches: [main, 'feat/**', 'fix/**']
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm audit --omit=dev --audit-level=high
+      - name: Build API container
+        run: docker build -f apps/api/Dockerfile -t pointrush-api:ci .
+      - name: Smoke test production container
+        shell: bash
+        run: |
+          docker run -d --name api -p 8080:8080 -e CORS_ORIGINS=https://example.com pointrush-api:ci
+          trap 'docker logs api; docker rm -f api' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:8080/api/v1/health/live; then
+              exit 0
+            fi
+            sleep 1
+          done
+          exit 1
