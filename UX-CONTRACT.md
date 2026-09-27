@@ -21,7 +21,7 @@ Status: planning contract. Related: [design](DESIGN.md), [validation and approva
 - Distinguish fixed commitments, voluntary participation and variable shared-pool estimates. Do not expose shared-pool features before the formula is approved.
 - Sponsor funded-creation confirmation shows reward allocation, separate fees and resulting available funds. Insufficient funding preserves the draft without publishing it.
 - Redemption confirmation shows recipient, current selected network, reward, points deduction and any fee. Never infer carrier solely from number prefix.
-- Pending, available, restricted and redeemed points have explicit explanations. A public badge states verification scope and never replaces eligibility messaging.
+- Pending, available, restricted and redeemed points have explicit explanations. Identity/business badges state verification scope; reputation levels describe earned history. Neither replaces eligibility messaging or mandatory task approval.
 
 ## Async and Recovery
 
@@ -50,3 +50,11 @@ Status: planning contract. Related: [design](DESIGN.md), [validation and approva
 ## Required Verification
 
 Exercise successful/invalid forms, conflict, double submit, expired session, offline/reconnect, stale task rules, unknown provider outcome, mobile keyboard, screen reader errors, keyboard navigation and zoom. Frontend prevention never substitutes for backend transactions, permissions or validation.
+
+## Sponsor Onboarding and Public Trust
+
+- Launch sponsor onboarding asks for verified email, sponsor name, contact details and task information; do not insert mandatory NIN/BVN/selfie/CAC steps.
+- Funded creation locks the task allocation, then the task remains unpublished until platform review approves its current version. Show funding and review as separate statuses; material edits require reapproval.
+- New sponsors and users display New reputation. Identity verification and earned reputation may coexist; paid funding, points or referrals never manufacture either.
+- Allow feedback only on real eligible interactions, once per interaction, with anti-retaliation publication timing and an appeal route. Private fraud signals are not public profile labels.
+- Later identity verification uses a separate explicit flow; provider, cost and triggers remain unresolved. Do not add an age field or gate based on the earlier unaccepted age proposal.
