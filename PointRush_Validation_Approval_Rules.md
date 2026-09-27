@@ -27,8 +27,14 @@ Errors carry a stable code, optional field, safe message and request ID. Do not 
 | VAL-11 | Dates | Joining, completion, correction, review and appeal are separate deadlines | Store server timestamps in UTC; show timezone explicitly. Define exact inclusive/exclusive boundaries in APIs and test them; device clock is not authoritative |
 | VAL-12 | Proof | Task-specific accepted types and evidence requirements; private storage | Server validates bytes/type/size, scans accepted uploads and controls access. Exact count/size/duration limits required per template; preserve upload retries without duplicate submissions |
 | VAL-13 | Links/search | Bound length, parse links, reject unsafe schemes; limit/paginate search | Server-side URL fetching requires SSRF protections. Search cannot expose other tenants or bypass ownership filters |
+| VAL-14 | Business code | Centrally assigned unique three-character code using the approved unambiguous alphabet; stable across business-name changes | Database uniqueness and reserved-code list. Business code is a routing label, not a secret |
+| VAL-15 | Claim code | Standard `PR-BUS-XXXX-XXXXX` display, 14 alphanumeric characters excluding separators; nine-character cryptographically random claim section | Normalize case and separators before lookup. Store a protected digest where possible; enforce global uniqueness and regenerate on collision |
+| VAL-16 | Claim code input | Accept manual entry and optional QR link; ignore approved separators/outer whitespace; reject unsupported characters and excessive attempts | Do not consume on open or failed validation. Rate-limit guesses and never reveal whether a nearby code exists |
+| VAL-17 | Code reward | Code resolves server-side to task, batch, reward rule, expiry and status; client cannot choose points or reward | Reward snapshot and task terms are immutable for the claim |
 
 Use type=tel, useful autocomplete and inputmode hints for phone/OTP. Do not set maxlength=11 on an input accepting international formatted paste. A valid phone format does not prove reachability, ownership or identity. Mobile prefix alone does not establish current carrier.
+
+Claim codes are vouchers, not passwords. Do not log raw codes, expose them in analytics or include them in unnecessary URLs after claim. QR is optional; a printed code must work without a camera. A reusable business/page QR opens discovery only and never creates reward entitlement.
 
 ## 3. Account Access and Approval
 
@@ -72,6 +78,8 @@ FIN-02: Funding requests are idempotent. Verify provider signature and account/r
 FIN-03: Track available sponsor funds, task-locked uncommitted budget, individual commitments, approved reward backing, fees and authorised releases separately. Campaign totals aggregate allocations and cannot spend the same balance again. Fees are disclosed and accounted separately from rewards.
 
 FIN-04: Approval atomically consumes the relevant commitment and credits immutable user ledger entries once. Backing for approved points remains unavailable to the sponsor while rewards remain owed. Approval, refund, cancellation and budget edits serialize against the same financial state.
+
+FIN-07: Code batches activate only against an existing locked task allocation. Batch activation allocates that lock and cannot create a second sponsor charge. Claiming a code consumes it atomically; opening or scanning does not. A duplicate, replay or concurrent claim produces one reward at most.
 
 FIN-05: Cancellation closes new commitments. Existing work, submissions, corrections and appeals remain protected. Refund/rollover can use only settlement-authorised unused funds. Rejected work releases funding only after its appeal rights conclude. A sponsor dispute alone never reverses valid earnings.
 
