@@ -98,7 +98,7 @@ The internal team controlling missions, sponsor approvals, user verification, fr
 6. User submits proof.
 7. Submission is reviewed by rules, AI checks, or admin.
 8. Approved user earns points.
-9. Points increase tier progress and wallet balance.
+9. Approved points increase wallet balance; settled conduct contributes separately to reputation.
 10. User redeems points for rewards.
 11. User refers others or unlocks better missions.
 12. Sponsors fund more missions when they see verified outcomes.
@@ -197,17 +197,21 @@ Referral abuse controls:
 
 ## 10. Tier System
 
-Tiers should not only be cosmetic. They must control trust, access, redemption limits, and sponsor confidence.
+Users and sponsors both earn public reputation levels from their conduct over time. New accounts start as **New**, not untrusted. Identity/business verification is a separate check and label.
 
-| Tier | Requirements | Benefits |
-| --- | --- | --- |
-| Starter | New user | Basic missions, low limits, slower review |
-| Bronze | 3 approved missions, 3,000 points earned | ₦500 weekly redemption cap, more missions |
-| Silver | 10 approved missions, 5 active referrals, 80% approval rate, no applicable active restriction, 7 active days | ₦1,500 weekly redemption cap, better missions, faster review |
-| Gold | 25 approved missions, 15 active referrals, 85% approval rate, no applicable active restriction | ₦3,000 weekly redemption cap, premium campaigns, priority support |
-| Elite | Invite-only or top verified users | Sponsor campaigns, higher caps, special missions, possible cash-equivalent partner offers |
+| Subject | Evidence of trust |
+| --- | --- |
+| User | Valid original work, reliable completion, fair interaction, low substantiated spam/fraud and resolved disputes |
+| Sponsor | Legitimate completed tasks, fair timely reviews, funded rewards, participant satisfaction and resolved complaints |
 
-The referral-based Silver/Gold criteria above are provisional. A quality-work alternative is required; its thresholds, the approval-rate denominator, active-day definition and Starter redemption cap must be settled before launch. Public verification badges are independent of tiers.
+- Count completed, settled activity, not task creation, applications or joins.
+- Points balance, spending, paid membership and referral counts do not buy or determine trust.
+- Feedback is restricted to actual eligible interactions, once per interaction. Publish mutual feedback after both parties submit or the feedback window ends to reduce retaliation.
+- Use upheld complaints and appeal outcomes, not raw accusations. Correct reputation when an appeal changes the underlying decision.
+- Limit the influence of repeated interactions with the same small group; assess sustained activity across distinct counterparties and recent behaviour.
+- Higher reputation may unlock opportunities, higher configured limits and less routine submission review. It never bypasses platform task approval, proof, permissions or funding locks.
+- Keep private fraud controls separate from the public reputation summary. A level does not guarantee honesty.
+- Exact level names, thresholds, rating window, sample-size requirements and redemption-cap mapping remain open. Earlier points/referral-based qualification tables are superseded; no replacement numerical thresholds are approved yet.
 
 ## 11. Mission Types
 
@@ -287,7 +291,7 @@ Sponsor reward funds allocated to a task must lock atomically when that funded t
 2. Confirmed available sponsor funds are checked server-side. Provider confirmation must match the account, reference, amount and currency; browser success is not proof.
 3. Funded task creation and budget locking happen in one transaction. Insufficient funding leaves an unfunded draft or fails the funded-creation operation.
 4. Locked funds cannot fund another task, be withdrawn, refunded or rolled over while committed.
-5. Sponsor approval, current task-version approval and funding are independent publication gates.
+5. Active sponsor access, platform approval of the current task version and locked funding are independent publication gates. Mandatory sponsor ID/business-document verification is not a launch gate.
 6. Reward commitments are recorded within the locked allocation according to the task model, not automatically on every Join.
 7. Approval atomically converts a commitment into backing for earned points and credits the user's ledger exactly once.
 8. Rejection cannot release disputed funds before correction/appeal rights finish.
@@ -378,7 +382,8 @@ Important launch rule: **No cash withdrawal initially.** This reduces fraud, reg
 ## 15. Sponsor Features
 
 - Sponsor onboarding.
-- Sponsor verification.
+- Lightweight onboarding: verified email, sponsor name, contact details and task information; no mandatory sponsor identity/business-document checks at launch.
+- Earned sponsor reputation and later separate identity/business verification.
 - Campaign creation.
 - Campaign funding.
 - Mission setup.
@@ -566,7 +571,7 @@ Yes. Points can be reversed if they were earned through fake proof, duplicate ac
 
 ### How do I know missions are real?
 
-Missions are created or approved by the platform. Sponsors and campaigns go through admin review before users can participate.
+Every task, including platform-created tasks, requires platform review and approval of its current version before publication. Sponsor reputation or verification status never bypasses this gate. Allocated reward funding locks at funded task creation. Mandatory sponsor ID verification is not required at launch.
 
 ### Does joining always guarantee a reward?
 
@@ -758,16 +763,16 @@ Actions:
 - Whether redemptions happen weekly or twice weekly.
 - Whether to start with Nomba immediately or manually fulfill airtime/data while API access is being secured.
 - Public verified sponsor/user/creator badges are a later feature; exact evidence requirements, expiry and retention remain to be decided.
-- Age eligibility, contact recovery, verification-message provider/cost, first-redemption waiting period and restriction review deadlines.
+- Contact recovery, verification-message provider/cost, first-redemption waiting period and restriction review deadlines. Age eligibility is intentionally deferred and is not a launch policy decision in this specification.
 - Review/correction/appeal timings proposed in the validation specification.
 - Shared-pool allocation and rounding policy before that model is enabled.
-- Fee refund terms, chargeback response and non-referral tier thresholds.
+- Fee refund terms, chargeback response and behaviour-based reputation thresholds for users and sponsors.
 - Exact sponsor setup fee.
 - Exact admin margin per sponsor-funded mission.
 - Whether to use Prisma or Drizzle.
 - Whether to start with Supabase Postgres, Neon, or Cloud SQL.
 
-## 26.1 Later Verification Badges
+## 26.1 Identity Verification and Reputation
 
 Verified sponsor and verified user/creator badges are later features, independent of contact ownership and reputation. Record subject, scope, status, reviewer, evidence reference and verification date. Expiry, revocation, re-verification after ownership changes and appeals must be supported. Sponsors see verification results, not private identity evidence. Paid membership, account approval or a high tier never automatically grants a badge. Badges never bypass task approval, funding or proof requirements.
 
@@ -814,3 +819,12 @@ For sponsors:
 For the admin/business:
 
 **PointRush turns user attention and action into a controlled rewards economy funded first by a launch pool, then increasingly by sponsors and partners.**
+
+## 29. Confirmed Launch Clarifications (2026-09-27)
+
+- Sponsor onboarding is lightweight: verified email, sponsor name, contact details and task information. No mandatory NIN, BVN, selfie, CAC upload or paid identity check at launch.
+- Every task requires explicit platform review before it goes live, regardless of sponsor reputation, identity status or funding. Review includes objective, instructions, proof feasibility, rewards, deadlines and destination links. Material changes require reapproval; accepted participant terms remain protected.
+- Locked funding protects allocated rewards, not sponsor identity or link safety. Never label a paying sponsor identity-verified automatically.
+- Identity verification remains a separate planned capability alongside earned reputation. Provider, cost, evidence and user verification triggers are undecided. No provider integration or compulsory user ID gate is authorised by this clarification.
+- Age eligibility is deferred. Do not infer an approved 18+ gate or an affirmative policy permitting all ages.
+- Earlier suggested 10% fee, twice-weekly fulfilment, seven-day waiting period and revised referral payouts remain unapproved proposals; this update does not adopt them. Existing tentative economics remain subject to their documented open decisions.
