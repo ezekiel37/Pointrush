@@ -40,3 +40,7 @@ Light-first identity. Dark mode requires separately designed and tested tokens b
 Shared components own visual and interaction states. Runtime tokens must trace back here or to a documented generated source. Changes require contrast checks, keyboard/touch checks, narrow/wide viewport screenshots, all form states and reduced-motion checks before claiming completion.
 
 References: [shadcn/ui](https://ui.shadcn.com/docs), [forms](https://ui.shadcn.com/docs/forms/react-hook-form), [Material UI](https://mui.com/material-ui/getting-started/).
+
+## Identity and Reputation Labels
+
+Show earned user/sponsor reputation separately from identity/business verification. New is neutral, not a warning. Explain verification scope and reputation evidence without implying guaranteed honesty or earnings. Sponsor signup remains lightweight, with no mandatory identity-document collection at launch. Every task still shows a truthful platform-review state; high reputation never substitutes for task approval.
