@@ -44,3 +44,7 @@ References: [shadcn/ui](https://ui.shadcn.com/docs), [forms](https://ui.shadcn.c
 ## Identity and Reputation Labels
 
 Show earned user/sponsor reputation separately from identity/business verification. New is neutral, not a warning. Explain verification scope and reputation evidence without implying guaranteed honesty or earnings. Sponsor signup remains lightweight, with no mandatory identity-document collection at launch. Every task still shows a truthful platform-review state; high reputation never substitutes for task approval.
+
+## Code Presentation
+
+Claim codes should be readable on low-quality print and easy to type on mobile. Use grouped uppercase text, generous spacing and a visible copy button. The standard visual treatment is `PR-ABC-7K4M-9X2QD`; QR may sit beside it when available but is never the only path. Discovery QR and reward claim QR use different labels so users do not confuse scanning a page with claiming a reward.
