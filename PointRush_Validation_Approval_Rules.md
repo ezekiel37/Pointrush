@@ -32,20 +32,20 @@ Use type=tel, useful autocomplete and inputmode hints for phone/OTP. Do not set 
 
 ## 3. Account Access and Approval
 
-Keep these dimensions separate: contact verification, access status, sponsor approval, public verification badge, reputation tier and redemption eligibility.
+Keep these dimensions separate: contact verification, access status, sponsor approval, identity/business verification badge, earned reputation level and redemption eligibility.
 
 | Action | Gate | Failure/recovery |
 | --- | --- | --- |
 | Browse public missions | No account needed | Private campaigns remain permission-scoped |
 | Join rewarded work | Verified email and phone, accepted terms, active/eligible account, task-model funding rules | Explain missing verification or eligibility; do not issue reward commitment until gates pass |
 | Submit proof | Valid participation/selection, accepted rule version, applicable deadline | Preserve draft; distinguish deadline failure from upload/network error |
-| Redeem | Verified contacts, available points, two approved missions, configured age/window/cap, no applicable restriction | Explain blockers; first redemption reviewed manually at launch; provider timeout remains processing until reconciled |
+| Redeem | Verified contacts, available points, two approved missions, configured account-tenure/window/cap, no applicable restriction | Explain blockers; first redemption reviewed manually at launch; provider timeout remains processing until reconciled |
 | Sponsor operations | Approved sponsor, actor membership/ownership and action permission | No access to other sponsors' campaigns or evidence |
 | Admin operations | MFA and least-privilege action permission | Audit actor, reason, record version and transition; no balance editing |
 
 Access states: active, restricted, suspended, closed. Verification states remain independent. Risk flags trigger evaluation, not automatic permanent guilt. A restriction records scope, reason, reviewer/owner, review deadline and appeal route. Preserve history/support access when safe. Shared phone/device/IP signals alone do not establish abuse.
 
-Phone changes require reauthentication, new-number verification and notification to the old verified channel. Recovery after SIM recycling must not grant control solely through an SMS to the recycled number. Age eligibility, recovery evidence, first-redemption age, suspension/session rules and review deadlines require explicit launch decisions.
+Phone changes require reauthentication, new-number verification and notification to the old verified channel. Recovery after SIM recycling must not grant control solely through an SMS to the recycled number. Recovery evidence, first-redemption account tenure, suspension/session rules and review deadlines remain open. Age eligibility is intentionally deferred; no age gate is approved in this specification.
 
 ## 4. Task Configuration and Reward Commitments
 
@@ -79,13 +79,13 @@ FIN-06: Material changes require versioned terms and re-review. New allocation i
 
 ## 6. Sponsor and Submission Decisions
 
-Sponsor approval requires verified contact, accountable owner, evidence appropriate to individual/business type, authority to represent that entity and accepted terms. Manual review applies at launch. A corporate email or registration document alone is not sufficient proof of representation. Exact evidence/retention policy remains open.
+Sponsor onboarding at launch requires verified email, sponsor name, contact details, accepted terms and task information. Mandatory identity/business-document verification is deferred: no NIN, BVN, selfie or CAC upload is required to become a launch sponsor. Account eligibility and access controls still apply. Identity verification remains a separate future capability; payment or onboarding completion cannot grant its badge.
 
-Task publication requires approved sponsor, approved current task version, locked budget for rewarded work, feasible proof and permitted objective. Funding status (unfunded/pending/locked/settled) and review status (draft/pending_review/changes_required/approved/rejected) are separate from lifecycle (not_live/live/paused/closing/completed/cancelled/suspended).
+Every task requires explicit platform review and approval before publication, regardless of sponsor reputation or verification. Publication requires active eligible sponsor access, platform approval of the current task version, locked budget for rewarded work, feasible proof and a permitted objective. Review must cover destination links, sensitive-data requests, instructions, reward terms and deadlines. Material changes require reapproval while accepted participant terms remain intact. Funding status (unfunded/pending/locked/settled) and review status (draft/pending_review/changes_required/approved/rejected) are separate from lifecycle (not_live/live/paused/closing/completed/cancelled/suspended).
 
 | Decision | Authorised actor | Required evidence/effect |
 | --- | --- | --- |
-| Approve sponsor/task | Platform reviewer with permission | Review checklist, version and reason recorded; cannot approve own sponsor/task |
+| Approve task | Platform reviewer with permission | Mandatory review of every current task version; checklist, version and reason recorded; cannot approve own sponsor/task |
 | Select applicant | Authorised sponsor/platform operator | Eligibility and funding checked; selection count enforced atomically |
 | Review submission | Scoped sponsor reviewer or platform reviewer | Check accepted terms and proof; cannot review own work |
 | Approve reward | Authorised review command | Audited atomic ledger/funding transition; duplicate request returns original result |
@@ -97,7 +97,7 @@ Submission progression: submitted -> under_review -> approved / changes_required
 
 Proposed operating targets: review within 72 hours; one correction opportunity within 48 hours when fixable; appeal within 7 days of rejection notice. Sponsor silence escalates to PointRush, never automatic rejection/payment. Capacity to staff these targets must be confirmed before launch. AI can flag, classify and assist; it cannot independently impose permanent bans or irreversible reward decisions.
 
-## 7. Later Public Verification Badges
+## 7. Identity Verification and Earned Reputation
 
 VER-01: Contact verification proves channel control and gives no public identity badge. Sponsor approval allows sponsor actions and does not automatically grant a badge. Tiers represent activity/reputation, not identity.
 
@@ -107,9 +107,23 @@ VER-03: Store subject ID, check scope, status, evidence reference, reviewer, ver
 
 VER-04: Badge status is server-issued and cannot be edited through profile APIs. Sponsors/public viewers receive only appropriate results, not private identity documents. Badges never bypass funding, proof, permission or fraud controls. Feature is deferred; no unnecessary evidence collection at launch.
 
+### 7.1 Two-Sided Reputation
+
+REP-01: Both users and sponsors start as New and grow through sustained legitimate conduct. Identity status, contact ownership and reputation are independent dimensions.
+
+REP-02: Sponsor evidence includes settled legitimate tasks, reliable funding, fair timely review, participant feedback and resolved disputes. User evidence includes valid original work, completion reliability, fair interactions and low substantiated abuse. Points balances, spending, referrals and paid membership never determine trust.
+
+REP-03: Feedback is available only for actual eligible interactions, once per interaction. Publish mutual feedback after both respond or a defined window closes. Raw accusations are not proven misconduct; upheld complaints and appeal outcomes affect the record. Appeals must correct the resulting reputation.
+
+REP-04: Limit reputation farming through repeated counterparties, trivial-task volume, reciprocal approval groups and fake feedback. Use distinct counterparties, sustained history and recent behaviour; do not equate volume alone with trust. Scoring, minimum samples and feedback windows must be defined before release.
+
+REP-05: Higher levels may unlock opportunities, configured limits or reduced routine submission review. They never bypass mandatory platform task approval, funding, proof, security or permissions. Private risk flags remain private and distinct from public scores.
+
+REP-06: Public profiles distinguish labels such as Identity verified / Business verified from New / an earned level, and explain what each means. No badge guarantees honesty or earnings. Mandatory sponsor identity checks are deferred at launch. Identity-provider choice, price and user verification triggers remain undecided; only one provider should be selected initially.
+
 ## 8. Unresolved Launch Gates
 
-- Age eligibility, identity recovery and personal-data retention policies.
+- Identity recovery and personal-data retention policies. Age eligibility is outside the current decision; no age rule should be inferred.
 - OTP provider/cost and exact security limits; mandatory phone verification has an operating cost separate from the reward pool.
 - First-redemption waiting period, Starter cap, redemption window and restriction-review deadlines.
 - Non-referral progression thresholds, approval-rate denominator and active-day definition.
