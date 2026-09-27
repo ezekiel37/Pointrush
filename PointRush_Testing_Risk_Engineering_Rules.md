@@ -384,6 +384,13 @@ Every module must have one job.
 | T-FIN-04 | FIN-04 | Concurrent approve/reject/refund/cancel commands preserve one valid transition and one point credit; stale reviewer sees conflict |
 | T-FIN-05 | FIN-05 | Sponsor cancellation, silence or dispute cannot confiscate approved rewards or release pending appeal funds |
 | T-FIN-06 | FIN-06 | Budget decrease cannot consume commitments; increase requires funding; provider chargeback stops new exposure without silent point seizure |
+| T-CODE-01 | VAL-14/15 | Business codes are centrally assigned and distinct; two businesses cannot receive the same business code; renaming a business does not break historical codes |
+| T-CODE-02 | VAL-15/16 | Generated claim codes remain globally unique across businesses and campaigns; formatted/lowercase manual input resolves correctly; invalid guesses are rate-limited |
+| T-CODE-03 | VAL-17/FIN-07 | Two simultaneous submissions of one unused code produce one claim and one ledger/fulfilment record; retry returns the original result |
+| T-CODE-04 | PRD 13.1 | Opening a page or scanning a reusable discovery QR does not award or consume anything; printed-code-only campaigns work without QR |
+| T-CODE-05 | FIN-07 | Code batch activation allocates locked task funds once; unclaimed expiry and authorised cancellation release only eligible unused backing |
+| T-CODE-06 | PRD 13.1 | Different batches resolve to different points/rewards; the client cannot alter a code's reward; claimed/expired/cancelled codes cannot be reactivated |
+| T-CODE-07 | PRD 13.1 | Raw code exports are access-controlled, audited and excluded from logs/analytics; claim links do not expose unnecessary private data |
 | T-REV-01 | Review policy | Missed review target escalates; correction and appeal deadlines enforced; no automatic approval/rejection for sponsor silence |
 | T-REV-02 | Permissions | Sponsor cannot decide own appeal or approve own submitted work; prohibited transitions and cross-tenant bulk requests fail |
 | T-RED-01 | Redemption | Duplicate submit, lost response and provider timeout never trigger blind second fulfillment; first-redemption gate and caps checked atomically |
