@@ -338,6 +338,30 @@ Funding and review are separate state dimensions. A funded task may be pending r
 
 ## 13. Reward Marketplace
 
+### 13.1 Business and Claim Codes
+
+Offline and online promotions may use PointRush claim codes. QR is optional: it is only a faster way to open or submit the same code.
+
+Standard customer-facing format:
+
+```text
+PR-ABC-7K4M-9X2QD
+```
+
+- `PR` identifies PointRush.
+- `ABC` is a unique three-character business code assigned by PointRush. It is not generated directly from the business name.
+- `7K4M9X2QD` is a cryptographically random nine-character claim section.
+- Use an unambiguous alphabet that excludes confusing characters such as `0`, `O`, `1`, `I` and `L`.
+- The full normalized code is globally unique. Database uniqueness, secure generation and collision retry enforce this.
+
+The code resolves server-side to a business, task, batch, reward rule and expiry. It does not contain a trusted editable reward amount. Different codes in one task can produce different points, airtime, data, vouchers or discounts.
+
+Code states are `generated`, `activated`, `claimed`, `expired` and `cancelled`. Opening a code does not consume it. A successful claim validates eligibility and code state, then marks the code claimed and creates the reward ledger or fulfilment record exactly once. Repeated requests return the original result and cannot issue a second reward.
+
+Businesses may use reusable page/campaign QR codes for discovery, but discovery scans do not prove purchase or earn rewards. Unique claim codes can be printed under bottle caps, on tickets, inside books, on receipts or in event materials. Online businesses can pass the same code or an authenticated event reference through checkout.
+
+Task funding is locked before code batches are activated. Activating a batch allocates part of that existing task lock; it does not charge the sponsor twice.
+
 Launch rewards:
 
 - Airtime.
@@ -632,6 +656,8 @@ Rules:
 - Tier.
 - Redemption request.
 - Reward provider transaction.
+- Sponsor business code.
+- Claim code and code batch.
 - Notification.
 - Support ticket.
 - Audit log.
