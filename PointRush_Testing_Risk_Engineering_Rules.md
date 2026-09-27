@@ -329,7 +329,7 @@ Required test types:
 | Point transfer | High fraud and point black-market risk |
 | Cash withdrawal | Higher compliance, liquidity, and fraud exposure |
 | Fully automated approvals | Fraud patterns are unknown at launch |
-| Open sponsor self-service | Bad campaigns can damage trust |
+| Sponsor self-publication without review | Lightweight self-service drafting/funding is allowed; every task still requires platform approval |
 | High referral bonuses | Burns the launch pool quickly |
 | Instant redemption | Fraud wins before review |
 | Too many providers | Integration complexity before product proof |
@@ -398,4 +398,20 @@ Use actual database concurrency tests for financial and uniqueness cases, API pe
 
 ## 17. Unresolved Policy Gates
 
-The validation specification lists policy decisions still required before their workflows ship. A test expecting an unspecified age limit, OTP expiry, fee refund, shared-pool formula or review deadline is not an approved requirement. Agree and version those policies, then bind acceptance assertions to them. Proposed review targets do not constitute an implemented or staffed service guarantee.
+The validation specification lists policy decisions still required before their workflows ship. Age eligibility is deferred. A test expecting an unspecified OTP expiry, fee refund, shared-pool formula or review deadline is not an approved requirement. Agree and version those policies, then bind acceptance assertions to them. Proposed review targets do not constitute an implemented or staffed service guarantee.
+
+## 18. Sponsor Onboarding, Reputation and Identity Acceptance Cases
+
+| Test ID | Requirement | Expected result |
+| --- | --- | --- |
+| T-SP-01 | Lightweight launch onboarding | Sponsor can onboard with verified email, name, contact and task details without NIN/BVN/selfie/CAC checks; identity badge remains absent |
+| T-SP-02 | Universal task approval | New, established and identity-verified sponsors cannot publish any task version without explicit platform approval; direct API and bulk bypass attempts fail |
+| T-SP-03 | Funding is not identity | Paid and locked funds never grant an identity badge or approve destination links; funded harmful tasks are rejected |
+| T-SP-04 | Changed task terms | Material edits require reapproval; existing accepted terms and commitments remain protected |
+| T-REP-01 | REP-01/02 | New is distinct from misconduct; funding volume, points, paid membership or referrals cannot purchase reputation |
+| T-REP-02 | REP-03 | Non-participants and duplicate ratings rejected; mutual-feedback timing enforced; upheld appeal corrects reputation |
+| T-REP-03 | REP-04 | Repeated counterparties and reciprocal task farms cannot manufacture trust merely through volume |
+| T-REP-04 | REP-05 | Highest reputation cannot bypass funding, task approval, proof or permission controls |
+| T-REP-05 | REP-06 | Identity verification can coexist with New reputation; high reputation cannot imply identity verification |
+
+Reputation thresholds and identity-provider triggers remain open. Do not turn earlier illustrative scores, suggested providers or prices into configured production rules. Age eligibility is deferred; this documentation update approves neither an age gate nor unrestricted eligibility.
