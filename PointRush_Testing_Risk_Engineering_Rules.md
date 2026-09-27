@@ -1,5 +1,7 @@
 # PointRush Testing, Risk, and Engineering Rules
 
+Related contracts: [PRD](PointRush_PRD.md), [validation and approval](PointRush_Validation_Approval_Rules.md), [design](DESIGN.md), [UX behaviour](UX-CONTRACT.md). Acceptance cases below describe required future tests, not tests already implemented.
+
 ## 1. Purpose
 
 This document exists to break the product before real users do.
@@ -62,26 +64,23 @@ Sponsor-funded campaigns must not depend on verbal promises or unpaid budgets. I
 
 ### 5.1 Required Sponsor Funding Flow
 
-1. Sponsor creates campaign draft.
-2. Sponsor defines mission reward, target number of approvals, total campaign budget, platform fee, and campaign duration.
-3. Platform calculates total funding required.
-4. Sponsor pays using the selected payment provider.
-5. Payment is verified through a signed provider webhook.
-6. Confirmed campaign budget becomes locked against that campaign.
-7. Campaign can only go live after admin approval and confirmed funding.
-8. Approved submissions consume locked budget.
-9. Pending submissions reserve budget if needed.
-10. Unused budget is refunded, rolled over, or converted to sponsor credit based on campaign terms.
+1. Sponsor saves an unfunded draft or creates a funded task from confirmed available funds.
+2. Funded task creation atomically locks its full allocated reward budget; insufficient funds prevent funded creation.
+3. Funding and sponsor/current-task-version review are independent publication gates.
+4. Reward commitments within the lock follow the task model: selection for assignments, claim for capped tasks, disclosed rules for open campaigns.
+5. Approval atomically converts a commitment into earned-point backing and credits the ledger once.
+6. Pending work, corrections and appeals retain their funding.
+7. Only settlement-authorised unused funds can be refunded, rolled over or released.
 
 ### 5.2 Sponsor Budget Rules
 
-- Sponsor reward budget must be separated from founder-funded launch rewards.
-- Campaign must pause automatically when remaining budget cannot cover another approval.
-- Platform fees must be shown separately from user reward budget.
-- Approved user rewards cannot be reversed because a sponsor changed their mind.
-- Sponsor refunds must exclude already approved rewards and non-refundable platform fees unless platform policy says otherwise.
-- Every funding, reservation, approval, refund, and rollover must have ledger records.
-- Sponsor budget state must be visible to admin.
+- Task-locked allocations cannot fund another task or be withdrawn.
+- Campaign totals aggregate task allocations without double-counting.
+- Stop new reward promises before overspending; do not impose automatic rewarded slots on open/selected tasks.
+- Sponsor reward funds remain separate from founder-funded rewards and platform fees.
+- Approved rewards remain backed until fulfilled or legitimately corrected; sponsor disagreement is not proof of fraud.
+- Every allocation, commitment, approval, release, refund and rollover is ledgered.
+- A local lock does not eliminate payment-provider chargebacks; track and resolve that risk separately.
 
 ### 5.3 Sponsor Edge Case Solutions
 
@@ -95,32 +94,19 @@ Sponsor-funded campaigns must not depend on verbal promises or unpaid budgets. I
 | Sponsor rejects valid work unfairly | Admin arbitration using stored campaign rules and submitted proof |
 | Sponsor changes reward amount | Apply only to future participants |
 | Sponsor changes proof rules | Apply only to future participants |
-| Budget cannot cover pending submissions | Stop new joins and prioritize already joined users based on campaign rules |
+| Budget cannot cover promised rewards | Prevent the commitment before work starts; never solve overspending by rejecting valid work. Investigate any invariant violation |
 | Sponsor claims fraud after approvals | Investigate; reverse only proven fraudulent rewards |
 | Sponsor asks for refund after approved work | Do not refund approved user rewards unless fraud is proven |
 | Sponsor mission violates policy | Reject or suspend campaign |
 | Sponsor account is compromised | Freeze campaigns and funding actions until verified |
 
-### 5.4 Campaign State Machine
+### 5.4 Independent State Dimensions
 
-Campaign states must be explicit:
+Review: draft, pending_review, changes_required, approved, rejected.
+Funding: unfunded, pending, locked, settled.
+Lifecycle: not_live, live, paused, closing, completed, cancelled, suspended.
 
-- `draft`
-- `pending_review`
-- `changes_required`
-- `pending_funding`
-- `funded`
-- `live`
-- `paused`
-- `closing`
-- `completed`
-- `settled`
-- `cancelled`
-- `suspended`
-
-No campaign should jump from `draft` to `live`. The minimum safe path is:
-
-`draft -> pending_review -> pending_funding -> funded -> live`
+A funded task can await review while its allocation remains locked. Publication requires approved sponsor, approved current task version and locked rewards. Cancellation/suspension is not settlement and cannot automatically release money.
 
 ## 6. Reward Economy Failure Cases
 
@@ -131,7 +117,7 @@ No campaign should jump from `draft` to `live`. The minimum safe path is:
 | Instant redemption | Fraud becomes profitable | Use redemption windows and manual review for first redemption |
 | No outstanding liability tracking | Platform may owe more rewards than it can fund | Track approved points, locked points, pending points, and redeemable liability |
 | Points created outside ledger | Balance becomes impossible to audit | Ledger-only point creation |
-| Budget not reserved | Sponsor campaign may overspend | Reserve budget before accepting submissions |
+| Budget not reserved | Sponsor campaign may overspend | Lock at funded task creation; commit individual rewards at the task-specific promise step |
 | No expiry rules | Old promo points become future debt | Expiry for promotional bonuses |
 | No burn-rate dashboard | Admin discovers problems late | Daily reward pool and liability dashboard |
 
@@ -280,9 +266,9 @@ Recommended modules:
 - Every ledger entry must have reason, source, reference, and actor where applicable.
 - Reversals must be new ledger entries, not edits.
 - Every financial-like operation must be idempotent.
-- Campaign budget must be reserved before user rewards are approved.
+- Full task allocation must lock at funded creation; task-specific commitments must precede promised work.
 - Outstanding points liability must be visible to admin.
-- Sponsor-funded campaign budget must be locked before campaign launch.
+- Sponsor-funded task allocation must lock at funded creation, independently of review/publication.
 - Sponsor budget reservations, consumption, refunds, and rollovers must be ledgered.
 
 ### 11.7 Provider Integration Rules
@@ -375,3 +361,41 @@ Every reward must be controlled.
 Every sponsor naira must be protected.  
 Every user-facing rule must be clear.  
 Every module must have one job.
+
+## 16. Traceable Acceptance Scenarios
+
+| Test ID | Rule | Scenario and expected result |
+| --- | --- | --- |
+| T-VAL-01 | VAL-01/02/03 | Local, international and formatted versions resolve to one canonical number. Invalid length/country/type is rejected. Equivalent verified numbers cannot own two accounts |
+| T-VAL-02 | VAL-03/09 | Pending-number squatting, replayed/expired OTP, cross-purpose challenge and resend flood fail without permanently blocking the rightful owner |
+| T-VAL-03 | VAL-04/05 | Eze and eze collide; boundary lengths 2/3/20/21, leading digit, trailing underscore, double underscore, Unicode lookalikes and reserved names produce specified outcomes |
+| T-VAL-04 | VAL-04 | Concurrent claims of one available username result in exactly one account; loser receives recoverable conflict |
+| T-VAL-05 | VAL-05/06 | Renamed username remains reserved; cooldown enforced; immutable referrals remain valid; legitimate Unicode display names work |
+| T-AUTH-01 | Account gates | Bypass UI verification, spoof roles/badges, edit another sponsor task or read private proof: backend rejects |
+| T-AUTH-02 | Account recovery | Recycled SIM cannot alone take over an account; number change reauthenticates and verifies; shared device alone does not ban a household |
+| T-AUTH-03 | Restrictions | A risk signal alone does not freeze points; scoped restriction blocks only permitted actions and retains review/appeal history |
+| T-FIN-01 | FIN-01 | Two task creations race for one balance: no overspend, no orphan lock, no published unfunded task |
+| T-FIN-02 | FIN-01/02 | Retried funded creation or duplicated/out-of-order payment confirmation locks/credits once; mismatched amount/currency/reference rejected |
+| T-FIN-03 | FIN-03 | Sponsor cannot withdraw, refund or allocate locked funds to another task; campaign aggregation cannot double-count them |
+| T-TASK-01 | Selected assignment | 100 applicants for 2 positions: applications do not promise payment; concurrent selections cannot exceed 2 funded commitments |
+| T-TASK-02 | Capped reward | Two users claim the last place: exactly one commitment; other gets clear unavailable state before work |
+| T-TASK-03 | Open/time-bound | No universal slot restriction; fixed-reward promises remain budgeted; voluntary participation and date boundaries are explicit |
+| T-TASK-04 | Terms/deadlines | Changed rules do not alter accepted work; server clock controls deadlines; timely submission remains protected when its claim expires |
+| T-FIN-04 | FIN-04 | Concurrent approve/reject/refund/cancel commands preserve one valid transition and one point credit; stale reviewer sees conflict |
+| T-FIN-05 | FIN-05 | Sponsor cancellation, silence or dispute cannot confiscate approved rewards or release pending appeal funds |
+| T-FIN-06 | FIN-06 | Budget decrease cannot consume commitments; increase requires funding; provider chargeback stops new exposure without silent point seizure |
+| T-REV-01 | Review policy | Missed review target escalates; correction and appeal deadlines enforced; no automatic approval/rejection for sponsor silence |
+| T-REV-02 | Permissions | Sponsor cannot decide own appeal or approve own submitted work; prohibited transitions and cross-tenant bulk requests fail |
+| T-RED-01 | Redemption | Duplicate submit, lost response and provider timeout never trigger blind second fulfillment; first-redemption gate and caps checked atomically |
+| T-VER-01 | VER-01/02 | Paid subscription, tier, email verification and sponsor approval never manufacture public badges |
+| T-VER-02 | VER-03/04 | Expired/revoked badge is not displayed as current; ownership changes trigger recheck; private evidence inaccessible to sponsors/public |
+| T-UX-01 | UX contract | Inline errors, summary/focus, paste/autofill, keyboard/mobile, long values, screen-reader feedback and preserved drafts work consistently |
+| T-UX-02 | Search/recovery | Late search response cannot overwrite new results; tenant filters remain enforced; session expiry and reconnect preserve safe work |
+| T-POOL-01 | PRD 8.3 | NGN 75,000 issuance allocation and NGN 25,000 reserve are not double-spent; issued points stay backed and redemption does not refill issuance allowance |
+| T-UPLOAD-01 | VAL-12/13 | Oversized/disguised/private uploads and internal-network proof URLs cannot bypass file access or SSRF controls |
+
+Use actual database concurrency tests for financial and uniqueness cases, API permission tests for ownership, and browser tests for UX. Run shared-pool and public-badge scenarios when those later features are enabled; test that disabled features cannot be invoked beforehand.
+
+## 17. Unresolved Policy Gates
+
+The validation specification lists policy decisions still required before their workflows ship. A test expecting an unspecified age limit, OTP expiry, fee refund, shared-pool formula or review deadline is not an approved requirement. Agree and version those policies, then bind acceptance assertions to them. Proposed review targets do not constitute an implemented or staffed service guarantee.
