@@ -1,5 +1,14 @@
 # PointRush Product Requirements Document
 
+## Document Map
+
+- [Validation and approval rules](PointRush_Validation_Approval_Rules.md): field constraints, task models, funding commitments, review permissions and later verification badges.
+- [Testing and engineering rules](PointRush_Testing_Risk_Engineering_Rules.md): abuse cases and traceable acceptance scenarios.
+- [Design direction](DESIGN.md): components, colours, typography and branding.
+- [UX contract](UX-CONTRACT.md): forms, search, feedback and recovery.
+
+Task means an individual mission; a campaign may contain multiple tasks. Funding belongs to explicit task allocations and must never be counted twice at campaign level. Rules marked proposed remain planning defaults until resolved before launch.
+
 ## 1. Product Summary
 
 **Working name:** PointRush  
@@ -123,7 +132,7 @@ Recommended launch conversion:
 | 5,000 points | ₦500 |
 | 10,000 points | ₦1,000 |
 
-Total equivalent launch pool:
+Total theoretical equivalent of the pool (not the initial issuance allowance):
 
 | Reward Pool | Point Equivalent |
 | ---: | ---: |
@@ -140,14 +149,16 @@ Total equivalent launch pool:
 | Redemption reserve | ₦15,000 | Prevent failed reward fulfillment |
 | Fraud/error buffer | ₦10,000 | Mistakes, reversals, provider failures |
 
+Under this allocation, NGN 75,000 (750,000 points at the proposed rate) funds initial reward issuance; NGN 25,000 remains ring-fenced. Issued points retain their backing until redeemed or legitimately reversed. Redemption does not create new issuance capacity by itself. Provider costs must be budgeted separately; buffer reallocation requires an audited decision and a solvency check.
+
 ### 8.4 Redemption Rules
 
 - Minimum redemption: **3,000 points = ₦300**.
 - No instant redemption for new users.
 - Redemption eligibility requires:
-  - Verified account.
+  - Verified email and phone ownership; a public verification badge is not required.
   - At least 2 approved missions.
-  - No fraud flag.
+  - No active restriction applicable to redemption; a risk signal alone is not a restriction.
   - Minimum point threshold reached.
 - Launch redemptions should happen in controlled windows, for example weekly.
 - Admin can pause redemptions if fraud, provider failure, or pool limits require it.
@@ -160,7 +171,7 @@ Total equivalent launch pool:
 | Approved | Points added to available balance |
 | Locked | Points earned but not yet redeemable due to tier, fraud, or timing rules |
 | Redeemed | Points exchanged for reward |
-| Reversed | Points removed due to fraud, duplicate proof, or sponsor dispute |
+| Reversed | Compensating ledger entry after substantiated fraud or a confirmed erroneous credit; sponsor disagreement alone is insufficient |
 | Expired | Promotional points not used within their validity period |
 
 ## 9. Referral System
@@ -192,9 +203,11 @@ Tiers should not only be cosmetic. They must control trust, access, redemption l
 | --- | --- | --- |
 | Starter | New user | Basic missions, low limits, slower review |
 | Bronze | 3 approved missions, 3,000 points earned | ₦500 weekly redemption cap, more missions |
-| Silver | 10 approved missions, 5 active referrals, 80% approval rate, no fraud flags, 7 active days | ₦1,500 weekly redemption cap, better missions, faster review |
-| Gold | 25 approved missions, 15 active referrals, 85% approval rate, no fraud flags | ₦3,000 weekly redemption cap, premium campaigns, priority support |
+| Silver | 10 approved missions, 5 active referrals, 80% approval rate, no applicable active restriction, 7 active days | ₦1,500 weekly redemption cap, better missions, faster review |
+| Gold | 25 approved missions, 15 active referrals, 85% approval rate, no applicable active restriction | ₦3,000 weekly redemption cap, premium campaigns, priority support |
 | Elite | Invite-only or top verified users | Sponsor campaigns, higher caps, special missions, possible cash-equivalent partner offers |
+
+The referral-based Silver/Gold criteria above are provisional. A quality-work alternative is required; its thresholds, the approval-rate denominator, active-day definition and Starter redemption cap must be settled before launch. Public verification badges are independent of tiers.
 
 ## 11. Mission Types
 
@@ -221,6 +234,16 @@ Tiers should not only be cosmetic. They must control trust, access, redemption l
 - Sponsored learning paths.
 - Job readiness challenges.
 - Partner loyalty campaigns.
+
+### 11.3 Participation and Reward Models
+
+- Selected assignments: many can apply; one, two, or another configured number are selected. Fixed rewards are committed on selection, before work starts.
+- Capped fixed-reward missions: rewards are committed when eligible users claim a funded place, with a disclosed completion deadline.
+- Time-bound campaigns: dates constrain participation, while the chosen reward model independently constrains spending.
+- Open campaigns: potentially unlimited participation, with explicit separation between rewarded and voluntary participation. An unfunded participant must never see a guaranteed reward promise.
+- Shared-pool campaigns: planned alternative with disclosed variable rewards. Formula, rounding, minimum payouts and cancellation rules must be specified before enabling.
+
+Joining is not universally a reservation. The platform reserves funds when it commits to a reward under the accepted task rules. Publication must specify participation, selection, reward, timing, funding and repeatability settings.
 
 ## 12. Sponsor Model
 
@@ -258,29 +281,21 @@ From day one, the platform should avoid relying only on user growth. Admin shoul
 
 ### 12.3 Sponsor Funding and Reward Locking
 
-Sponsor-funded missions must not go live on promises. The campaign reward budget must be funded and locked before users can earn from the campaign.
+Sponsor reward funds allocated to a task must lock atomically when that funded task is created. Unfunded drafts are allowed but cannot publish or accept participants.
 
-Recommended flow:
+1. Sponsor defines the task model, terms, reward budget and separate platform fees.
+2. Confirmed available sponsor funds are checked server-side. Provider confirmation must match the account, reference, amount and currency; browser success is not proof.
+3. Funded task creation and budget locking happen in one transaction. Insufficient funding leaves an unfunded draft or fails the funded-creation operation.
+4. Locked funds cannot fund another task, be withdrawn, refunded or rolled over while committed.
+5. Sponsor approval, current task-version approval and funding are independent publication gates.
+6. Reward commitments are recorded within the locked allocation according to the task model, not automatically on every Join.
+7. Approval atomically converts a commitment into backing for earned points and credits the user's ledger exactly once.
+8. Rejection cannot release disputed funds before correction/appeal rights finish.
+9. Cancellation stops new commitments and protects accepted work. Only unused, uncommitted funds can be released through settlement.
 
-1. Sponsor creates a campaign draft.
-2. Sponsor defines mission reward, target approvals, campaign budget, and campaign duration.
-3. Platform calculates required campaign funding, platform fee, and estimated user reward value.
-4. Sponsor pays through the approved payment provider.
-5. Payment is confirmed through verified webhook.
-6. Campaign funds become locked against that campaign.
-7. Only then can the mission go live.
-8. Each approved submission reserves or consumes part of the locked campaign budget.
-9. Rejected submissions do not consume reward budget.
-10. When the campaign ends, unused sponsor-funded balance is either refunded, rolled into another campaign, or converted to sponsor credit based on agreed terms.
+For example, NGN 50,000 available minus a NGN 20,000 task allocation leaves NGN 30,000 available. If NGN 5,000 backs approved rewards and NGN 3,000 backs ongoing work, NGN 12,000 remains uncommitted but locked to the task.
 
-Important rule: sponsor-funded reward budget must be separated from the founder-funded launch pool. The admin should always see:
-
-- Sponsor campaign budget.
-- Platform fee.
-- Amount reserved for pending submissions.
-- Amount consumed by approved submissions.
-- Amount available for more approvals.
-- Amount eligible for refund or rollover.
+Admin must separately see available sponsor funds, task-locked uncommitted funds, participant commitments, approved reward backing, fees and authorised releases. Campaign totals aggregate task allocations; they do not create another balance. A ledger lock is not a guarantee against provider chargebacks or a claim of legal escrow.
 
 ### 12.4 Sponsor Edge Case Solutions
 
@@ -290,13 +305,13 @@ Important rule: sponsor-funded reward budget must be separated from the founder-
 | Sponsor payment succeeds but webhook is delayed | Campaign stays in pending funding until payment is verified |
 | Sponsor funds less than required | Campaign cannot launch until the shortfall is paid or campaign size is reduced |
 | Sponsor funds campaign, then cancels before launch | Refund or sponsor credit after platform fee rules are applied |
-| Sponsor cancels after users have joined | Campaign enters closing state; joined users get a clear deadline or cancellation notice |
+| Sponsor cancels after users have joined | Enter closing; preserve accepted terms, committed work, pending reviews and appeals; no blanket forfeiture |
 | Sponsor rejects valid submissions unfairly | Admin arbitration decides using mission rules and submitted proof |
-| Sponsor runs out of campaign budget | Mission automatically pauses when remaining budget cannot cover more approvals |
+| Sponsor runs out of campaign budget | Stop new reward commitments before overspending; open voluntary participation may continue only if clearly disclosed |
 | Sponsor changes mission reward mid-campaign | Change applies only to future participants, not existing joined users |
 | Sponsor changes proof rules mid-campaign | Change applies only to future participants |
 | Sponsor disputes after campaign ends | Platform uses stored campaign rules, submission proof, and audit logs |
-| Sponsor requests refund after approved work | Approved rewards and platform fees are not reversed unless fraud is proven |
+| Sponsor requests refund after approved work | Approved rewards remain backed; unused funds and fees follow disclosed refund terms; disputes require investigation |
 | Sponsor uploads harmful campaign | Admin rejects campaign before it goes live |
 | Sponsor wants guaranteed sales | Platform must clarify that campaigns buy verified actions, not guaranteed revenue |
 
@@ -307,13 +322,15 @@ Important rule: sponsor-funded reward budget must be separated from the founder-
 | Draft | Sponsor is still creating the campaign |
 | Pending Review | Campaign submitted for admin review |
 | Changes Required | Admin rejected or requested edits |
-| Pending Funding | Campaign approved but not funded |
-| Funded | Payment confirmed and budget locked |
+| Pending Funding | Draft awaits confirmed funding; cannot publish |
+| Funded | Task allocation locked at funded creation; approval is still required |
 | Live | Users can join and complete mission |
 | Paused | Campaign temporarily stopped by sponsor, admin, or budget rule |
 | Closing | Campaign is ending, but existing joined users may still submit within rules |
 | Completed | Campaign ended and no new actions are accepted |
 | Settled | Rewards, fees, refunds, and sponsor reports are finalized |
+
+Funding and review are separate state dimensions. A funded task may be pending review or require changes without releasing its allocation. Publication requires both gates; cancellation/suspension never bypass settlement.
 
 ## 13. Reward Marketplace
 
@@ -521,7 +538,7 @@ A mission may be rejected if the proof is unclear, fake, duplicated, submitted l
 
 ### When can I redeem?
 
-You can redeem when you reach the minimum point threshold, complete the required number of approved missions, verify your account, and have no fraud flags.
+You can redeem when you have verified email and phone ownership, sufficient available points, the required approved missions, remaining redemption allowance, an open redemption window and no applicable active restriction. A public verification badge is not required.
 
 ### What is the minimum redemption?
 
@@ -550,6 +567,18 @@ Yes. Points can be reversed if they were earned through fake proof, duplicate ac
 ### How do I know missions are real?
 
 Missions are created or approved by the platform. Sponsors and campaigns go through admin review before users can participate.
+
+### Does joining always guarantee a reward?
+
+No. Each task states whether you are applying for selection, claiming a funded place, joining voluntarily or participating in a variable reward pool. A fixed reward commitment is made only at the step disclosed in that task's terms.
+
+### Can a sponsor take back my approved reward?
+
+A sponsor changing their mind does not reverse valid earnings. Fraud or erroneous credits require evidence and an audited correction process.
+
+### What does a verified badge mean?
+
+Later badges identify the checks PointRush performed on identity, business representation or linked profile ownership. They are separate from contact verification, tiers and campaign approval; they do not guarantee honesty, earnings or endorsement.
 
 ## 21. Technical Architecture
 
@@ -728,11 +757,19 @@ Actions:
 - Whether first launch should be invite-only.
 - Whether redemptions happen weekly or twice weekly.
 - Whether to start with Nomba immediately or manually fulfill airtime/data while API access is being secured.
-- Whether to add creator verification in v1 or after launch.
+- Public verified sponsor/user/creator badges are a later feature; exact evidence requirements, expiry and retention remain to be decided.
+- Age eligibility, contact recovery, verification-message provider/cost, first-redemption waiting period and restriction review deadlines.
+- Review/correction/appeal timings proposed in the validation specification.
+- Shared-pool allocation and rounding policy before that model is enabled.
+- Fee refund terms, chargeback response and non-referral tier thresholds.
 - Exact sponsor setup fee.
 - Exact admin margin per sponsor-funded mission.
 - Whether to use Prisma or Drizzle.
 - Whether to start with Supabase Postgres, Neon, or Cloud SQL.
+
+## 26.1 Later Verification Badges
+
+Verified sponsor and verified user/creator badges are later features, independent of contact ownership and reputation. Record subject, scope, status, reviewer, evidence reference and verification date. Expiry, revocation, re-verification after ownership changes and appeals must be supported. Sponsors see verification results, not private identity evidence. Paid membership, account approval or a high tier never automatically grants a badge. Badges never bypass task approval, funding or proof requirements.
 
 ## 27. Success Metrics
 
