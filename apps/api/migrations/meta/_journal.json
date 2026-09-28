@@ -15,6 +15,13 @@
       "when": 1790539778940,
       "tag": "0001_reserve_usernames",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790556992966,
+      "tag": "0002_account_profiles",
+      "breakpoints": true
     }
   ]
 }

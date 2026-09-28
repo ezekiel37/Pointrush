@@ -4,7 +4,7 @@ Production-oriented rewards platform for Nigeria. The product is under construct
 
 ## Current Slice
 
-NestJS API and portable PostgreSQL foundation: versioned HTTP, liveness/readiness, strict configuration, security headers, request validation, safe errors, Drizzle migrations, account identity constraints, tests and CI. No signup/login, payment or reward endpoints are enabled. The Next.js PWA will be added as its own feature slice.
+NestJS API, portable PostgreSQL and internal account management: versioned HTTP, liveness/readiness, strict configuration, security headers, safe errors, Drizzle migrations, account creation and username lifecycle. No signup/login, payment or reward endpoints are enabled. See [account boundaries and rules](ACCOUNTS.md). The Next.js PWA will be added as its own feature slice.
 
 ## Local Development
 
@@ -38,13 +38,13 @@ Cloud Run plus managed services is the agreed hosting direction. Deployment is n
 
 ## Feature Delivery
 
-Use a focused `feat/*` or `fix/*` branch for each independently testable change. Run `npm run check` and the relevant integration suite, inspect the staged diff, commit and push the branch. Database changes require `npm run test:db` against native PostgreSQL. Merge after CI passes; never combine unfinished money flows with an unrelated working feature. Keep secrets and generated builds out of Git. Apply compatible database migrations in their owning feature commits. Dependent PRs may target the preceding feature branch while its checks are blocked; merge in dependency order.
+Use a focused `feat/*` or `fix/*` branch for each independently testable change. Run `npm run check` and the relevant integration suite, inspect the staged diff, commit and push the branch. Database changes require `npm run test:db` against native PostgreSQL. Run checks locally and record any unverified release gates; do not add or expand CI workflows while the account billing issue remains unresolved. Keep secrets and generated builds out of Git. Apply compatible database migrations in their owning feature commits. Dependent PRs may target the preceding feature branch while its checks are blocked; merge in dependency order after required verification.
 
 Planned order:
 
 1. API foundation and automated checks (implemented).
 2. Portable PostgreSQL schema and migrations (implemented; native integration verification pending).
-3. Accounts, authentication, recovery, permissions and audit trail.
+3. Internal account creation and username lifecycle (implemented); authentication, recovery, permissions and full audit trail follow.
 4. Next.js application shell and account journeys.
 5. Sponsor funding ledger, task allocation locks and reconciliation.
 6. Task review, participation models, proof, appeals and reward accounting.

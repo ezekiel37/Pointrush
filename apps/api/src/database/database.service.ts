@@ -34,7 +34,7 @@ export class DatabaseService implements OnApplicationShutdown {
     try {
       // Check connectivity, the initial schema and SELECT permissions without reading PII.
       await this.pool.query(
-        'SELECT a.id FROM accounts a LEFT JOIN usernames u ON u.account_id = a.id LEFT JOIN verified_phones p ON p.account_id = a.id LIMIT 0',
+        'SELECT a.id FROM accounts a LEFT JOIN usernames u ON u.account_id = a.id LEFT JOIN verified_phones p ON p.account_id = a.id LEFT JOIN account_profiles profile ON profile.account_id = a.id LIMIT 0',
       );
       return true;
     } catch {

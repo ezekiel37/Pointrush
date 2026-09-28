@@ -27,6 +27,23 @@ export const accounts = pgTable(
   ],
 );
 
+export const accountProfiles = pgTable(
+  'account_profiles',
+  {
+    accountId: uuid('account_id')
+      .primaryKey()
+      .references(() => accounts.id, { onDelete: 'restrict' }),
+    displayName: varchar('display_name', { length: 80 }).notNull(),
+    usernameChangedAt: timestamp('username_changed_at', { withTimezone: true }),
+  },
+  (table) => [
+    check(
+      'account_profiles_display_name_check',
+      sql`char_length(${table.displayName}) between 1 and 80 and ${table.displayName} = btrim(${table.displayName}) and ${table.displayName} !~ '[[:cntrl:]]'`,
+    ),
+  ],
+);
+
 // Current, historical, and platform-reserved usernames share one namespace.
 export const usernames = pgTable(
   'usernames',
