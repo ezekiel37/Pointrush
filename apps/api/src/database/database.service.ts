@@ -32,9 +32,9 @@ export class DatabaseService implements OnApplicationShutdown {
   async isReady(): Promise<boolean> {
     if (!this.pool) return false;
     try {
-      // Check connectivity, the initial schema and SELECT permissions without reading PII.
+      // Check connectivity and required account/auth tables without reading PII.
       await this.pool.query(
-        'SELECT a.id FROM accounts a LEFT JOIN usernames u ON u.account_id = a.id LEFT JOIN verified_phones p ON p.account_id = a.id LEFT JOIN account_profiles profile ON profile.account_id = a.id LIMIT 0',
+        'SELECT a.id FROM accounts a LEFT JOIN usernames u ON u.account_id = a.id LEFT JOIN verified_phones p ON p.account_id = a.id LEFT JOIN account_profiles profile ON profile.account_id = a.id LEFT JOIN auth_account_links link ON link.account_id = a.id LEFT JOIN auth_users au ON false LEFT JOIN auth_sessions sess ON false LEFT JOIN auth_credentials cred ON false LEFT JOIN auth_verifications v ON false LEFT JOIN auth_rate_limits r ON false LEFT JOIN auth_email_budgets b ON false LEFT JOIN auth_email_jobs j ON false LIMIT 0',
       );
       return true;
     } catch {

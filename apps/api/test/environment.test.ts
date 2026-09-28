@@ -63,3 +63,17 @@ test('email budgets reject invalid or excessive configured limits', () => {
     );
   }
 });
+
+test('queue encryption key rejects malformed values without echoing them', () => {
+  for (const value of ['short-secret', 'x'.repeat(64), 'a'.repeat(63)]) {
+    assert.throws(
+      () => readEnvironment({ AUTH_EMAIL_ENCRYPTION_KEY: value }),
+      (error: unknown) => {
+        assert.ok(error instanceof Error);
+        assert.match(error.message, /AUTH_EMAIL_ENCRYPTION_KEY/);
+        assert.ok(!error.message.includes(value));
+        return true;
+      },
+    );
+  }
+});

@@ -7,12 +7,14 @@ import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { eq, ne, sql } from 'drizzle-orm';
 import * as schema from '../src/database/schema.js';
-import { createResendAuthEmail } from '../src/auth/auth.email.js';
 import {
-  AuthEmailBudget,
-  protectAuthEmail,
-} from '../src/auth/auth.email-budget.js';
-import type { EmailEvent } from '../src/auth/auth.email-budget.js';
+  createResendAuthEmail,
+  createResendPayloadSender,
+  EmailDeliveryError,
+} from '../src/auth/auth.email.js';
+import { AuthEmailBudget } from '../src/auth/auth.email-budget.js';
+import { createQueuedAuthEmail } from '../src/auth/email-queue.js';
+import type { SendAuthEmail } from '../src/auth/auth.email.js';
 import { createAuth } from '../src/auth/auth.factory.js';
 
 const pg = new PGlite();
@@ -23,6 +25,36 @@ const message = {
   to: 'member@example.test',
   url: 'https://api.example.test/verify?token=secret',
 };
+
+test('queued sends distinguish concurrent provider requests from payload conflicts', async () => {
+  for (const name of [
+    'concurrent_idempotent_requests',
+    'invalid_idempotent_request',
+  ]) {
+    const send = createResendPayloadSender('re_test', async () =>
+      Response.json({ name }, { status: 409 }),
+    );
+    await assert.rejects(
+      send(
+        {
+          from: 'sender@example.test',
+          to: 'user@example.test',
+          subject: 'Test',
+          text: 'Test',
+        },
+        'stable-key',
+      ),
+      (error: unknown) => {
+        assert.ok(error instanceof EmailDeliveryError);
+        assert.equal(
+          error.retryable,
+          name === 'concurrent_idempotent_requests',
+        );
+        return true;
+      },
+    );
+  }
+});
 before(async () => {
   await migrate(db, { migrationsFolder: resolve('migrations') });
 });
@@ -137,17 +169,17 @@ test('shared recipient cooldown, hourly cap and global budget use database time'
   assert.equal(await budget.claim('member@example.test'), true);
 });
 
-test('failed sends consume reservations, emit safe events and preserve reset response parity', async () => {
+test('queued emails consume reservations and preserve reset response and cooldown parity', async () => {
   await db.delete(schema.authEmailBudgets);
-  const events: EmailEvent[] = [];
   let sends = 0;
-  const protectedSend = protectAuthEmail(
-    async () => {
-      sends++;
-      throw new Error('secret-email-and-token');
-    },
-    (event) => events.push(event),
+  const enqueue = createQueuedAuthEmail(
+    randomBytes(32).toString('hex'),
+    'sender@example.test',
   );
+  const protectedSend: SendAuthEmail = async (message) => {
+    await enqueue(message);
+    sends++;
+  };
   const auth = createAuth(
     db,
     {
@@ -182,7 +214,6 @@ test('failed sends consume reservations, emit safe events and preserve reset res
     200,
   );
   assert.equal(sends, 1);
-  assert.deepEqual(events, ['auth_email_failed']);
   await db
     .update(schema.authEmailBudgets)
     .set({ lastAttemptAt: sql`clock_timestamp() - interval '61 seconds'` })
@@ -197,7 +228,6 @@ test('failed sends consume reservations, emit safe events and preserve reset res
   assert.equal(unknown.status, known.status);
   assert.deepEqual(await known.json(), await unknown.json());
   assert.equal(sends, 2);
-  assert.equal(events.at(-1), 'auth_email_failed');
   const knownLimited = await post('/send-verification-email', {
     email: 'outage@example.test',
   });
@@ -217,7 +247,6 @@ test('failed sends consume reservations, emit safe events and preserve reset res
   });
   assert.equal(failed.status, 200);
   assert.equal(sends, 3);
-  assert.equal(events.at(-1), 'auth_email_failed');
   assert.equal((await db.select().from(schema.authSessions)).length, 0);
 });
 

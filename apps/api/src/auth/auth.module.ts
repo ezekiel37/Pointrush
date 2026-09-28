@@ -7,7 +7,8 @@ import type { AuthConfig } from './auth.factory.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { AccountsModule } from '../accounts/accounts.module.js';
-import { AuthEmailBudget, protectAuthEmail } from './auth.email-budget.js';
+import { AuthEmailBudget } from './auth.email-budget.js';
+import { authEmailJobs } from './email-queue.schema.js';
 
 @Module({})
 export class AuthModule {
@@ -32,23 +33,22 @@ export class AuthModule {
               dailyEmailLimit,
             );
             return new AuthService(
-              createAuth(
-                database.db,
-                config,
-                protectAuthEmail(sendEmail, (event) => {
-                  logger.log({ event });
-                }),
-                async (recipient) => {
-                  try {
-                    const allowed = await budget.claim(recipient);
-                    if (!allowed) logger.log({ event: 'auth_email_limited' });
-                    return allowed;
-                  } catch {
-                    logger.error({ event: 'auth_email_budget_failed' });
-                    throw new Error('Email budget unavailable');
-                  }
-                },
-              ),
+              createAuth(database.db, config, sendEmail, async (recipient) => {
+                try {
+                  // Do this for known and unknown recipients alike, before
+                  // lookup, so a missing queue migration fails uniformly.
+                  await database.db
+                    .select({ id: authEmailJobs.id })
+                    .from(authEmailJobs)
+                    .limit(0);
+                  const allowed = await budget.claim(recipient);
+                  if (!allowed) logger.log({ event: 'auth_email_limited' });
+                  return allowed;
+                } catch {
+                  logger.error({ event: 'auth_email_budget_failed' });
+                  throw new Error('Email budget unavailable');
+                }
+              }),
               config.baseURL,
               config.trustedOrigins,
             );

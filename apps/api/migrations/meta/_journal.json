@@ -43,6 +43,13 @@
       "when": 1790594023087,
       "tag": "0005_auth_email_budgets",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790606925994,
+      "tag": "0006_auth_email_queue",
+      "breakpoints": true
     }
   ]
 }

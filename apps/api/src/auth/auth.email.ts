@@ -1,6 +1,16 @@
 import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { z } from 'zod';
+import type { SendEmailPayload } from './email-payload.js';
+
+export class EmailDeliveryError extends Error {
+  constructor(
+    readonly retryable: boolean,
+    readonly retryAfterSeconds = 60,
+  ) {
+    super('Authentication email delivery failed');
+  }
+}
 
 export interface AuthEmail {
   kind: 'verify-email' | 'reset-password';
@@ -31,13 +41,26 @@ export function createResendAuthEmail(
       'Auth email requires an API key and a valid sender address',
     );
   }
-  return async (message) => {
-    const body = JSON.stringify({
-      from: `PointRush <${from}>`,
-      to: message.to,
-      ...authEmailContent(message),
-    });
-    const idempotencyKey = `auth-email/${randomUUID()}`;
+  const send = createResendPayloadSender(apiKey, transport);
+  return async (message) =>
+    send(
+      {
+        from: `PointRush <${from}>`,
+        to: message.to,
+        ...authEmailContent(message),
+      },
+      `auth-email/${randomUUID()}`,
+    );
+}
+
+export function createResendPayloadSender(
+  apiKey: string,
+  transport: typeof fetch = fetch,
+): SendEmailPayload {
+  if (!apiKey.trim()) throw new Error('Resend API key is required');
+  return async (payload, idempotencyKey) => {
+    const body = JSON.stringify(payload);
+    let failure = new EmailDeliveryError(true);
     // The pinned SDK logs raw provider errors outside production and does not
     // expose AbortSignal in its send options. Use the documented endpoint here
     // to bound transport time and keep provider payloads out of logs.
@@ -66,11 +89,35 @@ export function createResendAuthEmail(
             return;
           retry = true; // Ambiguous acceptance; reuse the exact payload and key.
         } else {
+          let concurrentRequest = false;
+          if (response.status === 409) {
+            const error: unknown = await response.json();
+            concurrentRequest = Boolean(
+              error &&
+              typeof error === 'object' &&
+              'name' in error &&
+              error.name === 'concurrent_idempotent_requests',
+            );
+          }
+          const retryAfter = response.headers.get('retry-after');
+          const parsedDelay =
+            retryAfter && /^\d+$/.test(retryAfter)
+              ? Number(retryAfter)
+              : retryAfter
+                ? Math.ceil((Date.parse(retryAfter) - Date.now()) / 1000)
+                : 60;
+          failure = new EmailDeliveryError(
+            concurrentRequest ||
+              response.status === 429 ||
+              response.status >= 500,
+            Number.isFinite(parsedDelay) ? Math.max(60, parsedDelay) : 60,
+          );
           retry =
             response.status >= 500 && !response.headers.has('retry-after');
-          await response.body?.cancel();
+          if (!response.bodyUsed) await response.body?.cancel();
         }
       } catch {
+        failure = new EmailDeliveryError(true);
         retry = true;
       }
       // Rate limits, explicit backoff, credentials and validation errors are not
@@ -78,6 +125,6 @@ export function createResendAuthEmail(
       if (!retry || attempt === 1) break;
       await delay(250);
     }
-    throw new Error('Authentication email delivery failed');
+    throw failure;
   };
 }

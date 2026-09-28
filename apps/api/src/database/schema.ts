@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+export { authEmailJobs } from '../auth/email-queue.schema.js';
 export {
   authUsers,
   authSessions,

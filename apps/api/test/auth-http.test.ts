@@ -35,6 +35,7 @@ const config = {
   trustedOrigins: [origin],
   resendApiKey: 're_test_only',
   emailFrom: 'test@pointrush.test',
+  emailEncryptionKey: randomBytes(32).toString('hex'),
 };
 const mailbox: AuthEmail[] = [];
 const auth = createAuth(db, config, async (message) => {

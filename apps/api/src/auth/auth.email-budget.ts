@@ -3,11 +3,8 @@ import { sql } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import type * as schema from '../database/schema.js';
 import { authEmailBudgets } from './auth.schema.js';
-import type { SendAuthEmail } from './auth.email.js';
 
 class BudgetExhausted extends Error {}
-export type EmailEvent =
-  'auth_email_limited' | 'auth_email_accepted' | 'auth_email_failed';
 
 export class AuthEmailBudget {
   constructor(
@@ -71,20 +68,4 @@ export class AuthEmailBudget {
       throw error;
     }
   }
-}
-
-export function protectAuthEmail(
-  send: SendAuthEmail,
-  report: (event: EmailEvent) => void,
-): SendAuthEmail {
-  return async (message) => {
-    try {
-      await send(message);
-      report('auth_email_accepted');
-    } catch {
-      // Do not expose account existence through provider failure status codes.
-      // Reservations remain consumed after ambiguous failures or process death.
-      report('auth_email_failed');
-    }
-  };
 }

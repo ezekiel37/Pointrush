@@ -11,15 +11,17 @@
     "test": "tsc -p tsconfig.test.json && node --test .test-dist/test/*.test.js",
     "test:db": "tsc -p tsconfig.test.json && node --test .test-dist/test/database/*.test.js",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "node --env-file-if-exists=.env dist/database/migrate-cli.js"
+    "db:migrate": "node --env-file-if-exists=.env dist/database/migrate-cli.js",
+    "email:work": "node --env-file-if-exists=.env dist/auth/email-worker-cli.js"
   },
   "dependencies": {
+    "@better-auth/core": "1.7.6",
     "@better-auth/drizzle-adapter": "1.7.6",
     "@nestjs/common": "12.1.0",
     "@nestjs/core": "12.1.0",
     "@nestjs/platform-express": "12.1.0",
-    "better-call": "1.4.0",
     "better-auth": "1.7.6",
+    "better-call": "1.4.0",
     "class-transformer": "0.5.1",
     "class-validator": "0.15.1",
     "drizzle-orm": "0.45.3",

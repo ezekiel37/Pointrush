@@ -38,6 +38,8 @@ Cloud Run plus managed services is the agreed hosting direction. Deployment is n
 
 ## Feature Delivery
 
+Authentication email is now queued durably; see [worker setup and queue operations](EMAIL_QUEUE.md). Production auth requires `AUTH_EMAIL_ENCRYPTION_KEY` and a separately invoked worker before users can receive mail. No mail worker has been deployed yet.
+
 Continue on the shared `develop` branch with focused, independently testable atomic commits. Do not create a branch or PR per feature. The repository owner will merge the existing feature branches/PRs. Run `npm run check` and the relevant integration suite, inspect the staged diff, commit and push `develop` without force. Database changes require `npm run test:db` against native PostgreSQL. Run checks locally and record any unverified release gates; do not create or modify CI workflows. Keep secrets and generated builds out of Git. Apply compatible database migrations in their owning feature commits.
 
 Planned order:

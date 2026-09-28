@@ -10,6 +10,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { accounts } from '../database/schema.js';
+import { authEmailJobs } from './email-queue.schema.js';
 
 const dates = () => ({
   createdAt: timestamp('created_at', { withTimezone: true })
@@ -128,6 +129,7 @@ export const authAccountLinks = pgTable('auth_account_links', {
 });
 
 export const authAdapterSchema = {
+  authEmailJob: authEmailJobs,
   user: authUsers,
   session: authSessions,
   account: authCredentials,

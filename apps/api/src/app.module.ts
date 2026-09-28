@@ -5,7 +5,7 @@ import { DatabaseModule } from './database/database.module.js';
 import { AccountsModule } from './accounts/accounts.module.js';
 import type { DatabaseConfig } from './database/database.config.js';
 import type { AuthEnvironment } from './config/environment.js';
-import { createResendAuthEmail } from './auth/auth.email.js';
+import { createQueuedAuthEmail } from './auth/email-queue.js';
 import { AuthModule } from './auth/auth.module.js';
 import { APP_GUARD, Reflector } from '@nestjs/core';
 import { AuthService } from './auth/auth.service.js';
@@ -30,7 +30,7 @@ export class AppModule {
             baseURL: auth.baseURL,
             trustedOrigins: auth.trustedOrigins,
           },
-          createResendAuthEmail(auth.resendApiKey, auth.emailFrom),
+          createQueuedAuthEmail(auth.emailEncryptionKey, auth.emailFrom),
           auth.dailyEmailLimit,
         ),
       );

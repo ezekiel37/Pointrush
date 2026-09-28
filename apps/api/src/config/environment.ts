@@ -8,6 +8,7 @@ export interface AuthEnvironment {
   trustedOrigins: string[];
   resendApiKey: string;
   emailFrom: string;
+  emailEncryptionKey: string;
   dailyEmailLimit?: number;
 }
 
@@ -27,6 +28,10 @@ const schema = z.object({
   AUTH_TRUSTED_ORIGINS: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
+  AUTH_EMAIL_ENCRYPTION_KEY: z
+    .string()
+    .regex(/^[0-9a-f]{64}$/i)
+    .optional(),
   AUTH_EMAIL_DAILY_LIMIT: z
     .string()
     .regex(/^\d+$/)
@@ -58,6 +63,7 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
     AUTH_TRUSTED_ORIGINS,
     RESEND_API_KEY,
     EMAIL_FROM,
+    AUTH_EMAIL_ENCRYPTION_KEY,
     AUTH_EMAIL_DAILY_LIMIT,
   } = result.data;
   const origins = CORS_ORIGINS.split(',')
@@ -84,7 +90,13 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
     }
   }
   const database = readDatabaseConfig(input);
-  const authValues = [AUTH_SECRET, AUTH_BASE_URL, RESEND_API_KEY, EMAIL_FROM];
+  const authValues = [
+    AUTH_SECRET,
+    AUTH_BASE_URL,
+    RESEND_API_KEY,
+    EMAIL_FROM,
+    AUTH_EMAIL_ENCRYPTION_KEY,
+  ];
   if (authValues.some(Boolean) && authValues.some((value) => !value)) {
     throw new Error('Authentication configuration must be complete');
   }
@@ -92,7 +104,13 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
     throw new Error('Authentication configuration is required in production');
   }
   let auth: AuthEnvironment | undefined;
-  if (AUTH_SECRET && AUTH_BASE_URL && RESEND_API_KEY && EMAIL_FROM) {
+  if (
+    AUTH_SECRET &&
+    AUTH_BASE_URL &&
+    RESEND_API_KEY &&
+    EMAIL_FROM &&
+    AUTH_EMAIL_ENCRYPTION_KEY
+  ) {
     let baseURL: URL;
     try {
       baseURL = new URL(AUTH_BASE_URL);
@@ -112,6 +130,7 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
       trustedOrigins: [...new Set(trustedOrigins)],
       resendApiKey: RESEND_API_KEY,
       emailFrom: EMAIL_FROM,
+      emailEncryptionKey: AUTH_EMAIL_ENCRYPTION_KEY,
       dailyEmailLimit: AUTH_EMAIL_DAILY_LIMIT,
     };
   }

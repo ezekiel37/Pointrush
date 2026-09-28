@@ -21,6 +21,9 @@ import { accounts, usernames } from '../../src/database/schema.js';
 import { configureHttp } from '../../src/http/configure-http.js';
 import { AuthEmailBudget } from '../../src/auth/auth.email-budget.js';
 import { authEmailBudgets } from '../../src/database/schema.js';
+import { authEmailJobs } from '../../src/database/schema.js';
+import { EmailWorker } from '../../src/auth/email-worker.js';
+import { EmailPayloadCipher } from '../../src/auth/email-payload.js';
 
 const databaseName = `pointrush_test_${randomUUID().replaceAll('-', '')}`;
 const folder = resolve('migrations');
@@ -29,6 +32,36 @@ let pool: Pool;
 let database: DatabaseService;
 let config: DatabaseConfig;
 let created = false;
+
+test('two native workers claim a queued email only once while its lease is active', async () => {
+  const other = new DatabaseService(config);
+  const id = randomUUID();
+  const key = 'a'.repeat(64);
+  let sends = 0;
+  try {
+    await database.db.insert(authEmailJobs).values({
+      id,
+      expiresAt: new Date(Date.now() + 120000),
+      payload: new EmailPayloadCipher(key).seal(id, {
+        from: 'PointRush <sender@example.test>',
+        to: 'user@example.test',
+        subject: 'Test',
+        text: 'Local only',
+      }),
+    });
+    const send = async () => {
+      sends++;
+    };
+    const outcomes = await Promise.all([
+      new EmailWorker(database.db, key, send).runOne(),
+      new EmailWorker(other.db, key, send).runOne(),
+    ]);
+    assert.equal(outcomes.filter((value) => value === 'accepted').length, 1);
+    assert.equal(sends, 1);
+  } finally {
+    await other.onApplicationShutdown();
+  }
+});
 
 test('independent pools cannot overspend the email budget or bypass recipient cooldown', async () => {
   const other = new DatabaseService(config);

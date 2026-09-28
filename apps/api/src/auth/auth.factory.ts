@@ -6,6 +6,7 @@ import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import type * as schema from '../database/schema.js';
 import { authAdapterSchema } from './auth.schema.js';
 import type { SendAuthEmail } from './auth.email.js';
+import { emailQueuePlugin } from './email-queue.schema.js';
 
 export interface AuthConfig {
   secret: string;
@@ -45,6 +46,7 @@ export function createAuth(
 ) {
   validateConfig(config);
   return betterAuth({
+    plugins: [emailQueuePlugin],
     appName: 'PointRush',
     secret: config.secret,
     baseURL: config.baseURL,
