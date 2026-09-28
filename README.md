@@ -4,7 +4,7 @@ Production-oriented rewards platform for Nigeria. The product is under construct
 
 ## Current Slice
 
-NestJS API foundation only: versioned HTTP, liveness, environment validation, security headers, bounded request bodies, strict DTO validation, request IDs, safe errors, tests and CI. No user accounts, database, payments or reward issuance yet. The Next.js PWA will be added as its own feature slice.
+NestJS API and portable PostgreSQL foundation: versioned HTTP, liveness/readiness, strict configuration, security headers, request validation, safe errors, Drizzle migrations, account identity constraints, tests and CI. No signup/login, payment or reward endpoints are enabled. The Next.js PWA will be added as its own feature slice.
 
 ## Local Development
 
@@ -18,6 +18,8 @@ npm run dev:api
 
 API: `http://localhost:8080/api/v1/health/live`. Environment variables are documented in `apps/api/.env.example`; the development command loads an optional `apps/api/.env`. Real secrets must never be committed.
 
+Without database configuration, development liveness works but `/api/v1/health/ready` returns 503. Production requires `DATABASE_URL`. See [database setup and migration operations](DATABASE.md) for local PostgreSQL, TLS, connection limits and native database testing.
+
 ```sh
 npm run build
 npm start --workspace @pointrush/api
@@ -27,21 +29,21 @@ npm start --workspace @pointrush/api
 
 ```sh
 docker build -f apps/api/Dockerfile -t pointrush-api .
-docker run --rm -p 8080:8080 -e CORS_ORIGINS=https://your-frontend.example pointrush-api
+docker run --rm -p 8080:8080 -e DATABASE_URL -e CORS_ORIGINS=https://your-frontend.example pointrush-api
 ```
 
-The non-root container listens on `0.0.0.0:$PORT`, writes JSON Nest logs to standard output, and handles termination signals. Configure an exact HTTPS frontend origin before production startup. `/api/v1/health/live` proves process liveness only, not database or provider readiness. Add dependency readiness with the database feature.
+The non-root container listens on `0.0.0.0:$PORT`, writes JSON Nest logs to standard output, and handles termination signals. Configure an exact HTTPS frontend origin and database connection before production startup. `/api/v1/health/live` proves process liveness; `/api/v1/health/ready` additionally checks database connectivity and the initial schema. Neither claims that payment or reward providers are ready. Migrations run as a separate job before release, never on every API instance.
 
 Cloud Run plus managed services is the agreed hosting direction. Deployment is not configured yet: select region, project, service account, Secret Manager bindings, instance limits, budgets/alerts, database capacity and connection limits before enabling delivery. No infrastructure has been provisioned by this commit. Reward backing and operating costs are separate budgets.
 
 ## Feature Delivery
 
-Use a focused `feat/*` or `fix/*` branch for each independently testable change. Run `npm run check`, inspect the staged diff, commit and push the branch. Merge after CI passes; never combine unfinished money flows with an unrelated working feature. Keep secrets and generated builds out of Git. Apply compatible database migrations in their owning feature commits.
+Use a focused `feat/*` or `fix/*` branch for each independently testable change. Run `npm run check` and the relevant integration suite, inspect the staged diff, commit and push the branch. Database changes require `npm run test:db` against native PostgreSQL. Merge after CI passes; never combine unfinished money flows with an unrelated working feature. Keep secrets and generated builds out of Git. Apply compatible database migrations in their owning feature commits. Dependent PRs may target the preceding feature branch while its checks are blocked; merge in dependency order.
 
 Planned order:
 
-1. API foundation and automated checks (this slice).
-2. Portable PostgreSQL schema and migration tests.
+1. API foundation and automated checks (implemented).
+2. Portable PostgreSQL schema and migrations (implemented; native integration verification pending).
 3. Accounts, authentication, recovery, permissions and audit trail.
 4. Next.js application shell and account journeys.
 5. Sponsor funding ledger, task allocation locks and reconciliation.

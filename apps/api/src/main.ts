@@ -8,10 +8,13 @@ import { configureHttp } from './http/configure-http.js';
 
 async function bootstrap(): Promise<void> {
   const config = readEnvironment(process.env);
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    logger: new ConsoleLogger({ json: true }),
-    rawBody: true,
-  });
+  const app = await NestFactory.create<NestExpressApplication>(
+    AppModule.forRoot(config.database),
+    {
+      logger: new ConsoleLogger({ json: true }),
+      rawBody: true,
+    },
+  );
   configureHttp(app, config);
   app.enableShutdownHooks();
   await app.listen(config.port, '0.0.0.0');

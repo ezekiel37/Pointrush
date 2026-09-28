@@ -34,7 +34,7 @@ let server: Parameters<typeof request>[0];
 
 before(async () => {
   const module = await Test.createTestingModule({
-    imports: [AppModule],
+    imports: [AppModule.forRoot()],
     controllers: [ProbeController],
   }).compile();
   app = module.createNestApplication<NestExpressApplication>({
@@ -61,6 +61,11 @@ test('liveness is small, uncached, and has security headers', async () => {
   assert.equal(response.headers['x-content-type-options'], 'nosniff');
   assert.equal(response.headers['x-powered-by'], undefined);
   assert.match(String(response.headers['x-request-id']), /^[0-9a-f-]{36}$/);
+});
+
+test('an unconfigured database reports not ready while liveness stays healthy', async () => {
+  await request(server).get('/api/v1/health/ready').expect(503);
+  await request(server).get('/api/v1/health/live').expect(200);
 });
 
 test('request identifiers cannot be supplied by the caller', async () => {

@@ -1,5 +1,16 @@
 import { Module } from '@nestjs/common';
+import type { DynamicModule } from '@nestjs/common';
 import { HealthController } from './health/health.controller.js';
+import { DatabaseModule } from './database/database.module.js';
+import type { DatabaseConfig } from './database/database.config.js';
 
-@Module({ controllers: [HealthController] })
-export class AppModule {}
+@Module({})
+export class AppModule {
+  static forRoot(database?: DatabaseConfig): DynamicModule {
+    return {
+      module: AppModule,
+      imports: [DatabaseModule.forRoot(database)],
+      controllers: [HealthController],
+    };
+  }
+}
