@@ -36,6 +36,13 @@
       "when": 1790572717904,
       "tag": "0004_auth_account_link",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790594023087,
+      "tag": "0005_auth_email_budgets",
+      "breakpoints": true
     }
   ]
 }

@@ -103,6 +103,17 @@ export const authRateLimits = pgTable('auth_rate_limits', {
   lastRequest: bigint('last_request', { mode: 'number' }).notNull(),
 });
 
+export const authEmailBudgets = pgTable('auth_email_budgets', {
+  key: text('key').primaryKey(),
+  attempts: integer('attempts').notNull().default(1),
+  windowStartedAt: timestamp('window_started_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  lastAttemptAt: timestamp('last_attempt_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export const authAccountLinks = pgTable('auth_account_links', {
   accountId: uuid('account_id')
     .primaryKey()

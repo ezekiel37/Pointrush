@@ -19,6 +19,8 @@ import { DatabaseService } from '../../src/database/database.service.js';
 import { migrationLock, runMigrations } from '../../src/database/migrate.js';
 import { accounts, usernames } from '../../src/database/schema.js';
 import { configureHttp } from '../../src/http/configure-http.js';
+import { AuthEmailBudget } from '../../src/auth/auth.email-budget.js';
+import { authEmailBudgets } from '../../src/database/schema.js';
 
 const databaseName = `pointrush_test_${randomUUID().replaceAll('-', '')}`;
 const folder = resolve('migrations');
@@ -27,6 +29,34 @@ let pool: Pool;
 let database: DatabaseService;
 let config: DatabaseConfig;
 let created = false;
+
+test('independent pools cannot overspend the email budget or bypass recipient cooldown', async () => {
+  const other = new DatabaseService(config);
+  const secret = 'native-test-only-email-budget-secret';
+  try {
+    await database.db.delete(authEmailBudgets);
+    const first = new AuthEmailBudget(database.db, secret, 5);
+    const second = new AuthEmailBudget(other.db, secret, 5);
+    const sameRecipient = await Promise.all([
+      first.claim('same@example.test'),
+      second.claim('SAME@example.test'),
+    ]);
+    assert.equal(sameRecipient.filter(Boolean).length, 1);
+    const differentRecipients = await Promise.all(
+      Array.from({ length: 12 }, (_, index) =>
+        (index % 2 ? first : second).claim(`user${index}@example.test`),
+      ),
+    );
+    assert.equal(differentRecipients.filter(Boolean).length, 4);
+    const [global] = await database.db
+      .select()
+      .from(authEmailBudgets)
+      .where(eq(authEmailBudgets.key, 'global'));
+    assert.equal(global?.attempts, 5);
+  } finally {
+    await other.onApplicationShutdown();
+  }
+});
 
 before(async () => {
   if (!process.env.TEST_DATABASE_URL)

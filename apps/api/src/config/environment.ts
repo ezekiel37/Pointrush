@@ -8,6 +8,7 @@ export interface AuthEnvironment {
   trustedOrigins: string[];
   resendApiKey: string;
   emailFrom: string;
+  dailyEmailLimit?: number;
 }
 
 const schema = z.object({
@@ -26,6 +27,12 @@ const schema = z.object({
   AUTH_TRUSTED_ORIGINS: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
+  AUTH_EMAIL_DAILY_LIMIT: z
+    .string()
+    .regex(/^\d+$/)
+    .default('100')
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(10000)),
 });
 
 export interface Environment {
@@ -51,6 +58,7 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
     AUTH_TRUSTED_ORIGINS,
     RESEND_API_KEY,
     EMAIL_FROM,
+    AUTH_EMAIL_DAILY_LIMIT,
   } = result.data;
   const origins = CORS_ORIGINS.split(',')
     .map((origin) => origin.trim())
@@ -104,6 +112,7 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
       trustedOrigins: [...new Set(trustedOrigins)],
       resendApiKey: RESEND_API_KEY,
       emailFrom: EMAIL_FROM,
+      dailyEmailLimit: AUTH_EMAIL_DAILY_LIMIT,
     };
   }
   return {

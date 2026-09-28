@@ -1,4 +1,6 @@
 import { betterAuth } from 'better-auth';
+import { APIError, createAuthMiddleware } from 'better-auth/api';
+import { z } from 'zod';
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import type * as schema from '../database/schema.js';
@@ -39,6 +41,7 @@ export function createAuth(
   db: PgDatabase<PgQueryResultHKT, typeof schema>,
   config: AuthConfig,
   sendEmail: SendAuthEmail,
+  reserveEmail?: (recipient: string) => Promise<boolean>,
 ) {
   validateConfig(config);
   return betterAuth({
@@ -53,6 +56,33 @@ export function createAuth(
       transaction: true,
     }),
     logger: { disabled: true },
+    hooks: {
+      before: createAuthMiddleware(async (ctx) => {
+        if (
+          !reserveEmail ||
+          ![
+            '/sign-up/email',
+            '/send-verification-email',
+            '/request-password-reset',
+          ].includes(ctx.path)
+        )
+          return;
+        const email = z.email().safeParse(ctx.body?.email);
+        if (!email.success) return; // Endpoint validation rejects invalid input.
+        let allowed: boolean;
+        try {
+          allowed = await reserveEmail(email.data);
+        } catch {
+          throw new APIError('SERVICE_UNAVAILABLE', {
+            message: 'Email requests are temporarily unavailable',
+          });
+        }
+        if (!allowed)
+          throw new APIError('TOO_MANY_REQUESTS', {
+            message: 'Please wait before requesting another email',
+          });
+      }),
+    },
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 15,
@@ -66,6 +96,7 @@ export function createAuth(
     },
     emailVerification: {
       sendOnSignUp: true,
+      sendOnSignIn: false,
       autoSignInAfterVerification: false,
       expiresIn: 3600,
       sendVerificationEmail: ({ user, url }) =>

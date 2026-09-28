@@ -31,6 +31,7 @@ export class AppModule {
             trustedOrigins: auth.trustedOrigins,
           },
           createResendAuthEmail(auth.resendApiKey, auth.emailFrom),
+          auth.dailyEmailLimit,
         ),
       );
     }

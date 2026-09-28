@@ -6,6 +6,7 @@ export {
   authVerifications,
   authRateLimits,
   authAccountLinks,
+  authEmailBudgets,
 } from '../auth/auth.schema.js';
 import {
   boolean,

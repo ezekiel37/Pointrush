@@ -54,3 +54,12 @@ test('configuration errors never echo input values', () => {
     },
   );
 });
+
+test('email budgets reject invalid or excessive configured limits', () => {
+  for (const value of ['0', '-1', '10001', '1.5', 'Infinity', '']) {
+    assert.throws(
+      () => readEnvironment({ AUTH_EMAIL_DAILY_LIMIT: value }),
+      /AUTH_EMAIL_DAILY_LIMIT/,
+    );
+  }
+});
