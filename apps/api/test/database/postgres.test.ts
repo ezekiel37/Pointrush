@@ -5,6 +5,10 @@ import { resolve } from 'node:path';
 import { after, before, test } from 'node:test';
 import { Client, Pool } from 'pg';
 import { eq } from 'drizzle-orm';
+import { readMigrationFiles } from 'drizzle-orm/migrator';
+import { AccountsService } from '../../src/accounts/accounts.service.js';
+import { AccountsRepository } from '../../src/accounts/accounts.repository.js';
+import { AccountError } from '../../src/accounts/account.error.js';
 import { Test } from '@nestjs/testing';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
@@ -71,7 +75,7 @@ test('migrations are repeatable without changing data or history', async () => {
   );
   assert.equal(
     (await pool.query('SELECT * FROM drizzle.__drizzle_migrations')).rowCount,
-    2,
+    readMigrationFiles({ migrationsFolder: folder }).length,
   );
 });
 
@@ -128,6 +132,49 @@ test('two accounts verifying the same phone cannot both acquire ownership', asyn
   assert.equal(
     outcomes.filter((result) => result.status === 'rejected').length,
     1,
+  );
+});
+
+test('concurrent different renames on one account cannot bypass the cooldown', async () => {
+  const service = new AccountsService(new AccountsRepository(database));
+  const account = await service.create({
+    username: 'race_original',
+    displayName: 'Race',
+  });
+  const results = await Promise.allSettled([
+    service.rename(account.id, { username: 'race_first' }),
+    service.rename(account.id, { username: 'race_second' }),
+  ]);
+  assert.equal(
+    results.filter((result) => result.status === 'fulfilled').length,
+    1,
+  );
+  const failure = results.find((result) => result.status === 'rejected');
+  assert.ok(
+    failure?.status === 'rejected' && failure.reason instanceof AccountError,
+  );
+  assert.equal(failure.reason.code, 'USERNAME_CHANGE_TOO_SOON');
+});
+
+test('concurrent identical rename retries create only one history entry', async () => {
+  const service = new AccountsService(new AccountsRepository(database));
+  const account = await service.create({
+    username: 'same_original',
+    displayName: 'Same',
+  });
+  const results = await Promise.all([
+    service.rename(account.id, { username: 'same_new' }),
+    service.rename(account.id, { username: 'same_new' }),
+  ]);
+  assert.deepEqual(results[0], results[1]);
+  assert.equal(
+    (
+      await database.db
+        .select()
+        .from(usernames)
+        .where(eq(usernames.accountId, account.id))
+    ).length,
+    2,
   );
 });
 

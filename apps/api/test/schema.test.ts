@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
+import { readMigrationFiles } from 'drizzle-orm/migrator';
 
 const database = new PGlite();
 const folder = resolve('migrations');
@@ -32,7 +33,10 @@ test('checked-in migrations apply once and reruns preserve history and data', as
   const history = await database.query(
     'SELECT * FROM drizzle.__drizzle_migrations',
   );
-  assert.equal(history.rows.length, 2);
+  assert.equal(
+    history.rows.length,
+    readMigrationFiles({ migrationsFolder: folder }).length,
+  );
   const result = await database.query('SELECT id FROM accounts WHERE id = $1', [
     id,
   ]);

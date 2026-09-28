@@ -4,7 +4,7 @@
 
 Use Drizzle ORM with the standard `pg` driver. Schema definitions live in `apps/api/src/database/schema.ts`; reviewed, versioned SQL lives in `apps/api/migrations`. No Supabase-specific schemas, auth IDs, functions or extensions are required. Managed PostgreSQL remains the production target; no database provider has been provisioned.
 
-This feature adds account IDs, access states, a shared current/historical/reserved username namespace, and verified phone ownership. It does not implement authentication, profile validation, identity verification, username-change APIs, rewards or balances. Those features must enforce their own domain rules and permissions. Do not infer identity or reputation from the presence of an account row.
+The database foundation adds account IDs, access states, a shared current/historical/reserved username namespace, and verified phone ownership. The account feature adds profiles, display-name validation and internal transactional creation/rename commands; see [account management](ACCOUNTS.md). Authentication, identity verification, public account APIs, rewards and balances remain unimplemented. Do not infer identity or reputation from the presence of an account row.
 
 | Invariant                   | Database enforcement                                                                                  |
 | --------------------------- | ----------------------------------------------------------------------------------------------------- |
@@ -17,7 +17,7 @@ This feature adds account IDs, access states, a shared current/historical/reserv
 | No pending-number squatting | Only completed verification belongs in `verified_phones`; future challenges must use separate records |
 | Referential integrity       | Foreign keys prevent orphaned identities and accidental deletion of referenced accounts               |
 
-The E.164 database check validates storage shape and maximum length only. The authentication feature must use maintained country/type metadata, verify channel ownership, and normalize before insertion. Username availability remains advisory; catch uniqueness conflicts at commit. The 30-day username-change cooldown and email identity policy belong to the upcoming account feature. They are not yet implemented.
+The E.164 database check validates storage shape and maximum length only. The authentication feature must use maintained country/type metadata, verify channel ownership, and normalize before insertion. Username availability remains advisory; catch uniqueness conflicts at commit. The account service implements the 30-day rename cooldown using database time under an account row lock. Email identity policy and public account endpoints are not yet implemented.
 
 ## Local Setup
 
@@ -61,7 +61,7 @@ Use additive changes followed by backfill, rollout and later removal. No automat
 
 ## Health and Testing
 
-`/api/v1/health/live` checks the running process. `/api/v1/health/ready` performs a bounded query against all three initial tables without reading personal rows. Missing schema, unavailable database, exhausted pool or insufficient read permissions return 503 without connection details. This checks the initial schema only; extend readiness when later features introduce new required schema. Use liveness for process restart probes so a database outage does not cause a restart loop.
+`/api/v1/health/live` checks the running process. `/api/v1/health/ready` performs a bounded query against accounts, profiles, usernames and verified phones without reading personal rows. Missing schema, unavailable database, exhausted pool or insufficient read permissions return 503 without connection details. Extend readiness when later features introduce new required schema. Use liveness for process restart probes so a database outage does not cause a restart loop.
 
 ```sh
 npm run check

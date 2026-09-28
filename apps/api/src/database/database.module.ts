@@ -8,6 +8,7 @@ export class DatabaseModule {
   static forRoot(config: DatabaseConfig | undefined): DynamicModule {
     return {
       module: DatabaseModule,
+      global: true,
       providers: [
         { provide: DATABASE_CONFIG, useValue: config },
         DatabaseService,

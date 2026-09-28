@@ -162,3 +162,14 @@ test('unknown endpoints do not expose stack traces', async () => {
   assert.ok(!JSON.stringify(response.body).includes('secret-token'));
   assert.equal(response.body.requestId, response.headers['x-request-id']);
 });
+
+test('account commands are not exposed before authentication is implemented', async () => {
+  await request(server)
+    .post('/api/v1/accounts')
+    .send({ username: 'attacker', displayName: 'Attacker' })
+    .expect(404);
+  await request(server)
+    .patch('/api/v1/accounts/username')
+    .send({ username: 'attacker' })
+    .expect(404);
+});
