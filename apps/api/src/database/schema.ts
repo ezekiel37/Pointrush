@@ -1,4 +1,11 @@
 import { sql } from 'drizzle-orm';
+export {
+  authUsers,
+  authSessions,
+  authCredentials,
+  authVerifications,
+  authRateLimits,
+} from '../auth/auth.schema.js';
 import {
   boolean,
   check,

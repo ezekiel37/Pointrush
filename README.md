@@ -4,7 +4,7 @@ Production-oriented rewards platform for Nigeria. The product is under construct
 
 ## Current Slice
 
-NestJS API, portable PostgreSQL and internal account management: versioned HTTP, liveness/readiness, strict configuration, security headers, safe errors, Drizzle migrations, account creation and username lifecycle. No signup/login, payment or reward endpoints are enabled. See [account boundaries and rules](ACCOUNTS.md). The Next.js PWA will be added as its own feature slice.
+NestJS API, portable PostgreSQL and internal account management: versioned HTTP, liveness/readiness, strict configuration, security headers, safe errors, Drizzle migrations, account creation and username lifecycle. An internal Better Auth foundation now includes credentials, verified-email login, sessions and recovery; its HTTP routes are not mounted yet. No signup/login, payment or reward endpoints are enabled. See [account boundaries and rules](ACCOUNTS.md) and [authentication implementation and release gates](AUTH.md). The Next.js PWA will be added as its own feature slice.
 
 ## Local Development
 
@@ -38,7 +38,7 @@ Cloud Run plus managed services is the agreed hosting direction. Deployment is n
 
 ## Feature Delivery
 
-Use a focused `feat/*` or `fix/*` branch for each independently testable change. Run `npm run check` and the relevant integration suite, inspect the staged diff, commit and push the branch. Database changes require `npm run test:db` against native PostgreSQL. Run checks locally and record any unverified release gates; do not add or expand CI workflows while the account billing issue remains unresolved. Keep secrets and generated builds out of Git. Apply compatible database migrations in their owning feature commits. Dependent PRs may target the preceding feature branch while its checks are blocked; merge in dependency order after required verification.
+Continue on the shared `develop` branch with focused, independently testable atomic commits. Do not create a branch or PR per feature. The repository owner will merge the existing feature branches/PRs. Run `npm run check` and the relevant integration suite, inspect the staged diff, commit and push `develop` without force. Database changes require `npm run test:db` against native PostgreSQL. Run checks locally and record any unverified release gates; do not create or modify CI workflows. Keep secrets and generated builds out of Git. Apply compatible database migrations in their owning feature commits.
 
 Planned order:
 
