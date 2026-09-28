@@ -116,6 +116,16 @@ test('real HTTP signup, verification and login use the correct path and secure c
     .expect(200);
 });
 
+test('verified users without a linked account receive onboarding status without creating data', async () => {
+  const result = await request(server)
+    .get('/api/v1/accounts/me')
+    .set('Cookie', cookie)
+    .expect(200);
+  assert.deepEqual(result.body, { onboarding: 'required', account: null });
+  assert.equal(result.headers['cache-control'], 'no-store');
+  assert.equal((await db.select().from(schema.accounts)).length, 0);
+});
+
 test('onboarding requires a trusted origin and a verified session; payload IDs cannot escalate privileges', async () => {
   const data = { username: 'http_user', displayName: 'HTTP User' };
   await request(server)
@@ -176,7 +186,125 @@ test('onboarding requires a trusted origin and a verified session; payload IDs c
     .expect(403);
 });
 
+test('own account status stays readable across access states without authorizing business routes', async () => {
+  const [account] = await db.select().from(schema.accounts);
+  assert.ok(account);
+  for (const accessState of ['active', 'restricted', 'suspended', 'closed']) {
+    await db
+      .update(schema.accounts)
+      .set({ accessState })
+      .where(eq(schema.accounts.id, account.id));
+    const result = await request(server)
+      .get('/api/v1/accounts/me')
+      .set('Cookie', cookie)
+      .expect(200);
+    assert.equal(result.headers['cache-control'], 'no-store');
+    assert.deepEqual(result.body, {
+      onboarding: 'complete',
+      account: {
+        id: account.id,
+        accessState,
+        username: 'http_user',
+        displayName: 'HTTP User',
+      },
+    });
+    await request(server)
+      .get('/api/v1/private-probe')
+      .set('Cookie', cookie)
+      .expect(accessState === 'active' ? 200 : 403);
+    if (accessState !== 'active') {
+      await request(server)
+        .post('/api/v1/accounts/me')
+        .set('Cookie', cookie)
+        .set('Origin', origin)
+        .send({ username: 'http_user', displayName: 'HTTP User' })
+        .expect(403);
+    }
+  }
+});
+
+test('a second authenticated user cannot read the first user account by supplying its identifier', async () => {
+  const otherEmail = 'other-http@example.test';
+  await request(server)
+    .post('/api/v1/auth/sign-up/email')
+    .set('Origin', origin)
+    .send({ email: otherEmail, password, name: 'Other User' })
+    .expect(200);
+  const message = mailbox.find((item) => item.to === otherEmail);
+  assert.ok(message);
+  const url = new URL(message.url);
+  await request(server)
+    .get(url.pathname + url.search)
+    .expect(302);
+  const login = await request(server)
+    .post('/api/v1/auth/sign-in/email')
+    .set('Origin', origin)
+    .send({ email: otherEmail, password })
+    .expect(200);
+  const cookies = login.headers['set-cookie'] as unknown as string[];
+  const otherCookie = cookies
+    .find((item) => item.includes('session_token'))
+    ?.split(';')[0];
+  assert.ok(otherCookie);
+  const [victim] = await db.select().from(schema.accounts);
+  assert.ok(victim);
+  const result = await request(server)
+    .get(`/api/v1/accounts/me?accountId=${victim.id}`)
+    .set('Cookie', otherCookie)
+    .expect(200);
+  assert.deepEqual(result.body, { onboarding: 'required', account: null });
+});
+
+test('account status uses only the session identity and fails closed on incomplete profiles', async () => {
+  const [user] = await db
+    .select()
+    .from(schema.authUsers)
+    .where(eq(schema.authUsers.email, email));
+  const [link] = await db
+    .select()
+    .from(schema.authAccountLinks)
+    .where(eq(schema.authAccountLinks.authUserId, user!.id));
+  assert.ok(link);
+  await request(server).get('/api/v1/accounts/me').expect(401);
+  await request(server)
+    .get('/api/v1/accounts/me')
+    .set('Cookie', 'session_token=forged')
+    .expect(401);
+  const spoofed = await request(server)
+    .get('/api/v1/accounts/me?authUserId=someone-else&accountId=someone-else')
+    .set('Cookie', cookie)
+    .set('X-Auth-User-Id', 'someone-else')
+    .expect(200);
+  assert.equal(spoofed.body.account.id, link.accountId);
+  await db
+    .update(schema.authUsers)
+    .set({ emailVerified: false })
+    .where(eq(schema.authUsers.id, user!.id));
+  await request(server)
+    .get('/api/v1/accounts/me')
+    .set('Cookie', cookie)
+    .expect(403);
+  await db
+    .update(schema.authUsers)
+    .set({ emailVerified: true })
+    .where(eq(schema.authUsers.id, user!.id));
+  await db
+    .delete(schema.accountProfiles)
+    .where(eq(schema.accountProfiles.accountId, link.accountId));
+  const broken = await request(server)
+    .get('/api/v1/accounts/me')
+    .set('Cookie', cookie)
+    .expect(500);
+  assert.equal(broken.body.message, 'Internal server error');
+  assert.ok(!JSON.stringify(broken.body).includes('identity is incomplete'));
+  await db
+    .insert(schema.accountProfiles)
+    .values({ accountId: link.accountId, displayName: 'HTTP User' });
+});
+
 test('actual auth routes reject oversized bodies and untrusted origins', async () => {
+  // Isolate origin/body checks from earlier users sharing the test loopback IP.
+  await db.delete(schema.authRateLimits);
   const malformed = await request(server)
     .post('/api/v1/auth/sign-up/email')
     .set('Origin', origin)
@@ -216,6 +344,10 @@ test('spoofed forwarding headers cannot change the recorded session IP', async (
     .expect(200);
   await request(server)
     .get('/api/v1/private-probe')
+    .set('Cookie', cookie)
+    .expect(401);
+  await request(server)
+    .get('/api/v1/accounts/me')
     .set('Cookie', cookie)
     .expect(401);
 });

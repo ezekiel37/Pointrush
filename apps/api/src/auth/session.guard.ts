@@ -11,6 +11,9 @@ import type { AccountsService } from '../accounts/accounts.service.js';
 
 const PUBLIC_ROUTE = Symbol('PUBLIC_ROUTE');
 export const PublicRoute = () => SetMetadata(PUBLIC_ROUTE, true);
+const ACCOUNT_STATUS_READ = Symbol('ACCOUNT_STATUS_READ');
+// Only for reading the caller's own status; never a business permission.
+export const AccountStatusRead = () => SetMetadata(ACCOUNT_STATUS_READ, true);
 export const AUTH_USER_ID = Symbol('AUTH_USER_ID');
 export type AuthenticatedRequest = Request & { [AUTH_USER_ID]: string };
 
@@ -37,7 +40,10 @@ export class SessionGuard implements CanActivate {
     if (!session) throw new UnauthorizedException('Authentication required');
     if (!session.user.emailVerified)
       throw new ForbiddenException('Verified email is required');
-    await this.accounts.assertAuthAccess(session.user.id);
+    const statusRead =
+      ['GET', 'HEAD'].includes(request.method) &&
+      this.reflector.get<boolean>(ACCOUNT_STATUS_READ, context.getHandler());
+    if (!statusRead) await this.accounts.assertAuthAccess(session.user.id);
     request[AUTH_USER_ID] = session.user.id;
     return true;
   }

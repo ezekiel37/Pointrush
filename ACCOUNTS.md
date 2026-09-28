@@ -1,6 +1,18 @@
 # Account Management
 
-This feature implements internal account creation and username changes. It does not expose signup, login, profile editing or username-availability HTTP endpoints. Authentication, session management, contact verification, rate limits and endpoint authorization are still required before public use.
+Account creation and username changes are implemented internally. Verified-email authentication now supports authenticated onboarding and private account-status reads; see [authentication](AUTH.md). Profile editing and username availability are not exposed. Business permissions and endpoint abuse limits remain release requirements.
+
+## Private Account Status
+
+`GET /api/v1/accounts/me` requires a valid, verified-email session and returns `Cache-Control: no-store`. It resolves the account solely through the server-side authentication link. Query parameters and headers cannot select another account.
+
+- Before onboarding: `{ "onboarding": "required", "account": null }`. Reading never creates an account.
+- After onboarding: `{ "onboarding": "complete", "account": { "id": "…", "username": "…", "displayName": "…", "accessState": "active" } }`. Access state may also be `restricted`, `suspended` or `closed`.
+- A linked account missing its profile or current username returns a safe 500, not an invitation to onboard again.
+
+This read remains available for restricted, suspended and closed accounts with valid verified sessions so the client can explain their status. Its method-scoped guard exception permits only GET/HEAD and does not grant business access. Other routes retain their existing default-deny guard. Expired/revoked sessions still receive 401; unverified identities receive 403. The response contains no credentials, email, phone, moderation evidence, roles or invented balances. UI routing must not treat completed onboarding as authorization.
+
+Real HTTP tests cover onboarding state, all access states, two-user isolation, spoofed identifiers, verification changes, signout and incomplete records. Endpoint-specific read throttling and scoped support access remain future release work.
 
 ## Boundaries
 

@@ -22,6 +22,32 @@ export class AccountsRepository {
     @Inject(DatabaseService) private readonly database: AccountDatabase,
   ) {}
 
+  async getForAuth(authUserId: string) {
+    const [linked] = await this.database.db
+      .select({
+        id: accounts.id,
+        accessState: accounts.accessState,
+        username: usernames.username,
+        displayName: accountProfiles.displayName,
+      })
+      .from(schema.authAccountLinks)
+      .innerJoin(accounts, eq(accounts.id, schema.authAccountLinks.accountId))
+      .leftJoin(accountProfiles, eq(accountProfiles.accountId, accounts.id))
+      .leftJoin(
+        usernames,
+        and(
+          eq(usernames.accountId, accounts.id),
+          eq(usernames.isCurrent, true),
+        ),
+      )
+      .where(eq(schema.authAccountLinks.authUserId, authUserId));
+    if (!linked) return { onboarding: 'required' as const, account: null };
+    // Missing profile data is corruption, not permission to create another account.
+    if (linked.username === null || linked.displayName === null)
+      throw new Error('Account identity is incomplete');
+    return { onboarding: 'complete' as const, account: linked };
+  }
+
   async assertAuthAccess(authUserId: string): Promise<void> {
     const [linked] = await this.database.db
       .select({ state: accounts.accessState })

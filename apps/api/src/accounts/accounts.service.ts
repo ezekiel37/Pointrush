@@ -19,6 +19,10 @@ export class AccountsService {
     return this.repository.assertAuthAccess(authUserId);
   }
 
+  getForAuth(authUserId: string) {
+    return this.repository.getForAuth(authUserId);
+  }
+
   create(input: unknown): Promise<AccountIdentity> {
     return this.repository.create(
       parseAccountInput(createAccountSchema, input),
