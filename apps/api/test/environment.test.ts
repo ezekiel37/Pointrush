@@ -13,11 +13,11 @@ test('development defaults are explicit and deny cross-origin access', () => {
 test('accepts Cloud Run port and deduplicates explicit origins', () => {
   assert.deepEqual(
     readEnvironment({
-      NODE_ENV: 'production',
+      NODE_ENV: 'test',
       PORT: '9090',
       CORS_ORIGINS: 'https://example.com, https://example.com',
     }),
-    { nodeEnv: 'production', port: 9090, corsOrigins: ['https://example.com'] },
+    { nodeEnv: 'test', port: 9090, corsOrigins: ['https://example.com'] },
   );
 });
 

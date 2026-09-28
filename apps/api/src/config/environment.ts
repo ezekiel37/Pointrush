@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { readDatabaseConfig } from '../database/database.config.js';
+import type { DatabaseConfig } from '../database/database.config.js';
 
 const schema = z.object({
   NODE_ENV: z
@@ -17,6 +19,7 @@ export interface Environment {
   nodeEnv: 'development' | 'test' | 'production';
   port: number;
   corsOrigins: string[];
+  database?: DatabaseConfig;
 }
 
 export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
@@ -49,5 +52,11 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
       );
     }
   }
-  return { nodeEnv: NODE_ENV, port: PORT, corsOrigins: [...new Set(origins)] };
+  const database = readDatabaseConfig(input);
+  return {
+    nodeEnv: NODE_ENV,
+    port: PORT,
+    corsOrigins: [...new Set(origins)],
+    ...(database ? { database } : {}),
+  };
 }

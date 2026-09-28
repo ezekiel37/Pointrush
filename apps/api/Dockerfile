@@ -20,6 +20,7 @@ ENV PORT=8080
 WORKDIR /app
 COPY --from=dependencies --chown=node:node /app/ ./
 COPY --from=build --chown=node:node /app/apps/api/dist ./apps/api/dist
+COPY --chown=node:node apps/api/migrations ./apps/api/migrations
 USER node
 EXPOSE 8080
 CMD ["node", "apps/api/dist/main.js"]

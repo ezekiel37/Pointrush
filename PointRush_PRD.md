@@ -618,7 +618,7 @@ Later badges identify the checks PointRush performed on identity, business repre
 | Frontend | Next.js, TypeScript, PWA |
 | Backend API | NestJS |
 | Database | Postgres |
-| ORM | Prisma or Drizzle |
+| ORM | Drizzle with the standard PostgreSQL driver (selected for the database foundation) |
 | Cache/rate limits/queues | Upstash Redis or Google Cloud Tasks/Pub/Sub |
 | File storage | Cloudflare R2 or Google Cloud Storage |
 | Email | Resend first, Brevo later for marketing automation |
@@ -636,7 +636,7 @@ The platform may move from Supabase later, so the backend must avoid deep provid
 Rules:
 
 - Keep business logic inside NestJS services.
-- Use a database abstraction through Prisma or Drizzle.
+- Use Drizzle for typed database access with reviewed portable PostgreSQL migrations; see [database implementation and operations](DATABASE.md).
 - Do not depend heavily on Supabase Auth, Supabase Storage, or Supabase Edge Functions.
 - Keep provider integrations behind service interfaces.
 - Store files in a portable object storage provider.
@@ -795,7 +795,7 @@ Actions:
 - Fee refund terms, chargeback response and behaviour-based reputation thresholds for users and sponsors.
 - Exact sponsor setup fee.
 - Exact admin margin per sponsor-funded mission.
-- Whether to use Prisma or Drizzle.
+- Drizzle is selected; native PostgreSQL integration and deployment verification remain release gates.
 - Whether to start with Supabase Postgres, Neon, or Cloud SQL.
 
 ## 26.1 Identity Verification and Reputation

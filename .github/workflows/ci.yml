@@ -12,6 +12,18 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-bookworm
+        env:
+          POSTGRES_USER: pointrush
+          POSTGRES_PASSWORD: ci_only
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pointrush -d postgres"
+          --health-interval 5s --health-timeout 3s --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,16 +32,22 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      - name: Native PostgreSQL integration tests
+        run: npm run test:db
+        env:
+          TEST_DATABASE_URL: postgresql://pointrush:ci_only@127.0.0.1:5432/postgres
+          DATABASE_SSL_MODE: disable-local
       - run: npm audit --omit=dev --audit-level=high
       - name: Build API container
         run: docker build -f apps/api/Dockerfile -t pointrush-api:ci .
       - name: Smoke test production container
         shell: bash
         run: |
-          docker run -d --name api -p 8080:8080 -e CORS_ORIGINS=https://example.com pointrush-api:ci
+          docker run --rm --network host -e MIGRATION_DATABASE_URL=postgresql://pointrush:ci_only@127.0.0.1:5432/postgres -e DATABASE_SSL_MODE=disable-local pointrush-api:ci node apps/api/dist/database/migrate-cli.js
+          docker run -d --name api --network host -e CORS_ORIGINS=https://example.com -e DATABASE_URL=postgresql://pointrush:ci_only@127.0.0.1:5432/postgres -e DATABASE_SSL_MODE=disable-local pointrush-api:ci
           trap 'docker logs api; docker rm -f api' EXIT
           for attempt in {1..30}; do
-            if curl --fail --silent http://localhost:8080/api/v1/health/live; then
+            if curl --fail --silent http://localhost:8080/api/v1/health/ready; then
               exit 0
             fi
             sleep 1
