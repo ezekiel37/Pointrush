@@ -21,6 +21,17 @@ export class AccountsService {
     );
   }
 
+  createForAuth(authUserId: string, input: unknown): Promise<AccountIdentity> {
+    if (!/^[a-zA-Z0-9_-]{1,128}$/.test(authUserId)) {
+      throw new AccountError(
+        'INVALID_ACCOUNT_INPUT',
+        'Invalid authenticated identity.',
+      );
+    }
+    const parsed = parseAccountInput(createAccountSchema, input);
+    return this.repository.createForAuth({ authUserId, ...parsed });
+  }
+
   // Trusted internal boundary only. The future controller must derive the ID from
   // its authenticated session, never from an editable request body or URL alone.
   rename(accountId: string, input: unknown): Promise<AccountIdentity> {

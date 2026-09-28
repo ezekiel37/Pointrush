@@ -41,11 +41,22 @@ before(async () => {
     logger: false,
     rawBody: true,
   });
-  configureHttp(app, {
-    nodeEnv: 'test',
-    port: 8080,
-    corsOrigins: ['https://app.example.com'],
-  });
+  configureHttp(
+    app,
+    {
+      nodeEnv: 'test',
+      port: 8080,
+      corsOrigins: ['https://app.example.com'],
+    },
+    async (request, response) => {
+      let body = '';
+      for await (const chunk of request)
+        body += Buffer.from(chunk).toString('utf8');
+      response.statusCode = 200;
+      response.setHeader('Content-Type', 'application/json');
+      response.end(JSON.stringify({ body }));
+    },
+  );
   await app.init();
   server = app.getHttpServer() as Parameters<typeof request>[0];
 });
@@ -99,6 +110,17 @@ test('CORS grants only exact allowlisted origins', async () => {
       .set('Origin', origin);
     assert.equal(blocked.headers['access-control-allow-origin'], undefined);
   }
+});
+
+test('authentication handler runs before ordinary body parsers', async () => {
+  const response = await request(server)
+    .post('/api/v1/auth/test')
+    .send({ password: 'body-is-owned-by-auth' })
+    .expect(200);
+  assert.deepEqual(JSON.parse(response.body.body), {
+    password: 'body-is-owned-by-auth',
+  });
+  assert.equal(response.headers['access-control-allow-credentials'], 'true');
 });
 
 test('valid DTO reaches controller', async () => {

@@ -44,7 +44,7 @@ Planned order:
 
 1. API foundation and automated checks (implemented).
 2. Portable PostgreSQL schema and migrations (implemented; native integration verification pending).
-3. Internal account creation and username lifecycle (implemented); authentication, recovery, permissions and full audit trail follow.
+3. Internal account creation and username lifecycle (implemented); authentication foundation and authenticated account onboarding are implemented, while permissions and the full audit trail follow.
 4. Next.js application shell and account journeys.
 5. Sponsor funding ledger, task allocation locks and reconciliation.
 6. Task review, participation models, proof, appeals and reward accounting.

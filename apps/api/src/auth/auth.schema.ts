@@ -7,7 +7,9 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  uuid,
 } from 'drizzle-orm/pg-core';
+import { accounts } from '../database/schema.js';
 
 const dates = () => ({
   createdAt: timestamp('created_at', { withTimezone: true })
@@ -99,6 +101,19 @@ export const authRateLimits = pgTable('auth_rate_limits', {
   key: text('key').notNull().unique(),
   count: integer('count').notNull(),
   lastRequest: bigint('last_request', { mode: 'number' }).notNull(),
+});
+
+export const authAccountLinks = pgTable('auth_account_links', {
+  accountId: uuid('account_id')
+    .primaryKey()
+    .references(() => accounts.id, { onDelete: 'restrict' }),
+  authUserId: text('auth_user_id')
+    .notNull()
+    .unique()
+    .references(() => authUsers.id, { onDelete: 'restrict' }),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 export const authAdapterSchema = {

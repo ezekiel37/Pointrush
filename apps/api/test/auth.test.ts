@@ -13,6 +13,8 @@ import {
   createResendAuthEmail,
 } from '../src/auth/auth.email.js';
 import type { AuthEmail } from '../src/auth/auth.email.js';
+import { AccountsRepository } from '../src/accounts/accounts.repository.js';
+import { AccountsService } from '../src/accounts/accounts.service.js';
 
 const pg = new PGlite();
 const db = drizzle(pg, { schema });
@@ -25,6 +27,7 @@ const config = {
 const auth = createAuth(db, config, async (message) => {
   mailbox.push(message);
 });
+const accounts = new AccountsService(new AccountsRepository({ db }));
 const password = 'A long test passphrase 123!';
 let address = 0;
 
@@ -210,6 +213,42 @@ test('unknown and existing reset requests have the same public response', async 
   });
   assert.equal(known.status, unknown.status);
   assert.deepEqual(await known.json(), await unknown.json());
+});
+
+test('authenticated onboarding links one auth identity atomically to one PointRush account', async () => {
+  const email = 'onboarding@example.test';
+  assert.equal(
+    (await request('/sign-up/email', { email, password, name: 'Onboarding' }))
+      .status,
+    200,
+  );
+  const user = (await db.select().from(schema.authUsers)).find(
+    (row) => row.email === email,
+  );
+  assert.ok(user);
+  const created = await accounts.createForAuth(user.id, {
+    username: 'onboarding_user',
+    displayName: 'Onboarding User',
+  });
+  assert.equal((await db.select().from(schema.authAccountLinks)).length, 1);
+  await assert.rejects(
+    accounts.createForAuth(user.id, {
+      username: 'another_user',
+      displayName: 'Another User',
+    }),
+  );
+  assert.equal(
+    (await db.select().from(schema.accounts)).filter(
+      (row) => row.id === created.id,
+    ).length,
+    1,
+  );
+  assert.equal(
+    (await db.select().from(schema.usernames)).filter(
+      (row) => row.username === 'another_user',
+    ).length,
+    0,
+  );
 });
 
 test('expired sessions are not authenticated', async () => {

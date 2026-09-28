@@ -5,6 +5,7 @@ export {
   authCredentials,
   authVerifications,
   authRateLimits,
+  authAccountLinks,
 } from '../auth/auth.schema.js';
 import {
   boolean,

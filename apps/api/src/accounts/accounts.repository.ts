@@ -49,6 +49,41 @@ export class AccountsRepository {
     }
   }
 
+  async createForAuth(input: {
+    authUserId: string;
+    username: string;
+    displayName: string;
+  }): Promise<AccountIdentity> {
+    try {
+      return await this.database.db.transaction(async (tx) => {
+        const [account] = await tx
+          .insert(accounts)
+          .values({})
+          .returning({ id: accounts.id });
+        if (!account)
+          throw new Error('Account insert did not return an identifier');
+        await tx
+          .insert(accountProfiles)
+          .values({ accountId: account.id, displayName: input.displayName });
+        await tx.insert(usernames).values({
+          username: input.username,
+          accountId: account.id,
+          isCurrent: true,
+        });
+        await tx
+          .insert(schema.authAccountLinks)
+          .values({ accountId: account.id, authUserId: input.authUserId });
+        return {
+          id: account.id,
+          username: input.username,
+          displayName: input.displayName,
+        };
+      });
+    } catch (error) {
+      this.rethrowConflict(error);
+    }
+  }
+
   async rename(accountId: string, username: string): Promise<AccountIdentity> {
     try {
       return await this.database.db.transaction(async (tx) => {

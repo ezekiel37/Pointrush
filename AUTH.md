@@ -1,11 +1,12 @@
 # Authentication foundation
 
-Status: internal, not mounted in NestJS. No public signup/login is enabled by this commit. Better Auth 1.7.6 owns password hashing, verification, reset tokens and database-backed sessions; Resend is the selected email delivery implementation. No live email has been sent or provider account configured.
+Status: authentication is now mounted only when the complete production configuration is present. Better Auth 1.7.6 owns password hashing, verification, reset tokens and database-backed sessions; Resend is the selected email delivery implementation. No live email has been sent or provider account configured.
 
 ## Implemented boundaries
 
 - Authentication uses separate PostgreSQL tables, migrated by Drizzle with the existing application migration runner. Better Auth's credential `account` model is explicitly mapped to `auth_credentials`, never PointRush `accounts`.
 - Signup creates only an authentication identity. It does not claim a username, verify a phone, establish legal identity, grant a role or approve a sponsor.
+- `POST /api/v1/accounts/me` is the authenticated onboarding command. It derives the auth user from the session and atomically creates the PointRush account, profile, username and one-to-one identity link. Retrying a successful command cannot create a second PointRush account.
 - Email verification is required before password login. Neither signup nor verification automatically creates a session.
 - Passwords use Better Auth's default scrypt implementation, with a 15–128 character policy. No custom hashing or password/token logging.
 - Password reset identifiers are stored hashed; successful resets revoke existing sessions. Cookie caching is disabled, so revoked sessions are checked against the database.
@@ -15,10 +16,10 @@ Status: internal, not mounted in NestJS. No public signup/login is enabled by th
 
 Security defaults in this slice: verification link 1 hour; reset link 30 minutes; sessions 7 days with daily refresh. These are configuration choices, not promises of final launch policy. Fresh authentication for sensitive actions still needs implementation.
 
-## Required before mounting routes
+## Required before public launch
 
 1. Validate production configuration and secrets at startup. Generate a high-entropy auth secret (minimum 32 characters is only a length check), store it and the Resend API key in Secret Manager, verify the sender domain, and use a stable API origin. Define rotation and recovery procedures.
-2. Mount the handler with a strict body-size limit, safe parser errors, request IDs, security headers and credentialed exact-origin CORS. Preserve Better Auth origin/CSRF checks. Test this through the actual Nest/Express server, not only Web Requests.
+2. The handler is mounted before ordinary Nest parsers with a 64 KiB stream limit, request IDs, security headers and credentialed exact-origin CORS. Preserve Better Auth origin/CSRF checks. Test this through the actual Nest/Express server, not only Web Requests.
 3. Strip client-supplied `x-pointrush-client-ip` and set it only from a validated deployment-specific client-IP policy. The internal factory reads only that header; it is NOT safe to expose directly. Validate Cloud Run ingress/proxy behavior before trusting forwarded headers.
 4. Built-in rate limits use PostgreSQL storage (30 requests per minute, plus library endpoint-specific defaults). This is not proof of race-safe distributed abuse prevention. Verify multi-instance concurrency and implement atomic abuse controls, per-account/email throttles, cost limits and cleanup before public signup.
 5. Add default-deny Nest session/permission guards and explicitly public routes. Link a verified auth identity to exactly one PointRush account using a transactional, unique, retry-safe onboarding command. Never accept the acting account ID from the browser. Enforce restricted/suspended/closed status on business operations.

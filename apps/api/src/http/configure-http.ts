@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { NextFunction, Request, Response } from 'express';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import helmet from 'helmet';
 import type { Environment } from '../config/environment.js';
 import { ApiExceptionFilter } from './exception.filter.js';
@@ -13,6 +14,10 @@ import { ApiExceptionFilter } from './exception.filter.js';
 export function configureHttp(
   app: NestExpressApplication,
   config: Environment,
+  authHandler?: (
+    request: IncomingMessage,
+    response: ServerResponse,
+  ) => Promise<void>,
 ): void {
   app.disable('x-powered-by');
   app.use(helmet());
@@ -25,9 +30,14 @@ export function configureHttp(
   });
   app.enableCors({
     origin: config.corsOrigins,
-    credentials: false,
+    credentials: Boolean(authHandler),
     exposedHeaders: ['X-Request-Id'],
   });
+  if (authHandler) {
+    // This must remain before Nest's ordinary body parsers. Better Auth reads
+    // and bounds the request stream itself.
+    app.use('/api/v1/auth', authHandler);
+  }
   app.useBodyParser('json', { limit: '64kb' });
   app.useBodyParser('urlencoded', { limit: '64kb', extended: false });
   app.use(
