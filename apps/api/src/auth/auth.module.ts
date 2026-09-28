@@ -23,6 +23,7 @@ export class AuthModule {
             new AuthService(
               createAuth(database.db, config, sendEmail),
               config.baseURL,
+              config.trustedOrigins,
             ),
         },
       ],

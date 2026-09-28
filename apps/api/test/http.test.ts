@@ -8,6 +8,7 @@ import { IsInt, Min } from 'class-validator';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
 import { configureHttp } from '../src/http/configure-http.js';
+import { PublicRoute } from '../src/auth/session.guard.js';
 
 class ProbeDto {
   @IsInt()
@@ -17,6 +18,7 @@ class ProbeDto {
 
 // Fixtures only exist in this test module, never the production app.
 @Controller('probe')
+@PublicRoute()
 class ProbeController {
   @Post()
   validate(@Body() input: ProbeDto): ProbeDto {

@@ -6,7 +6,9 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service.js';
+import { PublicRoute } from '../auth/session.guard.js';
 
+@PublicRoute()
 @Controller('health')
 export class HealthController {
   constructor(

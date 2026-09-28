@@ -13,11 +13,15 @@ export class ApiExceptionFilter implements ExceptionFilter {
       exception instanceof HttpException
         ? exception.getStatus()
         : exception instanceof AccountError
-          ? exception.code === 'USERNAME_UNAVAILABLE'
+          ? exception.code === 'USERNAME_UNAVAILABLE' ||
+            exception.code === 'ACCOUNT_ALREADY_EXISTS'
             ? 409
-            : exception.code === 'ACCOUNT_NOT_FOUND'
-              ? 404
-              : 400
+            : exception.code === 'AUTH_IDENTITY_UNVERIFIED' ||
+                exception.code === 'ACCOUNT_NOT_ACTIVE'
+              ? 403
+              : exception.code === 'ACCOUNT_NOT_FOUND'
+                ? 404
+                : 400
           : 500;
     const requestId: unknown = response.locals.requestId;
     if (status >= 500) {

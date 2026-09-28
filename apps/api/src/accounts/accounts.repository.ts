@@ -22,6 +22,22 @@ export class AccountsRepository {
     @Inject(DatabaseService) private readonly database: AccountDatabase,
   ) {}
 
+  async assertAuthAccess(authUserId: string): Promise<void> {
+    const [linked] = await this.database.db
+      .select({ state: accounts.accessState })
+      .from(schema.authAccountLinks)
+      .innerJoin(accounts, eq(accounts.id, schema.authAccountLinks.accountId))
+      .where(eq(schema.authAccountLinks.authUserId, authUserId));
+    // Unlinked verified identities may complete onboarding. Future business
+    // routes must additionally require the relevant account/role permission.
+    if (linked && linked.state !== 'active') {
+      throw new AccountError(
+        'ACCOUNT_NOT_ACTIVE',
+        'Account access is currently unavailable.',
+      );
+    }
+  }
+
   async create(input: {
     username: string;
     displayName: string;
@@ -56,6 +72,63 @@ export class AccountsRepository {
   }): Promise<AccountIdentity> {
     try {
       return await this.database.db.transaction(async (tx) => {
+        // Lock the authentication identity first so simultaneous retries cannot
+        // race to create different accounts. Recheck verification in this transaction.
+        const [user] = await tx
+          .select()
+          .from(schema.authUsers)
+          .where(eq(schema.authUsers.id, input.authUserId))
+          .for('update');
+        if (!user?.emailVerified)
+          throw new AccountError(
+            'AUTH_IDENTITY_UNVERIFIED',
+            'Verified email is required.',
+          );
+        const [existing] = await tx
+          .select({
+            id: accounts.id,
+            username: usernames.username,
+            displayName: accountProfiles.displayName,
+            state: accounts.accessState,
+          })
+          .from(schema.authAccountLinks)
+          .innerJoin(
+            accounts,
+            eq(accounts.id, schema.authAccountLinks.accountId),
+          )
+          .innerJoin(
+            accountProfiles,
+            eq(accountProfiles.accountId, accounts.id),
+          )
+          .innerJoin(
+            usernames,
+            and(
+              eq(usernames.accountId, accounts.id),
+              eq(usernames.isCurrent, true),
+            ),
+          )
+          .where(eq(schema.authAccountLinks.authUserId, input.authUserId));
+        if (existing) {
+          if (existing.state !== 'active')
+            throw new AccountError(
+              'ACCOUNT_NOT_ACTIVE',
+              'Account changes are currently unavailable.',
+            );
+          if (
+            existing.username !== input.username ||
+            existing.displayName !== input.displayName
+          ) {
+            throw new AccountError(
+              'ACCOUNT_ALREADY_EXISTS',
+              'An account already exists for this identity.',
+            );
+          }
+          return {
+            id: existing.id,
+            username: existing.username,
+            displayName: existing.displayName,
+          };
+        }
         const [account] = await tx
           .insert(accounts)
           .values({})

@@ -226,6 +226,13 @@ test('authenticated onboarding links one auth identity atomically to one PointRu
     (row) => row.email === email,
   );
   assert.ok(user);
+  await assert.rejects(
+    accounts.createForAuth(user.id, {
+      username: 'not_verified',
+      displayName: 'User',
+    }),
+  );
+  await auth.handler(new Request(lastEmail('verify-email').url));
   const created = await accounts.createForAuth(user.id, {
     username: 'onboarding_user',
     displayName: 'Onboarding User',

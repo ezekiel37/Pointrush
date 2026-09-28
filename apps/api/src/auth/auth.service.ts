@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { fromNodeHeaders } from 'better-auth/node';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createAuthNodeHandler } from './auth.http.js';
@@ -11,7 +11,14 @@ export class AuthService {
   constructor(
     private readonly auth: PointRushAuth,
     private readonly baseURL: string,
+    private readonly trustedOrigins: string[] = [],
   ) {}
+
+  assertTrustedOrigin(origin: string | undefined): void {
+    if (!origin || ![this.baseURL, ...this.trustedOrigins].includes(origin)) {
+      throw new ForbiddenException('A trusted request origin is required');
+    }
+  }
 
   get handler(): (
     request: IncomingMessage,

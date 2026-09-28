@@ -15,6 +15,10 @@ export class AccountsService {
     @Inject(AccountsRepository) private readonly repository: AccountsRepository,
   ) {}
 
+  assertAuthAccess(authUserId: string): Promise<void> {
+    return this.repository.assertAuthAccess(authUserId);
+  }
+
   create(input: unknown): Promise<AccountIdentity> {
     return this.repository.create(
       parseAccountInput(createAccountSchema, input),

@@ -4,7 +4,7 @@ Production-oriented rewards platform for Nigeria. The product is under construct
 
 ## Current Slice
 
-NestJS API, portable PostgreSQL and internal account management: versioned HTTP, liveness/readiness, strict configuration, security headers, safe errors, Drizzle migrations, account creation and username lifecycle. An internal Better Auth foundation now includes credentials, verified-email login, sessions and recovery; its HTTP routes are not mounted yet. No signup/login, payment or reward endpoints are enabled. See [account boundaries and rules](ACCOUNTS.md) and [authentication implementation and release gates](AUTH.md). The Next.js PWA will be added as its own feature slice.
+NestJS API with portable PostgreSQL, account management, verified-email authentication, sessions, recovery and authenticated onboarding. Auth routes mount when the complete auth configuration is provided; development without it retains public health checks and denies protected requests. No payment or reward endpoints exist yet. See [account boundaries and rules](ACCOUNTS.md) and [authentication implementation and release gates](AUTH.md). The Next.js PWA will be added as its own feature slice.
 
 ## Local Development
 

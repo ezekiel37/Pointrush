@@ -7,6 +7,10 @@ import type { DatabaseConfig } from './database/database.config.js';
 import type { AuthEnvironment } from './config/environment.js';
 import { createResendAuthEmail } from './auth/auth.email.js';
 import { AuthModule } from './auth/auth.module.js';
+import { APP_GUARD, Reflector } from '@nestjs/core';
+import { AuthService } from './auth/auth.service.js';
+import { SessionGuard } from './auth/session.guard.js';
+import { AccountsService } from './accounts/accounts.service.js';
 
 @Module({})
 export class AppModule {
@@ -34,6 +38,21 @@ export class AppModule {
       module: AppModule,
       imports,
       controllers: [HealthController],
+      providers: [
+        {
+          provide: APP_GUARD,
+          inject: [
+            Reflector,
+            AccountsService,
+            { token: AuthService, optional: true },
+          ],
+          useFactory: (
+            reflector: Reflector,
+            accounts: AccountsService,
+            service?: AuthService,
+          ) => new SessionGuard(reflector, accounts, service),
+        },
+      ],
     };
   }
 }

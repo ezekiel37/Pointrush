@@ -6,24 +6,23 @@ import {
   Inject,
   Post,
   Req,
-  UnauthorizedException,
 } from '@nestjs/common';
-import type { Request } from 'express';
+import { AUTH_USER_ID } from './session.guard.js';
+import type { AuthenticatedRequest } from './session.guard.js';
 import { AccountsService } from '../accounts/accounts.service.js';
-import { AuthService } from './auth.service.js';
 
 @Controller('accounts')
 export class AuthController {
   constructor(
-    @Inject(AuthService) private readonly auth: AuthService,
     @Inject(AccountsService) private readonly accounts: AccountsService,
   ) {}
 
   @Post('me')
   @HttpCode(HttpStatus.CREATED)
-  async createAccount(@Req() request: Request, @Body() input: unknown) {
-    const session = await this.auth.getSession(request.headers);
-    if (!session) throw new UnauthorizedException('Authentication required');
-    return this.accounts.createForAuth(session.user.id, input);
+  async createAccount(
+    @Req() request: AuthenticatedRequest,
+    @Body() input: unknown,
+  ) {
+    return this.accounts.createForAuth(request[AUTH_USER_ID], input);
   }
 }
