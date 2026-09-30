@@ -34,7 +34,7 @@ docker run --rm -p 8080:8080 -e DATABASE_URL -e CORS_ORIGINS=https://your-fronte
 
 The non-root container listens on `0.0.0.0:$PORT`, writes JSON Nest logs to standard output, and handles termination signals. Configure an exact HTTPS frontend origin and database connection before production startup. `/api/v1/health/live` proves process liveness; `/api/v1/health/ready` additionally checks database connectivity and the initial schema. Neither claims that payment or reward providers are ready. Migrations run as a separate job before release, never on every API instance.
 
-Cloud Run plus managed services is the agreed hosting direction. Deployment is not configured yet: select region, project, service account, Secret Manager bindings, instance limits, budgets/alerts, database capacity and connection limits before enabling delivery. No infrastructure has been provisioned by this commit. Reward backing and operating costs are separate budgets.
+The agreed validation stack is Vercel/Next.js, Cloud Run/NestJS and Supabase Free PostgreSQL, retaining Better Auth and Drizzle. Cloudflare provides DNS, appropriate API protection, R2 storage and Turnstile; PostgreSQL notifications with FCM and Resend delivery follow in their feature slices. See [infrastructure decisions, costs and release gaps](INFRASTRUCTURE.md). These choices are not deployed integrations. Start with recurring free allowances, zero minimum API instances and bounded scaling; trial credits are optional temporary buffers. Configure regions, secrets, connection budgets, authenticated job execution and restore-tested backups before release. Reward backing and operating costs remain separate budgets.
 
 ## Feature Delivery
 

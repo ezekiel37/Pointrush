@@ -273,7 +273,7 @@ Recommended modules:
 
 ### 11.7 Provider Integration Rules
 
-- Paystack, Nomba, Resend, OneSignal, object storage, and database-specific logic must be behind service interfaces.
+- Payment/redemption, Resend email, FCM push and R2 storage integrations must stay behind narrow interfaces. Introduce adapters with their consuming features; OneSignal is deferred. PostgreSQL uses Drizzle repositories, not a speculative universal database adapter. Follow [the agreed infrastructure decisions](INFRASTRUCTURE.md).
 - Webhooks must verify signatures.
 - Webhooks must be idempotent.
 - Provider failures must not corrupt local state.

@@ -611,23 +611,30 @@ Later badges identify the checks PointRush performed on identity, business repre
 
 ## 21. Technical Architecture
 
-### 21.1 Recommended Stack
+### 21.1 Agreed Stack
+
+Agreed 30 September 2026. [INFRASTRUCTURE.md](INFRASTRUCTURE.md) owns deployment decisions, cost limits, provider boundaries and release gates. This section describes the target; it does not imply that planned integrations are implemented or deployed.
 
 | Layer | Recommendation |
 | --- | --- |
 | Frontend | Next.js, TypeScript, PWA |
 | Backend API | NestJS |
-| Database | Postgres |
+| Database | Supabase Free PostgreSQL only; no Supabase Auth or browser database access |
 | ORM | Drizzle with the standard PostgreSQL driver (selected for the database foundation) |
-| Cache/rate limits/queues | Upstash Redis or Google Cloud Tasks/Pub/Sub |
-| File storage | Cloudflare R2 or Google Cloud Storage |
-| Email | Resend first, Brevo later for marketing automation |
-| Push notifications | OneSignal first, FCM later if native mobile is added |
+| Authentication | Existing Better Auth backed by PostgreSQL |
+| Rate limits/background work | PostgreSQL controls and durable jobs with authenticated scheduled execution; no separate queue server initially |
+| File storage | Cloudflare R2 through a storage interface; private evidence and approved public assets |
+| Email | Existing Resend delivery behind an email interface; protect authentication/recovery capacity |
+| Notifications | PostgreSQL in-app history/preferences; FCM push through a provider interface; OneSignal later only if justified |
+| DNS/abuse protection | Cloudflare DNS, validated API edge protection and Turnstile; Vercel hostname initially DNS-only |
 | Payments | Paystack for sponsor payments |
 | Rewards | Nomba first for airtime/data/bills if API access is approved |
 | Deployment | Vercel for frontend, Google Cloud Run for NestJS API |
-| Analytics | PostHog or self-hosted event table first |
-| Error monitoring | Sentry |
+| Analytics | Focused PostgreSQL product records/aggregates as features arrive; separate analytics platform deferred |
+| Error monitoring | Structured logs, request/event/job IDs and basic operational/spending alerts |
+| Backups | Scheduled encrypted PostgreSQL exports and verified restoration; not included automatically in Supabase Free |
+
+Target approximately $0 fixed infrastructure cost during validation, excluding domains, rewards and external transaction costs. Free quotas are finite; Google trial credit is an optional 90-day buffer, not a permanent budget. Measure consumption rather than upgrade at arbitrary user counts. Before a paid database/hosting upgrade, compare actual managed-service costs with a VPS and its operational obligations. No new CI workflows, branches or infrastructure provisioning are authorized by this architecture decision.
 
 ### 21.2 Portability Rule
 
@@ -637,9 +644,12 @@ Rules:
 
 - Keep business logic inside NestJS services.
 - Use Drizzle for typed database access with reviewed portable PostgreSQL migrations; see [database implementation and operations](DATABASE.md).
-- Do not depend heavily on Supabase Auth, Supabase Storage, or Supabase Edge Functions.
+- Use Supabase only for PostgreSQL; retain Better Auth and avoid Supabase Auth, Storage and Edge Functions dependencies.
 - Keep provider integrations behind service interfaces.
 - Store files in a portable object storage provider.
+- Persist critical state changes, ledger entries and required events/jobs atomically. In-process events are only for effects safe to lose or recompute; retries must not duplicate rewards, payments or notifications.
+- Keep notification audiences, preferences and read state in PointRush. FCM/Resend deliver messages; SMS stays disabled until its use case and spending controls are approved.
+- Introduce narrow provider interfaces with their consuming features. Do not prebuild adapters for unused providers or a generic database abstraction.
 
 ## 22. Key Data Objects
 
@@ -713,7 +723,7 @@ PointRush must be designed as if users, sponsors, providers, and even internal a
 - Validate all inputs on the backend.
 - Enforce authentication, authorization, role checks, and ownership checks on every protected endpoint.
 - Use server-side search, filtering, and pagination for admin and sponsor data.
-- Keep Paystack, Nomba, Resend, OneSignal, storage, and database access behind provider interfaces.
+- Keep payment, redemption, email, push and storage integrations behind narrow provider interfaces. Use Drizzle repositories for PostgreSQL; no universal database adapter. FCM is the initial push provider; OneSignal is deferred.
 - Log important business events and admin actions.
 - Separate staging and production from day one.
 - Write tests for ledger, referrals, redemptions, campaign budgets, auth, and mission approval.
@@ -796,7 +806,7 @@ Actions:
 - Exact sponsor setup fee.
 - Exact admin margin per sponsor-funded mission.
 - Drizzle is selected; native PostgreSQL integration and deployment verification remain release gates.
-- Whether to start with Supabase Postgres, Neon, or Cloud SQL.
+- Supabase Free PostgreSQL is selected. Region/connectivity, connection roles, backup/recovery objectives, capacity measurements and deployment configuration remain release decisions; see INFRASTRUCTURE.md.
 
 ## 26.1 Identity Verification and Reputation
 

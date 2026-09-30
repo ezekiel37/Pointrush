@@ -2,9 +2,9 @@
 
 ## Decision and Scope
 
-Use Drizzle ORM with the standard `pg` driver. Schema definitions live in `apps/api/src/database/schema.ts`; reviewed, versioned SQL lives in `apps/api/migrations`. No Supabase-specific schemas, auth IDs, functions or extensions are required. Managed PostgreSQL remains the production target; no database provider has been provisioned.
+Use Drizzle ORM with the standard `pg` driver. Schema definitions live in `apps/api/src/database/schema.ts`; reviewed, versioned SQL lives in `apps/api/migrations`. No Supabase-specific schemas, auth IDs, functions or extensions are required. Supabase Free PostgreSQL is the selected initial host; no database provider has been provisioned. See [infrastructure decisions](INFRASTRUCTURE.md) for quotas, networking, backup requirements and migration policy. Supabase is only the database host; Better Auth and NestJS retain application ownership.
 
-The database foundation adds account IDs, access states, a shared current/historical/reserved username namespace, and verified phone ownership. The account feature adds profiles, display-name validation and internal transactional creation/rename commands; see [account management](ACCOUNTS.md). Authentication, identity verification, public account APIs, rewards and balances remain unimplemented. Do not infer identity or reputation from the presence of an account row.
+The database foundation adds account IDs, access states, a shared current/historical/reserved username namespace, and verified phone ownership. The account feature adds profiles, display-name validation and internal transactional creation/rename commands; see [account management](ACCOUNTS.md). Authentication, sessions, authenticated onboarding/status reads and durable authentication-email jobs are implemented. Phone verification delivery, identity verification, public profiles, rewards and balances remain unimplemented. Do not infer identity or reputation from the presence of an account row.
 
 | Invariant                   | Database enforcement                                                                                  |
 | --------------------------- | ----------------------------------------------------------------------------------------------------- |
@@ -17,7 +17,7 @@ The database foundation adds account IDs, access states, a shared current/histor
 | No pending-number squatting | Only completed verification belongs in `verified_phones`; future challenges must use separate records |
 | Referential integrity       | Foreign keys prevent orphaned identities and accidental deletion of referenced accounts               |
 
-The E.164 database check validates storage shape and maximum length only. The authentication feature must use maintained country/type metadata, verify channel ownership, and normalize before insertion. Username availability remains advisory; catch uniqueness conflicts at commit. The account service implements the 30-day rename cooldown using database time under an account row lock. Email identity policy and public account endpoints are not yet implemented.
+The E.164 database check validates storage shape and maximum length only. A future phone-verification feature must use maintained country/type metadata, verify channel ownership, and normalize before insertion. Username availability remains advisory; catch uniqueness conflicts at commit. The account service implements the 30-day rename cooldown using database time under an account row lock. Email authentication and private account endpoints are documented in AUTH.md and ACCOUNTS.md; public profile endpoints are not implemented.
 
 ## Local Setup
 
@@ -51,6 +51,8 @@ The CLI uses Drizzle's migrator, a direct-session advisory lock and a preflight 
 Use additive changes followed by backfill, rollout and later removal. No automatic destructive `down` migrations or runtime schema synchronization. Restore/backups and incident procedures must be verified with the chosen provider before real accounts or money go live.
 
 ## Connections and Access
+
+Choose Supabase runtime and migration endpoints separately. Verify Cloud Run IPv4/IPv6 connectivity; where a direct endpoint is unsuitable, evaluate the session pooler for migration lock preservation. Transaction pooling requires runtime compatibility tests and must not be used for the current migration session lock. Keep TLS verification and review provider URL options against the strict configuration parser. Restrict unused Data API exposure and grants; do not expose domain tables through an unintended browser-facing path. Supabase Free lacks included automatic backups: scheduled encrypted exports, retention and restoration verification are release requirements.
 
 - `DATABASE_POOL_MAX` defaults to 5 connections per API instance and accepts 1-20. One pool is created per Nest module instance and closed on application shutdown.
 - Connection acquisition times out after 3 seconds; SQL execution after 5 seconds; client query waiting after 6 seconds. Idle transactions are terminated after 5 seconds. Idle connections expire after 30 seconds.
