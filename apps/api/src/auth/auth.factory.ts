@@ -1,3 +1,4 @@
+import { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '@pointrush/contracts';
 import { betterAuth } from 'better-auth';
 import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { z } from 'zod';
@@ -87,8 +88,8 @@ export function createAuth(
     },
     emailAndPassword: {
       enabled: true,
-      minPasswordLength: 15,
-      maxPasswordLength: 128,
+      minPasswordLength: PASSWORD_MIN_LENGTH,
+      maxPasswordLength: PASSWORD_MAX_LENGTH,
       requireEmailVerification: true,
       autoSignIn: false,
       revokeSessionsOnPasswordReset: true,

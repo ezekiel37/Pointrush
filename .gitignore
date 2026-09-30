@@ -9,3 +9,9 @@ coverage/
 *.tsbuildinfo
 *.log
 .DS_Store
+
+playwright-report/
+test-results/
+premium-audit.json
+
+next-env.d.ts

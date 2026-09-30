@@ -68,3 +68,24 @@ Exercise successful/invalid forms, conflict, double submit, expired session, off
 - Do not ask offline sellers to enter every sale in PointRush. The business receives controlled code batches for packaging, tickets, inserts or receipts; batch activation draws from already locked task funds.
 - Online businesses may pass a code or authenticated event reference from checkout. A click alone is not a purchase; the UI must state what qualifies before participation.
 - Customers cannot edit the reward value. Different code batches may resolve to different points, airtime, data, vouchers or discounts.
+
+## Implemented account UI ownership
+
+The account slice uses Nigerian English (`en-NG`), light mode and document scrolling. Sources: `AUTH.md` for session and email behavior, `ACCOUNTS.md` for account states, and shared `@pointrush/contracts` for identity validation. No existing sibling UI preceded this slice; signup and recovery establish the first shared form behavior.
+
+| Capability | Canonical owner | Source of truth | Allowed variants | Verification |
+| --- | --- | --- | --- | --- |
+| Form | `apps/web/src/components/ui/form.tsx`, `field.tsx`, React Hook Form/Zod | This contract and shared validation | Login, signup, email request, password reset, onboarding | Browser validation, labels, focus, failure recovery |
+| Scrollbar | `apps/web/src/app/globals.css` | DESIGN.md | Global baseline; forced-colors override | Browser computed styles and narrow viewport |
+| Feedback | `apps/web/src/components/ui/feedback.tsx` | This contract | Persistent error or status; no toast-only outcomes | Browser role/status assertions |
+| Account reads | `account-screen.tsx` and `lib/account.ts` | ACCOUNTS.md | Initial load, reconnect, visibility return, explicit retry | Browser failure and expiry scenarios |
+| Button/Input | `components/ui/button.tsx`, `input.tsx` | DESIGN.md | Primary, outline, ghost; native text/password | Keyboard, password reveal, automated accessibility |
+
+- Forms are disabled until hydration and declare POST as a fallback, preventing native GET submission of credentials. Shared Form owns `noValidate`; call sites declare it explicitly too.
+- Authentication uses Better Auth's client. Cookies remain HTTP-only; no password/token/session storage or analytics are introduced. Reset tokens are held in memory and removed from the address bar; refreshing requires reopening the email link.
+- Signup success asks users to check email and sign in; it never claims to have created a session. Reset/resend confirmations do not reveal whether an address exists.
+- Login routes to `/account`. The API decides whether to show setup, account summary or restriction. Status reads are private; client navigation is not authorization.
+- Submission locks prevent duplicate clicks. Writes are never retried automatically. Network errors acknowledge an uncertain outcome; onboarding retries use the server's existing idempotent behavior.
+- An expired session during onboarding keeps the form in memory and offers sign-in in another tab. Safe revalidation runs on return/reconnect; closing or reloading the tab discards the form. No draft is persisted on shared devices.
+- Pre-launch help explicitly identifies unavailable tasks, rewards and support. No fake amounts, earnings, tasks, sponsor approvals or verified-identity labels appear.
+- No offline cache, push registration or service worker is included yet. PWA delivery remains a separate feature; do not cache private account/auth responses when adding it.

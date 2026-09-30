@@ -6,31 +6,38 @@
     "node": ">=24 <25"
   },
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces",
+    "build": "npm run build --workspace @pointrush/contracts && npm run build --workspace @pointrush/api && npm run build --workspace @pointrush/web",
     "dev:api": "npm run dev --workspace @pointrush/api",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "npm run typecheck --workspaces",
-    "test": "npm run test --workspaces",
+    "typecheck": "npm run build --workspace @pointrush/contracts && npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
     "test:db": "npm run test:db --workspace @pointrush/api",
     "db:generate": "npm run db:generate --workspace @pointrush/api",
     "db:migrate": "npm run db:migrate --workspace @pointrush/api",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build"
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build",
+    "dev:web": "npm run dev --workspace @pointrush/web"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@electric-sql/pglite": "0.5.8",
-    "@eslint/js": "10.0.1",
+    "@eslint/js": "9.39.5",
     "@nestjs/testing": "12.1.0",
+    "@playwright/test": "1.63.0",
     "@types/express": "5.0.6",
     "@types/node": "24.19.0",
     "@types/pg": "8.23.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "@types/supertest": "7.2.1",
     "drizzle-kit": "0.31.11",
-    "eslint": "10.11.0",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.6",
     "prettier": "3.9.9",
     "supertest": "7.3.0",
     "tsc-watch": "7.2.1",

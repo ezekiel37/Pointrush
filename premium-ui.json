@@ -1,0 +1,16 @@
+{
+  "profile": "product-admin",
+  "sourceRoots": ["apps/web/src"],
+  "locale": "en-NG",
+  "canonicalMap": "UX-CONTRACT.md",
+  "requiredCapabilities": ["Form", "Scrollbar"],
+  "requiredCommands": ["check", "browser"],
+  "commands": {
+    "check": "npm run check",
+    "browser": "npm run test:e2e --workspace @pointrush/web"
+  },
+  "evidence": {
+    "crudFullFlow": "apps/web/test/browser/accounts.spec.ts",
+    "failurePaths": "apps/web/test/browser/accounts.spec.ts"
+  }
+}

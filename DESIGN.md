@@ -1,6 +1,6 @@
 # PointRush Design Direction
 
-Status: documented planning direction from the 2026-09-27 discussion; no UI has been implemented or visually verified. Related: [PRD](PointRush_PRD.md), [UX contract](UX-CONTRACT.md).
+Status: account shell implemented from the 2026-09-27 design direction. Browser verification and remaining release checks are recorded below. Related: [PRD](PointRush_PRD.md), [UX contract](UX-CONTRACT.md).
 
 ## Intent
 
@@ -21,9 +21,9 @@ Use shadcn/ui with Tailwind and one maintained set of shared primitives for Next
 | surface | #FFFFFF | Inputs, menus and repeated mission items |
 | text-primary | #182026 | Headings, copy and balances |
 
-Semantic success, warning, error, info, muted text, borders, focus rings and interactive states need complete tokens and contrast verification during implementation. Pending rewards must never resemble confirmed earnings. Never communicate status through colour alone. Target WCAG 2.2 AA; proposed hex values are not proof of conformance.
+The account slice defines the semantic tokens it uses below. Additional warning and notification treatments require verification when implemented. Pending rewards must never resemble confirmed earnings. Never communicate status through colour alone. Target WCAG 2.2 AA; proposed hex values are not proof of conformance.
 
-Light-first identity. Dark mode requires separately designed and tested tokens before being offered. Define tokens once in shared CSS custom properties and map Tailwind/shared components to them; no screen-local colour copies. This mapping is planned, not an existing runtime path.
+Light-first identity. Dark mode requires separately designed and tested tokens before being offered. Define tokens once in shared CSS custom properties and map Tailwind/shared components to them; no screen-local colour copies. The account-shell mapping is implemented below.
 
 ## Typography, Geometry and Motion
 
@@ -48,3 +48,26 @@ Show earned user/sponsor reputation separately from identity/business verificati
 ## Code Presentation
 
 Claim codes should be readable on low-quality print and easy to type on mobile. Use grouped uppercase text, generous spacing and a visible copy button. The standard visual treatment is `PR-ABC-7K4M-9X2QD`; QR may sit beside it when available but is never the only path. Discovery QR and reward claim QR use different labels so users do not confuse scanning a page with claiming a reward.
+
+## Runtime mapping: account shell
+
+The first account UI implements the established palette without a rebrand. Runtime owner: `apps/web/src/app/globals.css` (`@theme`); Tailwind and shared primitives consume the same semantic properties. This document mirrors the values and explains their use. Manrope 600/700 is self-hosted through `@fontsource/manrope`; body copy uses the system stack. No external font request is required.
+
+| Document role | Runtime token | Value / consumers |
+| --- | --- | --- |
+| brand-primary | `--color-primary` | #2457E0; actions, links, focus, story panel |
+| progress-surface | `--color-mint` | #DDF7ED; status feedback |
+| reward-accent | `--color-reward` | #F4C84A; brand mark and setup step |
+| page-background | `--color-canvas` | #F7F8FA; account canvas |
+| surface / text-primary | `--color-surface` / `--color-ink` | #FFFFFF / #182026 |
+| muted text | `--color-muted` | #56636E; help text |
+| input border / divider | `--color-border` / `--color-divider` | #798793 / #DCE2E8 |
+| error foreground / surface | `--color-danger` / `--color-danger-surface` | #A82727 / #FFF1F0 |
+| primary hover / active | `--color-primary-hover` / `--color-primary-active` | #1945BB / #133792 |
+| success foreground | `--color-success` | #186347 |
+| scrollbar thumb / track / hover / active | `--color-scroll-*` | #798793 / #F7F8FA / #56636E / #182026 |
+| control radius | `--radius-control` | 0.5rem; shared fields, buttons, panels |
+
+Account entry uses a blue story panel beside a restrained white form on desktop. The story panel becomes a compact brand header on mobile, leaving the task prominent. The real three-step account setup track is the account-flow variant of the progress signature; it makes no reward promise. Controls are at least 48px tall; password toggles are 44px. Document scrolling preserves mobile keyboard and zoom reachability.
+
+Reconcile result: original brand tokens, Manrope headings, flat surfaces, light theme and 8px corners are retained. Previously unresolved semantic colors now have runtime owners. Browser screenshots and automated accessibility tests cover signup/login and account summary; physical device keyboard and screen-reader checks remain release verification.

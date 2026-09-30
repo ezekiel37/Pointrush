@@ -4,7 +4,7 @@ Production-oriented rewards platform for Nigeria. The product is under construct
 
 ## Current Slice
 
-NestJS API with portable PostgreSQL, account management, verified-email authentication, sessions, recovery and authenticated onboarding. Auth routes mount when the complete auth configuration is provided; development without it retains public health checks and denies protected requests. No payment or reward endpoints exist yet. See [account boundaries and rules](ACCOUNTS.md) and [authentication implementation and release gates](AUTH.md). The Next.js PWA will be added as its own feature slice.
+NestJS API with portable PostgreSQL, account management, verified-email authentication, sessions, recovery and authenticated onboarding. Auth routes mount when the complete auth configuration is provided; development without it retains public health checks and denies protected requests. No payment or reward endpoints exist yet. See [account boundaries and rules](ACCOUNTS.md) and [authentication implementation and release gates](AUTH.md). The Next.js account shell now connects to this API; see [web setup and browser verification](WEB.md). PWA/offline/push remain separate work.
 
 ## Local Development
 
@@ -47,7 +47,7 @@ Planned order:
 1. API foundation and automated checks (implemented).
 2. Portable PostgreSQL schema and migrations (implemented; native integration verification pending).
 3. Internal account creation and username lifecycle (implemented); authentication foundation, authenticated account onboarding and private account-status reads are implemented, while permissions and the full audit trail follow.
-4. Next.js application shell and account journeys.
+4. Next.js application shell and account journeys (implemented; production browser and delivery gates pending).
 5. Sponsor funding ledger, task allocation locks and reconciliation.
 6. Task review, participation models, proof, appeals and reward accounting.
 7. Redemptions, notifications, support and operational controls.
