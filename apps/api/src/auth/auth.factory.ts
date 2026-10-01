@@ -8,6 +8,7 @@ import type * as schema from '../database/schema.js';
 import { authAdapterSchema } from './auth.schema.js';
 import type { SendAuthEmail } from './auth.email.js';
 import { emailQueuePlugin } from './email-queue.schema.js';
+import { assertTrustedOrigin } from '../config/validation.js';
 
 export interface AuthConfig {
   secret: string;
@@ -19,22 +20,7 @@ function validateConfig(config: AuthConfig): void {
   if (config.secret.trim().length < 32)
     throw new Error('Auth secret must contain at least 32 characters');
   for (const origin of [config.baseURL, ...config.trustedOrigins]) {
-    let url: URL;
-    try {
-      url = new URL(origin);
-    } catch {
-      throw new Error('Auth requires exact trusted origins');
-    }
-    const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
-    if (
-      origin.includes('*') ||
-      url.origin !== origin ||
-      (url.protocol !== 'https:' && !(local && url.protocol === 'http:'))
-    ) {
-      throw new Error(
-        'Auth requires HTTPS origins (HTTP allowed only on loopback)',
-      );
-    }
+    assertTrustedOrigin(origin, 'Auth');
   }
 }
 

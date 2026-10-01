@@ -1,23 +1,32 @@
 import 'reflect-metadata';
-import { readEnvironment } from '../config/environment.js';
+import { readEmailWorkerEnvironment } from '../config/email-worker.environment.js';
 import { DatabaseService } from '../database/database.service.js';
 import { createResendPayloadSender } from './auth.email.js';
 import { EmailWorker } from './email-worker.js';
 
 let database: DatabaseService | undefined;
+let deadlineTimer: ReturnType<typeof setTimeout> | undefined;
 try {
-  const config = readEnvironment(process.env);
-  if (!config.database || !config.auth)
-    throw new Error('Worker configuration required');
+  const config = readEmailWorkerEnvironment(process.env);
+  const deadline = performance.now() + config.maxDurationMs;
+  // CLI-only watchdog includes DB waits, delivery, pruning and pool shutdown.
+  // Termination may leave an uncertain send; lease recovery reuses the job's
+  // original provider idempotency key. Never mark interrupted work accepted.
+  deadlineTimer = setTimeout(() => {
+    process.stderr.write(
+      JSON.stringify({ event: 'auth_email_batch_deadline' }) + '\n',
+    );
+    process.exit(1);
+  }, config.maxDurationMs);
   database = new DatabaseService(config.database);
   const worker = new EmailWorker(
     database.db,
-    config.auth.emailEncryptionKey,
-    createResendPayloadSender(config.auth.resendApiKey),
+    config.emailEncryptionKey,
+    createResendPayloadSender(config.resendApiKey),
   );
   const outcomes: Record<string, number> = {};
   // Finite batch: external job/event invocation owns scheduling and restart.
-  for (let count = 0; count < 25; count++) {
+  for (let count = 0; count < 25 && performance.now() < deadline; count++) {
     const result = await worker.runOne();
     outcomes[result] = (outcomes[result] ?? 0) + 1;
     if (result === 'idle') break;
@@ -33,5 +42,12 @@ try {
   );
   process.exitCode = 1;
 } finally {
-  await database?.onApplicationShutdown();
+  try {
+    await database?.onApplicationShutdown();
+  } catch {
+    process.stderr.write('Authentication email worker cleanup failed.\n');
+    process.exitCode = 1;
+  } finally {
+    clearTimeout(deadlineTimer);
+  }
 }

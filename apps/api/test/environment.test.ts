@@ -1,6 +1,131 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readEnvironment } from '../src/config/environment.js';
+import { readEmailWorkerEnvironment } from '../src/config/email-worker.environment.js';
+
+const apiConfig = {
+  NODE_ENV: 'production',
+  DATABASE_URL: 'postgres://runtime:example@db.example.test/pointrush',
+  CORS_ORIGINS: 'https://app.example.test',
+  AUTH_SECRET: 'test-only-secret-with-at-least-32-characters',
+  AUTH_BASE_URL: 'https://api.example.test',
+  EMAIL_FROM: 'accounts@example.test',
+  AUTH_EMAIL_ENCRYPTION_KEY: 'ab'.repeat(32),
+};
+
+test('production API queues mail without delivery credentials and preserves the secret', () => {
+  const secret = ` ${apiConfig.AUTH_SECRET} `;
+  const config = readEnvironment({ ...apiConfig, AUTH_SECRET: secret });
+  assert.equal(config.auth?.secret, secret);
+  assert.equal(config.auth?.emailFrom, apiConfig.EMAIL_FROM);
+  assert.ok(!('resendApiKey' in config.auth!));
+  assert.deepEqual(
+    readEnvironment({ ...apiConfig, RESEND_API_KEY: 'ignored' }),
+    readEnvironment(apiConfig),
+  );
+});
+
+test('local auth accepts loopback HTTP only outside production', () => {
+  for (const host of ['localhost', '127.0.0.1', '[::1]']) {
+    const local = {
+      ...apiConfig,
+      NODE_ENV: 'development',
+      AUTH_BASE_URL: `http://${host}:8080`,
+      CORS_ORIGINS: `http://${host}:3000`,
+    };
+    assert.equal(readEnvironment(local).auth?.baseURL, local.AUTH_BASE_URL);
+    assert.throws(
+      () => readEnvironment({ ...local, NODE_ENV: 'production' }),
+      /CORS_ORIGINS/,
+    );
+    assert.throws(
+      () =>
+        readEnvironment({ ...apiConfig, AUTH_BASE_URL: local.AUTH_BASE_URL }),
+      /AUTH_BASE_URL/,
+    );
+    assert.throws(
+      () =>
+        readEnvironment({
+          ...apiConfig,
+          AUTH_TRUSTED_ORIGINS: local.CORS_ORIGINS,
+        }),
+      /AUTH_TRUSTED_ORIGINS/,
+    );
+  }
+});
+
+test('auth configuration rejects incomplete settings and unsafe explicit origins', () => {
+  for (const field of [
+    'AUTH_SECRET',
+    'AUTH_BASE_URL',
+    'EMAIL_FROM',
+    'AUTH_EMAIL_ENCRYPTION_KEY',
+  ]) {
+    assert.throws(
+      () => readEnvironment({ ...apiConfig, [field]: undefined }),
+      /Authentication configuration/,
+    );
+  }
+  for (const origin of [
+    'http://remote.test',
+    'https://*.example.test',
+    'https://example.test/path',
+    'https://user:secret@example.test',
+  ]) {
+    for (const field of ['AUTH_BASE_URL', 'AUTH_TRUSTED_ORIGINS']) {
+      assert.throws(
+        () =>
+          readEnvironment({
+            ...apiConfig,
+            NODE_ENV: 'development',
+            [field]: origin,
+          }),
+        new RegExp(field),
+      );
+    }
+  }
+});
+
+test('worker requires only delivery and database settings, independently from API settings', () => {
+  const input = {
+    NODE_ENV: 'production',
+    DATABASE_URL: apiConfig.DATABASE_URL,
+    RESEND_API_KEY: 're_test_only',
+    AUTH_EMAIL_ENCRYPTION_KEY: apiConfig.AUTH_EMAIL_ENCRYPTION_KEY,
+  };
+  const config = readEmailWorkerEnvironment(input);
+  assert.equal(config.maxDurationMs, 60000);
+  assert.equal(config.resendApiKey, input.RESEND_API_KEY);
+  assert.deepEqual(
+    readEmailWorkerEnvironment({
+      ...input,
+      PORT: 'invalid',
+      AUTH_BASE_URL: 'invalid',
+      EMAIL_FROM: 'invalid',
+    }),
+    config,
+  );
+  for (const field of [
+    'DATABASE_URL',
+    'RESEND_API_KEY',
+    'AUTH_EMAIL_ENCRYPTION_KEY',
+  ]) {
+    assert.throws(
+      () => readEmailWorkerEnvironment({ ...input, [field]: undefined }),
+      new RegExp(field),
+    );
+  }
+  for (const duration of ['0', '999', '300001', '1.5', 'Infinity', '']) {
+    assert.throws(
+      () =>
+        readEmailWorkerEnvironment({
+          ...input,
+          EMAIL_WORKER_MAX_DURATION_MS: duration,
+        }),
+      /EMAIL_WORKER_MAX_DURATION_MS/,
+    );
+  }
+});
 
 test('development defaults are explicit and deny cross-origin access', () => {
   assert.deepEqual(readEnvironment({}), {

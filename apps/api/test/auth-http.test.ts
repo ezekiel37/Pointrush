@@ -33,7 +33,6 @@ const config = {
   secret: randomBytes(32).toString('hex'),
   baseURL: 'https://api.pointrush.test',
   trustedOrigins: [origin],
-  resendApiKey: 're_test_only',
   emailFrom: 'test@pointrush.test',
   emailEncryptionKey: randomBytes(32).toString('hex'),
 };

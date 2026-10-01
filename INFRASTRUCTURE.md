@@ -141,7 +141,7 @@ Retain current names rather than rename working configuration:
 | Migration only         | MIGRATION_DATABASE_URL                                        |
 | Authentication         | AUTH_SECRET, AUTH_BASE_URL, AUTH_TRUSTED_ORIGINS              |
 | Auth email             | EMAIL_FROM, AUTH_EMAIL_ENCRYPTION_KEY, AUTH_EMAIL_DAILY_LIMIT |
-| Delivery               | RESEND_API_KEY                                                |
+| Delivery               | RESEND_API_KEY; EMAIL_WORKER_MAX_DURATION_MS (default 60000)  |
 
 Use stable app and api hostnames under the same HTTPS site. Current SameSite=Lax sessions do not support unrelated frontend/API provider domains. Changing NEXT_PUBLIC_API_ORIGIN requires a web rebuild; moving hosting behind the same API hostname does not.
 
@@ -166,10 +166,10 @@ Do not add Redis/Upstash, D1, KV, Durable Objects, Workers, Queues, Kafka, Rabbi
 ## Release sequence and known gaps
 
 1. Verify provider accounts, regions, TLS/connectivity, connection budgets, backups and measured consumption. No service has been provisioned by this decision.
-2. Split API/worker/migration configuration: currently the API unnecessarily requires the Resend delivery key, and the worker reads API settings it does not need.
-3. Resolve local auth configuration: the environment parser requires HTTPS while the auth factory/docs allow loopback HTTP. Do not relax production HTTPS.
+2. Implemented: separate API and email-worker parsers; migrations already read only database configuration. API no longer requires the Resend key; worker no longer requires auth/browser settings. Provision separate secret environments at deployment.
+3. Implemented: shared exact-origin validation allows non-production loopback HTTP while production auth/trusted/CORS origins remain HTTPS-only.
 4. Validate proxy-derived IP handling; current auth uses the socket address, which can group users behind ingress.
-5. Configure authenticated worker wakeups and wall-clock limits; monitor expired/dead jobs. No scheduler is implemented yet.
+5. CLI deadline implemented: EMAIL_WORKER_MAX_DURATION_MS covers async processing and cleanup, with failed exit/lease recovery on expiry. Configure external timeout, authenticated wakeups and expired/dead-job monitoring; no scheduler or HTTP runner is implemented yet.
 6. Run native PostgreSQL concurrency and migration checks, build/smoke-test the actual container, test real domains/cookies and verify live email delivery.
 7. Implement restore-tested encrypted backups, deployment rollback and critical audit/security controls before real funds.
 8. Add storage, events, ledger/task workflows and notifications in their owning feature commits. Review blanket web cache headers before publishing public cacheable content; retain private-data protections.

@@ -1,12 +1,16 @@
 import { z } from 'zod';
 import { readDatabaseConfig } from '../database/database.config.js';
 import type { DatabaseConfig } from '../database/database.config.js';
+import {
+  assertTrustedOrigin,
+  emailEncryptionKey,
+  parseEnvironment,
+} from './validation.js';
 
 export interface AuthEnvironment {
   secret: string;
   baseURL: string;
   trustedOrigins: string[];
-  resendApiKey: string;
   emailFrom: string;
   emailEncryptionKey: string;
   dailyEmailLimit?: number;
@@ -23,15 +27,14 @@ const schema = z.object({
     .transform(Number)
     .pipe(z.number().int().min(1).max(65535)),
   CORS_ORIGINS: z.string().default(''),
-  AUTH_SECRET: z.string().optional(),
+  AUTH_SECRET: z
+    .string()
+    .refine((value) => value.trim().length >= 32)
+    .optional(),
   AUTH_BASE_URL: z.string().optional(),
   AUTH_TRUSTED_ORIGINS: z.string().optional(),
-  RESEND_API_KEY: z.string().optional(),
-  EMAIL_FROM: z.string().optional(),
-  AUTH_EMAIL_ENCRYPTION_KEY: z
-    .string()
-    .regex(/^[0-9a-f]{64}$/i)
-    .optional(),
+  EMAIL_FROM: z.email().optional(),
+  AUTH_EMAIL_ENCRYPTION_KEY: emailEncryptionKey.optional(),
   AUTH_EMAIL_DAILY_LIMIT: z
     .string()
     .regex(/^\d+$/)
@@ -49,11 +52,6 @@ export interface Environment {
 }
 
 export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
-  const result = schema.safeParse(input);
-  if (!result.success) {
-    const fields = result.error.issues.map((issue) => issue.path.join('.'));
-    throw new Error(`Invalid environment configuration: ${fields.join(', ')}`);
-  }
   const {
     NODE_ENV,
     PORT,
@@ -61,11 +59,10 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
     AUTH_SECRET,
     AUTH_BASE_URL,
     AUTH_TRUSTED_ORIGINS,
-    RESEND_API_KEY,
     EMAIL_FROM,
     AUTH_EMAIL_ENCRYPTION_KEY,
     AUTH_EMAIL_DAILY_LIMIT,
-  } = result.data;
+  } = parseEnvironment(schema, input);
   const origins = CORS_ORIGINS.split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
@@ -73,27 +70,12 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
     throw new Error('CORS_ORIGINS must be explicitly configured in production');
   }
   for (const origin of origins) {
-    let url: URL;
-    try {
-      url = new URL(origin);
-    } catch {
-      throw new Error('CORS_ORIGINS must contain valid origins');
-    }
-    if (
-      !['http:', 'https:'].includes(url.protocol) ||
-      url.origin !== origin ||
-      (NODE_ENV === 'production' && url.protocol !== 'https:')
-    ) {
-      throw new Error(
-        'CORS_ORIGINS requires exact origins and production HTTPS',
-      );
-    }
+    assertTrustedOrigin(origin, 'CORS_ORIGINS', NODE_ENV === 'production');
   }
   const database = readDatabaseConfig(input);
   const authValues = [
     AUTH_SECRET,
     AUTH_BASE_URL,
-    RESEND_API_KEY,
     EMAIL_FROM,
     AUTH_EMAIL_ENCRYPTION_KEY,
   ];
@@ -104,31 +86,27 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
     throw new Error('Authentication configuration is required in production');
   }
   let auth: AuthEnvironment | undefined;
-  if (
-    AUTH_SECRET &&
-    AUTH_BASE_URL &&
-    RESEND_API_KEY &&
-    EMAIL_FROM &&
-    AUTH_EMAIL_ENCRYPTION_KEY
-  ) {
-    let baseURL: URL;
-    try {
-      baseURL = new URL(AUTH_BASE_URL);
-    } catch {
-      throw new Error('AUTH_BASE_URL must be a valid URL');
-    }
-    if (baseURL.origin !== AUTH_BASE_URL || baseURL.protocol !== 'https:') {
-      throw new Error('AUTH_BASE_URL must be an exact HTTPS origin');
-    }
+  if (AUTH_SECRET && AUTH_BASE_URL && EMAIL_FROM && AUTH_EMAIL_ENCRYPTION_KEY) {
+    assertTrustedOrigin(
+      AUTH_BASE_URL,
+      'AUTH_BASE_URL',
+      NODE_ENV === 'production',
+    );
     const trustedOrigins = (AUTH_TRUSTED_ORIGINS ?? CORS_ORIGINS)
       .split(',')
       .map((origin) => origin.trim())
       .filter(Boolean);
+    for (const origin of trustedOrigins) {
+      assertTrustedOrigin(
+        origin,
+        'AUTH_TRUSTED_ORIGINS',
+        NODE_ENV === 'production',
+      );
+    }
     auth = {
       secret: AUTH_SECRET,
       baseURL: AUTH_BASE_URL,
       trustedOrigins: [...new Set(trustedOrigins)],
-      resendApiKey: RESEND_API_KEY,
       emailFrom: EMAIL_FROM,
       emailEncryptionKey: AUTH_EMAIL_ENCRYPTION_KEY,
       dailyEmailLimit: AUTH_EMAIL_DAILY_LIMIT,

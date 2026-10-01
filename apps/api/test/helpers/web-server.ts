@@ -26,7 +26,6 @@ const config = {
   secret: randomBytes(32).toString('hex'),
   baseURL: 'http://localhost:8081',
   trustedOrigins: [origin],
-  resendApiKey: 're_test_only',
   emailFrom: 'test@example.test',
   emailEncryptionKey: randomBytes(32).toString('hex'),
 };
