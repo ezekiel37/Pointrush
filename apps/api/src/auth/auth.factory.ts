@@ -1,6 +1,16 @@
 import { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '@pointrush/contracts';
 import { betterAuth } from 'better-auth';
-import { APIError, createAuthMiddleware } from 'better-auth/api';
+import {
+  APIError,
+  createAuthMiddleware,
+  getSessionFromCtx,
+} from 'better-auth/api';
+import { twoFactor } from 'better-auth/plugins';
+import {
+  assertReviewerEnrollment,
+  hasRecentAdminMfa,
+  recordAdminMfa,
+} from './admin-mfa.js';
 import { z } from 'zod';
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
@@ -33,7 +43,10 @@ export function createAuth(
 ) {
   validateConfig(config);
   return betterAuth({
-    plugins: [emailQueuePlugin],
+    plugins: [
+      emailQueuePlugin,
+      twoFactor({ issuer: 'PointRush', skipVerificationOnEnable: false }),
+    ],
     appName: 'PointRush',
     secret: config.secret,
     baseURL: config.baseURL,
@@ -47,6 +60,55 @@ export function createAuth(
     logger: { disabled: true },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path.startsWith('/two-factor/')) {
+          if (
+            ctx.body?.trustDevice === true ||
+            ctx.path === '/two-factor/disable'
+          ) {
+            throw new APIError('FORBIDDEN', {
+              message: 'This MFA operation is not enabled',
+            });
+          }
+          if (ctx.path === '/two-factor/enable') {
+            const session = await getSessionFromCtx(ctx);
+            if (!session) throw new APIError('UNAUTHORIZED');
+            await assertReviewerEnrollment(db, session.user.id);
+            if (ctx.body?.method && ctx.body.method !== 'totp')
+              throw new APIError('BAD_REQUEST', {
+                message: 'Use an authenticator app',
+              });
+          }
+          if (
+            ctx.path === '/two-factor/verify-totp' &&
+            !z
+              .string()
+              .regex(/^\d{6}$/)
+              .safeParse(ctx.body?.code).success
+          ) {
+            throw new APIError('BAD_REQUEST', {
+              message: 'Enter a six-digit authenticator code',
+            });
+          }
+          if (
+            [
+              '/two-factor/get-totp-uri',
+              '/two-factor/generate-backup-codes',
+            ].includes(ctx.path)
+          ) {
+            const session = await getSessionFromCtx(ctx);
+            if (
+              !session ||
+              !(await hasRecentAdminMfa(
+                db,
+                session.session.id,
+                session.user.id,
+              ))
+            )
+              throw new APIError('FORBIDDEN', {
+                message: 'Recent authenticator verification is required',
+              });
+          }
+        }
         if (
           !reserveEmail ||
           ![
@@ -70,6 +132,29 @@ export function createAuth(
           throw new APIError('TOO_MANY_REQUESTS', {
             message: 'Please wait before requesting another email',
           });
+      }),
+      after: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== '/two-factor/verify-totp') return;
+        const result = ctx.context.returned;
+        if (
+          !result ||
+          typeof result !== 'object' ||
+          !('token' in result) ||
+          typeof result.token !== 'string'
+        )
+          return;
+        const verified = ctx.context.newSession ?? ctx.context.session;
+        if (!verified)
+          throw new APIError('FORBIDDEN', {
+            message: 'MFA session is unavailable',
+          });
+        await recordAdminMfa(
+          db,
+          config.secret,
+          verified.session.id,
+          verified.user.id,
+          ctx.body.code,
+        );
       }),
     },
     emailAndPassword: {

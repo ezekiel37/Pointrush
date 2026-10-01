@@ -71,6 +71,13 @@
       "when": 1790849974583,
       "tag": "0009_task_review_audit",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790863717758,
+      "tag": "0010_admin_mfa",
+      "breakpoints": true
     }
   ]
 }

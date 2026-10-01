@@ -8,8 +8,11 @@ import type { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import type { AuthService } from './auth.service.js';
 import type { AccountsService } from '../accounts/accounts.service.js';
+import { hasRecentAdminMfa } from './admin-mfa.js';
 
 const PUBLIC_ROUTE = Symbol('PUBLIC_ROUTE');
+const ADMIN_MFA_REQUIRED = Symbol('ADMIN_MFA_REQUIRED');
+export const AdminMfaRequired = () => SetMetadata(ADMIN_MFA_REQUIRED, true);
 export const PublicRoute = () => SetMetadata(PUBLIC_ROUTE, true);
 const ACCOUNT_STATUS_READ = Symbol('ACCOUNT_STATUS_READ');
 // Only for reading the caller's own status; never a business permission.
@@ -22,6 +25,7 @@ export class SessionGuard implements CanActivate {
     private readonly reflector: Reflector,
     private readonly accounts: AccountsService,
     private readonly auth?: AuthService,
+    private readonly database?: { db: Parameters<typeof hasRecentAdminMfa>[0] },
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -44,6 +48,25 @@ export class SessionGuard implements CanActivate {
       ['GET', 'HEAD'].includes(request.method) &&
       this.reflector.get<boolean>(ACCOUNT_STATUS_READ, context.getHandler());
     if (!statusRead) await this.accounts.assertAuthAccess(session.user.id);
+    if (
+      this.reflector.getAllAndOverride<boolean>(ADMIN_MFA_REQUIRED, [
+        context.getHandler(),
+        context.getClass(),
+      ])
+    ) {
+      if (
+        !this.database ||
+        !(await hasRecentAdminMfa(
+          this.database.db,
+          session.session.id,
+          session.user.id,
+        ))
+      ) {
+        throw new ForbiddenException(
+          'Recent authenticator verification is required',
+        );
+      }
+    }
     request[AUTH_USER_ID] = session.user.id;
     return true;
   }

@@ -11,6 +11,9 @@ export {
 export { authEmailJobs } from '../auth/email-queue.schema.js';
 export {
   authUsers,
+  authTwoFactors,
+  authMfaSessions,
+  authMfaCodes,
   authSessions,
   authCredentials,
   authVerifications,

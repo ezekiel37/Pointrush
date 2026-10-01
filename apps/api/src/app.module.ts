@@ -56,12 +56,14 @@ export class AppModule {
             Reflector,
             AccountsService,
             { token: AuthService, optional: true },
+            DatabaseService,
           ],
           useFactory: (
             reflector: Reflector,
             accounts: AccountsService,
             service?: AuthService,
-          ) => new SessionGuard(reflector, accounts, service),
+            database?: DatabaseService,
+          ) => new SessionGuard(reflector, accounts, service, database),
         },
       ],
     };

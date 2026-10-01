@@ -28,6 +28,7 @@ export const authUsers = pgTable('auth_users', {
   email: text('email').notNull().unique(),
   emailVerified: boolean('email_verified').notNull().default(false),
   image: text('image'),
+  twoFactorEnabled: boolean('two_factor_enabled').notNull().default(false),
   ...dates(),
 });
 
@@ -128,7 +129,43 @@ export const authAccountLinks = pgTable('auth_account_links', {
     .defaultNow(),
 });
 
+export const authTwoFactors = pgTable('auth_two_factors', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .unique()
+    .references(() => authUsers.id, { onDelete: 'cascade' }),
+  secret: text('secret').notNull(),
+  backupCodes: text('backup_codes').notNull(),
+  verified: boolean('verified').notNull().default(false),
+  failedVerificationCount: integer('failed_verification_count')
+    .notNull()
+    .default(0),
+  lockedUntil: timestamp('locked_until', { withTimezone: true }),
+});
+
+export const authMfaSessions = pgTable('auth_mfa_sessions', {
+  sessionId: text('session_id')
+    .primaryKey()
+    .references(() => authSessions.id, { onDelete: 'cascade' }),
+  factorId: text('factor_id')
+    .notNull()
+    .references(() => authTwoFactors.id, { onDelete: 'cascade' }),
+  verifiedAt: timestamp('verified_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const authMfaCodes = pgTable('auth_mfa_codes', {
+  id: text('id').primaryKey(),
+  factorId: text('factor_id')
+    .notNull()
+    .references(() => authTwoFactors.id, { onDelete: 'cascade' }),
+  usedAt: timestamp('used_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const authAdapterSchema = {
+  twoFactor: authTwoFactors,
   authEmailJob: authEmailJobs,
   user: authUsers,
   session: authSessions,
