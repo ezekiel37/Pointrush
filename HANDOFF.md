@@ -22,23 +22,24 @@ Next.js/Vercel; NestJS/Cloud Run; Supabase Free PostgreSQL only; Drizzle/pg; Bet
 - Infrastructure decision docs: b25dfdf. Frontend foundation: 740e9e2.
 - Separate API/worker environment parsing, origin validation and CLI execution deadline.
 - Authenticated email HTTP runner, bounded batches, overlap protection and cooperative delivery cancellation (c71fe44).
-- Current slice: explicit no-trust proxy policy, rejection of missing transport identity, expanded spoofing/rate-limit tests and INGRESS.md deployment decision record. No proxy header is newly trusted; cloud identity verification remains a release gate.
+- Explicit no-trust proxy policy, missing transport identity rejection and INGRESS.md deployment gates (1167488).
+- Current slice: internal sponsor funding ledger, migration 0007, immutable balanced transfers, bigint kobo, idempotent references, database-enforced available-fund checks and task allocation locks. See FUNDING_LEDGER.md. No public funding endpoints, payment adapter or task lifecycle exists yet.
 
-The API no longer needs RESEND_API_KEY. Worker needs its database settings, queue encryption key, Resend key and optional EMAIL_WORKER_MAX_DURATION_MS (default 60000). Deadline termination may leave a leased job/uncertain send; preserve its provider idempotency key during recovery. No schema changes in this slice.
+The API no longer needs RESEND_API_KEY. Worker needs its database settings, queue encryption key, Resend key and optional EMAIL_WORKER_MAX_DURATION_MS (default 60000). Deadline termination may leave a leased job/uncertain send; preserve its provider idempotency key during recovery. This slice adds migration 0007; it has not been applied to a hosted database.
 
 ## Verification
 
-Current-slice checks: all 140 API tests, lint, production build, formatting and diff checks passed. Added Cloudflare-header session coverage, rotating-header rate-limit attempts and missing transport identity checks. Earlier frontend browser suite passed six scenarios; this slice does not change UI and that suite was not rerun. Native PostgreSQL multi-session tests, Docker smoke test, actual provider delivery and physical browser/domain checks remain unverified release gates. Tests use synthetic data and do not send real email.
+Current-slice checks: all 149 API tests passed; lint, production build, formatting and diff checks also passed. Funding tests use PGlite with synthetic money; the new native PostgreSQL concurrent-allocation test is checked in but not run (no native PostgreSQL/Docker available). Earlier frontend browser suite passed six scenarios; this slice does not change UI. Actual provider delivery, container operation and physical browser/domain checks remain release gates.
 
 ## Next work
 
-Next code slice: inspect PRD funding rules and implement the sponsor ledger and task-allocation locks. Items 1-4 below are deployment release gates; do not stall product work by guessing unavailable cloud configuration.
+Next code slice: sponsor/business ownership and task records, with allocation creation tied atomically to task creation and mandatory review before publication. Reuse the ledger; do not expose its internal confirmed-funding operation to browsers. Items 1-4 below are deployment release gates; do not stall product work by guessing unavailable cloud configuration.
 
 1. Review deployment configuration for the new `email:serve` entry point: separate secret, restricted invocation, scheduler pricing/configuration, service timeouts and queue monitoring. See EMAIL_QUEUE.md. Code is ready for local verification; no scheduler or service is deployed. Do not provision resources without authorization/configuration.
 2. Execute INGRESS.md staging checks when a deployment exists. Current auth intentionally uses the socket address; proxy-derived visitor identity remains unverified. Do not invent hop counts or trust Cloudflare headers on a publicly bypassable origin.
 3. Configure Supabase endpoints, runtime/migration roles, TLS, connection limits and backups when accounts/domain/billing are available. Validate native PostgreSQL and container operation.
 4. Verify live signup/email/recovery on same-site production domains before public launch.
-5. Next major product feature: sponsor funding ledger and task-allocation locks, followed by task review/participation/proof and rewards. Do not start external payments without idempotency, audit and reconciliation.
+5. Continue sponsor/business authorization and atomic funded task creation, then task review/participation/proof and rewards. The ledger primitives exist, but task binding and business permissions do not. Do not start external payments without verified event ingestion and reconciliation.
 
 Remaining product modules include business/sponsor profiles, R2 evidence, notification preferences/device registrations/PWA, redemptions, offline codes, reputation/referrals, marketing/analytics, support/admin and full frontend journeys. Planned features are not implemented merely because they appear in the PRD.
 

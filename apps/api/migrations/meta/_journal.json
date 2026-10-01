@@ -50,6 +50,13 @@
       "when": 1790606925994,
       "tag": "0006_auth_email_queue",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790845050261,
+      "tag": "0007_sponsor_funding_ledger",
+      "breakpoints": true
     }
   ]
 }

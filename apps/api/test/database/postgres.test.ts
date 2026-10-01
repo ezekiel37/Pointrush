@@ -24,6 +24,11 @@ import { authEmailBudgets } from '../../src/database/schema.js';
 import { authEmailJobs } from '../../src/database/schema.js';
 import { EmailWorker } from '../../src/auth/email-worker.js';
 import { EmailPayloadCipher } from '../../src/auth/email-payload.js';
+import { fundingAccounts } from '../../src/funding/funding.schema.js';
+import {
+  fundingBalance,
+  postFundingTransfer,
+} from '../../src/funding/funding-ledger.js';
 
 const databaseName = `pointrush_test_${randomUUID().replaceAll('-', '')}`;
 const folder = resolve('migrations');
@@ -32,6 +37,74 @@ let pool: Pool;
 let database: DatabaseService;
 let config: DatabaseConfig;
 let created = false;
+
+test('native concurrent allocations cannot overspend one sponsor balance', async () => {
+  const other = new DatabaseService(config);
+  try {
+    const [owner] = await database.db.insert(accounts).values({}).returning();
+    const [clearing] = await database.db
+      .insert(fundingAccounts)
+      .values({ bucket: 'clearing' })
+      .onConflictDoNothing()
+      .returning();
+    const clearingId =
+      clearing?.id ??
+      (
+        await database.db
+          .select()
+          .from(fundingAccounts)
+          .where(eq(fundingAccounts.bucket, 'clearing'))
+      )[0]!.id;
+    const [available] = await database.db
+      .insert(fundingAccounts)
+      .values({ ownerId: owner!.id, bucket: 'available' })
+      .returning();
+    const destinations = await database.db
+      .insert(fundingAccounts)
+      .values(
+        [0, 1].map(() => ({
+          ownerId: owner!.id,
+          bucket: 'task_locked',
+          allocationId: randomUUID(),
+        })),
+      )
+      .returning();
+    await postFundingTransfer(database.db, {
+      id: randomUUID(),
+      sourceId: clearingId,
+      destinationId: available!.id,
+      amountKobo: 5000000n,
+      actorId: owner!.id,
+      kind: 'funding_confirmed',
+      reference: `test:${randomUUID()}`,
+      reason: 'Native test',
+    });
+    const outcomes = await Promise.allSettled(
+      destinations.map((destination, i) =>
+        postFundingTransfer(i === 0 ? database.db : other.db, {
+          id: randomUUID(),
+          sourceId: available!.id,
+          destinationId: destination.id,
+          amountKobo: 4000000n,
+          actorId: owner!.id,
+          kind: 'task_lock',
+          reference: `test:${randomUUID()}`,
+          reason: 'Native concurrent lock',
+        }),
+      ),
+    );
+    assert.equal(outcomes.filter((r) => r.status === 'fulfilled').length, 1);
+    assert.equal(outcomes.filter((r) => r.status === 'rejected').length, 1);
+    assert.equal(await fundingBalance(database.db, available!.id), 1000000n);
+    assert.equal(
+      (await fundingBalance(database.db, destinations[0]!.id)) +
+        (await fundingBalance(database.db, destinations[1]!.id)),
+      4000000n,
+    );
+  } finally {
+    await other.onApplicationShutdown();
+  }
+});
 
 test('two native workers claim a queued email only once while its lease is active', async () => {
   const other = new DatabaseService(config);

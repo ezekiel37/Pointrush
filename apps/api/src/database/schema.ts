@@ -1,4 +1,8 @@
 import { sql } from 'drizzle-orm';
+export {
+  fundingAccounts,
+  fundingTransfers,
+} from '../funding/funding.schema.js';
 export { authEmailJobs } from '../auth/email-queue.schema.js';
 export {
   authUsers,
