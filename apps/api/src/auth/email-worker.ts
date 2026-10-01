@@ -51,9 +51,10 @@ export class EmailWorker {
     });
   }
 
-  async runOne(): Promise<
-    'idle' | 'accepted' | 'retry' | 'dead' | 'expired' | 'stale'
-  > {
+  async runOne(
+    signal?: AbortSignal,
+  ): Promise<'idle' | 'accepted' | 'retry' | 'dead' | 'expired' | 'stale'> {
+    if (signal?.aborted) return 'idle';
     const job = await this.claim();
     if (!job) return 'idle';
     const ownership = and(
@@ -101,7 +102,8 @@ export class EmailWorker {
         preservePayload = true;
         throw new Error('Invalid encrypted payload');
       }
-      await this.send(payload, `auth-email/${ready.id}`);
+      if (signal?.aborted) throw new EmailDeliveryError(true);
+      await this.send(payload, `auth-email/${ready.id}`, signal);
     } catch (error) {
       state =
         error instanceof EmailDeliveryError &&

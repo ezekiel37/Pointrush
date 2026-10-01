@@ -58,13 +58,14 @@ export function createResendPayloadSender(
   transport: typeof fetch = fetch,
 ): SendEmailPayload {
   if (!apiKey.trim()) throw new Error('Resend API key is required');
-  return async (payload, idempotencyKey) => {
+  return async (payload, idempotencyKey, signal) => {
     const body = JSON.stringify(payload);
     let failure = new EmailDeliveryError(true);
     // The pinned SDK logs raw provider errors outside production and does not
     // expose AbortSignal in its send options. Use the documented endpoint here
     // to bound transport time and keep provider payloads out of logs.
     for (let attempt = 0; attempt < 2; attempt++) {
+      if (signal?.aborted) throw new EmailDeliveryError(true);
       let retry: boolean;
       try {
         const response = await transport('https://api.resend.com/emails', {
@@ -75,7 +76,10 @@ export function createResendPayloadSender(
             'Idempotency-Key': idempotencyKey,
           },
           body,
-          signal: AbortSignal.timeout(5000),
+          signal: AbortSignal.any([
+            AbortSignal.timeout(5000),
+            ...(signal ? [signal] : []),
+          ]),
         });
         if (response.ok) {
           const data: unknown = await response.json();
@@ -122,8 +126,12 @@ export function createResendPayloadSender(
       }
       // Rate limits, explicit backoff, credentials and validation errors are not
       // retried inline. They require a new user request after the local cooldown.
-      if (!retry || attempt === 1) break;
-      await delay(250);
+      if (!retry || attempt === 1 || signal?.aborted) break;
+      try {
+        await delay(250, undefined, { signal });
+      } catch {
+        throw new EmailDeliveryError(true);
+      }
     }
     throw failure;
   };

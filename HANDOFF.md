@@ -20,17 +20,18 @@ Next.js/Vercel; NestJS/Cloud Run; Supabase Free PostgreSQL only; Drizzle/pg; Bet
 - Encrypted durable auth-email queue, quotas, retry/lease fencing and finite delivery CLI.
 - Next.js account/signup/login/reset/onboarding journeys and browser regression suite.
 - Infrastructure decision docs: b25dfdf. Frontend foundation: 740e9e2.
-- Current slice: separate API and worker environment parsing, shared origin validation, non-production loopback HTTP, production HTTPS, CLI execution deadline and regression tests. Migration configuration was already separate.
+- Separate API/worker environment parsing, origin validation and CLI execution deadline.
+- Current slice: separate authenticated email HTTP runner, bounded batches, overlap protection, cooperative delivery cancellation and regression tests. Same durable queue; no schema changes or deployment.
 
 The API no longer needs RESEND_API_KEY. Worker needs its database settings, queue encryption key, Resend key and optional EMAIL_WORKER_MAX_DURATION_MS (default 60000). Deadline termination may leave a leased job/uncertain send; preserve its provider idempotency key during recovery. No schema changes in this slice.
 
 ## Verification
 
-Current-slice checks: all 134 API tests passed, including process-level deadline termination against a stalled local database socket; repository lint and API production build passed. Formatting and diff checks are included before commit. Earlier frontend browser suite passed six scenarios; this slice does not change UI and that suite was not rerun. Native PostgreSQL multi-session tests, Docker smoke test, actual provider delivery and physical browser/domain checks remain unverified release gates. Tests use synthetic data and do not send real email.
+Current-slice checks: all 138 API tests passed, including HTTP authorization/input rejection, overlap/deadline settlement, batch limits and provider cancellation. Repository lint, API build, formatting and diff checks run before commit. Earlier frontend browser suite passed six scenarios; this slice does not change UI and that suite was not rerun. Native PostgreSQL multi-session tests, Docker smoke test, actual provider delivery and physical browser/domain checks remain unverified release gates. Tests use synthetic data and do not send real email.
 
 ## Next work
 
-1. Design/implement authenticated scheduled execution appropriate to Cloud Run. Current runner is CLI-only; never embed its process-exit watchdog in the HTTP server. Inspect queue lifecycle before choosing HTTP runner versus managed job execution and compare scheduling costs.
+1. Review deployment configuration for the new `email:serve` entry point: separate secret, restricted invocation, scheduler pricing/configuration, service timeouts and queue monitoring. See EMAIL_QUEUE.md. Code is ready for local verification; no scheduler or service is deployed. Do not provision resources without authorization/configuration.
 2. Validate Cloudflare/Cloud Run ingress and trusted client-IP handling. Current auth intentionally uses the socket address; no broad trust-proxy setting should bypass this boundary.
 3. Configure Supabase endpoints, runtime/migration roles, TLS, connection limits and backups when accounts/domain/billing are available. Validate native PostgreSQL and container operation.
 4. Verify live signup/email/recovery on same-site production domains before public launch.

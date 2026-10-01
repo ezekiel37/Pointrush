@@ -12,7 +12,8 @@
     "test:db": "tsc -p tsconfig.test.json && node --test .test-dist/test/database/*.test.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node --env-file-if-exists=.env dist/database/migrate-cli.js",
-    "email:work": "node --env-file-if-exists=.env dist/auth/email-worker-cli.js"
+    "email:work": "node --env-file-if-exists=.env dist/auth/email-worker-cli.js",
+    "email:serve": "node --env-file-if-exists=.env dist/auth/email-http-main.js"
   },
   "dependencies": {
     "@better-auth/core": "1.7.6",

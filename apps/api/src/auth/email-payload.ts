@@ -13,6 +13,7 @@ export type EmailPayload = z.infer<typeof emailPayloadSchema>;
 export type SendEmailPayload = (
   payload: EmailPayload,
   idempotencyKey: string,
+  signal?: AbortSignal,
 ) => Promise<void>;
 
 export class EmailPayloadCipher {
