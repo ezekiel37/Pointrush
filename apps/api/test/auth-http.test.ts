@@ -97,6 +97,10 @@ test('real HTTP signup, verification and login use the correct path and secure c
     .post('/api/v1/auth/sign-in/email')
     .set('X-Pointrush-Client-Ip', '203.0.113.99')
     .set('X-Forwarded-For', '203.0.113.99')
+    .set('CF-Connecting-IP', '203.0.113.98')
+    .set('True-Client-IP', '203.0.113.97')
+    .set('X-Real-IP', '203.0.113.96')
+    .set('Forwarded', 'for=203.0.113.95;proto=https')
     .set('Origin', origin)
     .send({ email, password })
     .expect(200);
@@ -325,6 +329,7 @@ test('actual auth routes reject oversized bodies and untrusted origins', async (
 });
 
 test('spoofed forwarding headers cannot change the recorded session IP', async () => {
+  assert.equal(app.getHttpAdapter().getInstance().get('trust proxy'), false);
   const sessions = await db.select().from(schema.authSessions);
   assert.ok(sessions.length);
   assert.ok(
@@ -349,4 +354,33 @@ test('spoofed forwarding headers cannot change the recorded session IP', async (
     .get('/api/v1/accounts/me')
     .set('Cookie', cookie)
     .expect(401);
+});
+
+test('rotating forged client IP headers cannot evade the authentication rate limit', async () => {
+  await db.delete(schema.authRateLimits);
+  try {
+    let limited = false;
+    for (let attempt = 1; attempt <= 31; attempt++) {
+      const forged = `203.0.113.${attempt}`;
+      const result = await request(server)
+        .post('/api/v1/auth/sign-in/email')
+        .set('Origin', origin)
+        .set('X-Pointrush-Client-IP', forged)
+        .set('X-Forwarded-For', `${forged}, 198.51.100.1`)
+        .set('CF-Connecting-IP', forged)
+        .set('X-Real-IP', forged)
+        .send({});
+      assert.ok([400, 429].includes(result.status));
+      if (result.status === 429) {
+        limited = true;
+        break;
+      }
+    }
+    assert.ok(
+      limited,
+      'Forged IP rotation must not reset the rate-limit bucket',
+    );
+  } finally {
+    await db.delete(schema.authRateLimits);
+  }
 });

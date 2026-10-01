@@ -56,7 +56,7 @@ flowchart TD
     Browser -->|"Signed file requests"| Media
 ```
 
-The runner belongs to the same backend codebase. It may initially execute through a protected, bounded HTTP handler, with a separate process/container later if measured work requires it. The current implementation is a finite email-worker CLI only; no HTTP runner or scheduler exists yet.
+The runner belongs to the same backend codebase. Both a finite email-worker CLI and a separate protected HTTP entry point now exist; neither scheduling nor cloud deployment is configured. See EMAIL_QUEUE.md for invocation and INGRESS.md for origin security and client-IP release gates.
 
 ## Existing implementation versus planned work
 

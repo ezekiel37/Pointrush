@@ -20,6 +20,9 @@ export function configureHttp(
   ) => Promise<void>,
 ): void {
   app.disable('x-powered-by');
+  // Do not infer trust from a header or a guessed number of cloud proxy hops.
+  // See INGRESS.md before changing this deployment boundary.
+  app.set('trust proxy', false);
   app.use(helmet());
   app.use((_request: Request, response: Response, next: NextFunction) => {
     const requestId = randomUUID();
