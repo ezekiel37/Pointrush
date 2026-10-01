@@ -17,6 +17,7 @@ export interface AuthEnvironment {
 }
 
 const schema = z.object({
+  SPONSOR_TERMS_VERSION: z.string().trim().min(1).max(80).optional(),
   NODE_ENV: z
     .enum(['development', 'test', 'production'])
     .default('development'),
@@ -44,6 +45,7 @@ const schema = z.object({
 });
 
 export interface Environment {
+  sponsorTermsVersion?: string;
   nodeEnv: 'development' | 'test' | 'production';
   port: number;
   corsOrigins: string[];
@@ -53,6 +55,7 @@ export interface Environment {
 
 export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
   const {
+    SPONSOR_TERMS_VERSION,
     NODE_ENV,
     PORT,
     CORS_ORIGINS,
@@ -113,6 +116,9 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
     };
   }
   return {
+    ...(SPONSOR_TERMS_VERSION
+      ? { sponsorTermsVersion: SPONSOR_TERMS_VERSION }
+      : {}),
     nodeEnv: NODE_ENV,
     port: PORT,
     corsOrigins: [...new Set(origins)],

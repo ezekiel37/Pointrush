@@ -10,7 +10,7 @@ import { AuthService } from './auth/auth.service.js';
 async function bootstrap(): Promise<void> {
   const config = readEnvironment(process.env);
   const app = await NestFactory.create<NestExpressApplication>(
-    AppModule.forRoot(config.database, config.auth),
+    AppModule.forRoot(config.database, config.auth, config.sponsorTermsVersion),
     {
       logger: new ConsoleLogger({ json: true }),
       rawBody: true,

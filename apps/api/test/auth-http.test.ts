@@ -50,7 +50,7 @@ const password = 'An actual HTTP test password 123!';
 before(async () => {
   await migrate(db, { migrationsFolder: resolve('migrations') });
   const module = await Test.createTestingModule({
-    imports: [AppModule.forRoot(undefined, config)],
+    imports: [AppModule.forRoot(undefined, config, 'test-v1')],
     controllers: [PrivateProbe],
   })
     .overrideProvider(DatabaseService)
@@ -303,6 +303,72 @@ test('account status uses only the session identity and fails closed on incomple
   await db
     .insert(schema.accountProfiles)
     .values({ accountId: link.accountId, displayName: 'HTTP User' });
+});
+
+test('sponsor routes require session and trusted origin, derive ownership, and reject unfunded tasks', async () => {
+  // The preceding account-state test deliberately leaves this account closed.
+  const [ownerLink] = await db.select().from(schema.authAccountLinks);
+  await request(server)
+    .get('/api/v1/sponsor/profile')
+    .set('Cookie', cookie)
+    .expect(403);
+  await db
+    .update(schema.accounts)
+    .set({ accessState: 'active' })
+    .where(eq(schema.accounts.id, ownerLink!.accountId));
+  const body = {
+    name: 'HTTP Sponsor',
+    acceptTerms: true,
+    termsVersion: 'test-v1',
+  };
+  await request(server)
+    .post('/api/v1/sponsor/profile')
+    .set('Origin', origin)
+    .send(body)
+    .expect(401);
+  await request(server)
+    .post('/api/v1/sponsor/profile')
+    .set('Cookie', cookie)
+    .set('Origin', 'https://evil.test')
+    .send(body)
+    .expect(403);
+  await request(server)
+    .post('/api/v1/sponsor/profile')
+    .set('Cookie', cookie)
+    .set('Origin', origin)
+    .send({ ...body, ownerId: 'forged' })
+    .expect(400);
+  const profile = await request(server)
+    .post('/api/v1/sponsor/profile')
+    .set('Cookie', cookie)
+    .set('Origin', origin)
+    .send(body)
+    .expect(201);
+  const [link] = await db.select().from(schema.authAccountLinks);
+  assert.equal(profile.body.ownerId, link!.accountId);
+  assert.equal(profile.body.contactEmail, email);
+  const read = await request(server)
+    .get('/api/v1/sponsor/profile')
+    .set('Cookie', cookie)
+    .expect(200);
+  assert.equal(read.body.id, profile.body.id);
+  await request(server)
+    .post('/api/v1/sponsor/tasks')
+    .set('Cookie', cookie)
+    .set('Origin', origin)
+    .send({
+      requestId: '397fd682-d913-46cd-88c9-d797795b7ef2',
+      title: 'Test',
+      instructions: 'Write an article',
+      proofRequirements: 'Document',
+      rejectionCriteria: 'Copied work',
+      model: 'selected_assignment',
+      capacity: 1,
+      rewardKobo: '100',
+      startsAt: new Date(Date.now() + 86400000).toISOString(),
+      endsAt: new Date(Date.now() + 172800000).toISOString(),
+    })
+    .expect(409);
 });
 
 test('actual auth routes reject oversized bodies and untrusted origins', async () => {

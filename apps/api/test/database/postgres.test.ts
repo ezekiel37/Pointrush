@@ -26,6 +26,12 @@ import { EmailWorker } from '../../src/auth/email-worker.js';
 import { EmailPayloadCipher } from '../../src/auth/email-payload.js';
 import { fundingAccounts } from '../../src/funding/funding.schema.js';
 import {
+  authUsers,
+  authAccountLinks,
+  sponsorTasks,
+} from '../../src/database/schema.js';
+import { SponsorsService } from '../../src/sponsors/sponsors.service.js';
+import {
   fundingBalance,
   postFundingTransfer,
 } from '../../src/funding/funding-ledger.js';
@@ -37,6 +43,84 @@ let pool: Pool;
 let database: DatabaseService;
 let config: DatabaseConfig;
 let created = false;
+
+test('native duplicate task requests create one allocation and one task', async () => {
+  const other = new DatabaseService(config);
+  try {
+    const authId = randomUUID();
+    await database.db.insert(authUsers).values({
+      id: authId,
+      name: 'Native sponsor',
+      email: `${authId}@example.test`,
+      emailVerified: true,
+    });
+    const [owner] = await database.db.insert(accounts).values({}).returning();
+    await database.db
+      .insert(authAccountLinks)
+      .values({ accountId: owner!.id, authUserId: authId });
+    const service = new SponsorsService(database, 'test-v1');
+    const profile = await service.createProfile(authId, {
+      name: 'Native sponsor',
+      acceptTerms: true,
+      termsVersion: 'test-v1',
+    });
+    await database.db
+      .insert(fundingAccounts)
+      .values({ bucket: 'clearing' })
+      .onConflictDoNothing();
+    const [clearing] = await database.db
+      .select()
+      .from(fundingAccounts)
+      .where(eq(fundingAccounts.bucket, 'clearing'));
+    const [available] = await database.db
+      .select()
+      .from(fundingAccounts)
+      .where(eq(fundingAccounts.ownerId, owner!.id));
+    await postFundingTransfer(database.db, {
+      id: randomUUID(),
+      sourceId: clearing!.id,
+      destinationId: available!.id,
+      amountKobo: 200n,
+      actorId: owner!.id,
+      kind: 'funding_confirmed',
+      reference: `test:${randomUUID()}`,
+      reason: 'Native test',
+    });
+    const input = {
+      requestId: randomUUID(),
+      title: 'Test',
+      instructions: 'Test instructions',
+      proofRequirements: 'Document',
+      rejectionCriteria: 'Copied work',
+      model: 'selected_assignment',
+      capacity: 2,
+      rewardKobo: '100',
+      startsAt: new Date(Date.now() + 86400000).toISOString(),
+      endsAt: new Date(Date.now() + 172800000).toISOString(),
+    };
+    const results = await Promise.all([
+      service.createTask(authId, input),
+      new SponsorsService(other, 'test-v1').createTask(authId, input),
+    ]);
+    assert.equal(results[0].id, results[1].id);
+    assert.equal(await fundingBalance(database.db, available!.id), 0n);
+    assert.equal(
+      await fundingBalance(database.db, results[0].allocationAccountId),
+      200n,
+    );
+    assert.equal(
+      (
+        await database.db
+          .select()
+          .from(sponsorTasks)
+          .where(eq(sponsorTasks.sponsorId, profile.id))
+      ).length,
+      1,
+    );
+  } finally {
+    await other.onApplicationShutdown();
+  }
+});
 
 test('native concurrent allocations cannot overspend one sponsor balance', async () => {
   const other = new DatabaseService(config);

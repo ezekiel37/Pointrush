@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+export { sponsorProfiles, sponsorTasks } from '../sponsors/sponsor.schema.js';
 export {
   fundingAccounts,
   fundingTransfers,

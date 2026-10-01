@@ -62,7 +62,7 @@ The runner belongs to the same backend codebase. Both a finite email-worker CLI 
 
 Implemented: API modules, PostgreSQL schema/migrations, account management, Better Auth, durable encrypted authentication-email jobs, finite worker CLI, Next.js account journeys and shared contracts. A non-root API Dockerfile, health endpoints and shutdown handling exist.
 
-An internal sponsor ledger foundation now exists; see FUNDING_LEDGER.md for migration 0007, its safeguards and incomplete product boundaries. Not deployed or implemented: hosting, scheduled worker invocation, backup automation, R2 uploads, Turnstile, general domain events/jobs, in-app notifications, FCM/PWA, campaign/task processing, live payments and redemptions. Database concurrency, actual container operation and production delivery still require verification.
+The internal sponsor ledger (migration 0007) and owner-authorized funded task creation (migration 0008) now exist; see FUNDING_LEDGER.md and SPONSOR_TASKS.md. Tasks remain pending review and not live. Not deployed or implemented: hosting, scheduled worker invocation, backup automation, R2 uploads, Turnstile, general domain events/jobs, in-app notifications, FCM/PWA, task publication/participation/rewards, live payments and redemptions. Database concurrency, actual container operation and production delivery still require verification.
 
 ## Database and portability
 

@@ -11,12 +11,16 @@ import { APP_GUARD, Reflector } from '@nestjs/core';
 import { AuthService } from './auth/auth.service.js';
 import { SessionGuard } from './auth/session.guard.js';
 import { AccountsService } from './accounts/accounts.service.js';
+import { DatabaseService } from './database/database.service.js';
+import { SponsorsService } from './sponsors/sponsors.service.js';
+import { SponsorsController } from './sponsors/sponsors.controller.js';
 
 @Module({})
 export class AppModule {
   static forRoot(
     database?: DatabaseConfig,
     auth?: AuthEnvironment,
+    sponsorTermsVersion?: string,
   ): DynamicModule {
     const imports: DynamicModule['imports'] = [
       DatabaseModule.forRoot(database),
@@ -38,8 +42,14 @@ export class AppModule {
     return {
       module: AppModule,
       imports,
-      controllers: [HealthController],
+      controllers: [HealthController, SponsorsController],
       providers: [
+        {
+          provide: SponsorsService,
+          inject: [DatabaseService],
+          useFactory: (database: DatabaseService) =>
+            new SponsorsService(database, sponsorTermsVersion),
+        },
         {
           provide: APP_GUARD,
           inject: [

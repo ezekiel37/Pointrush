@@ -57,6 +57,13 @@
       "when": 1790845050261,
       "tag": "0007_sponsor_funding_ledger",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790849178376,
+      "tag": "0008_sponsor_task_creation",
+      "breakpoints": true
     }
   ]
 }
