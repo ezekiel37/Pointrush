@@ -43,6 +43,7 @@ export const sponsorTasks = pgTable(
       .references(() => sponsorProfiles.id),
     requestId: uuid('request_id').notNull(),
     requestHash: varchar('request_hash', { length: 64 }).notNull(),
+    termsVersion: integer('terms_version').notNull().default(1),
     allocationAccountId: uuid('allocation_account_id')
       .notNull()
       .references(() => fundingAccounts.id),
@@ -77,7 +78,7 @@ export const sponsorTasks = pgTable(
     // No publication path is implemented until reviewer authorization exists.
     check(
       'sponsor_task_review_gate',
-      sql`${t.reviewState} = 'pending_review' and ${t.lifecycle} = 'not_live'`,
+      sql`${t.reviewState} in ('pending_review', 'approved', 'changes_required', 'rejected') and ${t.lifecycle} = 'not_live' and ${t.termsVersion} > 0`,
     ),
   ],
 );

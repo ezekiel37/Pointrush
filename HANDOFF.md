@@ -24,23 +24,24 @@ Next.js/Vercel; NestJS/Cloud Run; Supabase Free PostgreSQL only; Drizzle/pg; Bet
 - Authenticated email HTTP runner, bounded batches, overlap protection and cooperative delivery cancellation (c71fe44).
 - Explicit no-trust proxy policy, missing transport identity rejection and INGRESS.md deployment gates (1167488).
 - Internal sponsor funding ledger and task-allocation lock primitives, migration 0007 (4569fad).
-- Current slice: authenticated sponsor profile ownership and atomic funded task creation, migration 0008. Selected assignments and capped fixed rewards only; tasks remain pending review and not live. See SPONSOR_TASKS.md. No credit-money endpoint or live payment adapter.
+- Authenticated sponsor profile ownership and atomic funded task creation, migration 0008 (3a8fa60); selected assignments and capped fixed rewards only.
+- Current slice: internal task review, expiring reviewer permission grants, immutable decision audit and version/state checks, migration 0009. See TASK_REVIEW.md. Reviews do not publish tasks or release funding. No admin routes or MFA assertion is exposed; there are no default grants.
 
-The API no longer needs RESEND_API_KEY. Worker needs its database settings, queue encryption key, Resend key and optional EMAIL_WORKER_MAX_DURATION_MS (default 60000). Deadline termination may leave a leased job/uncertain send; preserve its provider idempotency key during recovery. This slice adds migration 0008; it has not been applied to a hosted database. SPONSOR_TERMS_VERSION must remain unset until real sponsor terms are published and shown for acceptance.
+The API no longer needs RESEND_API_KEY. Worker needs its database settings, queue encryption key, Resend key and optional EMAIL_WORKER_MAX_DURATION_MS (default 60000). Deadline termination may leave a leased job/uncertain send; preserve its provider idempotency key during recovery. This slice adds migration 0009; it has not been applied to a hosted database. SPONSOR_TERMS_VERSION must remain unset until real sponsor terms are published and shown for acceptance.
 
 ## Verification
 
-Current-slice checks: all 157 API tests, lint and production build passed; formatting and diff checks run before commit. Sponsor tests use PGlite and real HTTP authentication with synthetic money. Native PostgreSQL duplicate-task and concurrent-allocation tests are checked in but not run (no native PostgreSQL/Docker available). Earlier frontend browser suite passed six scenarios; this slice does not change UI. Actual provider delivery, container operation and physical browser/domain checks remain release gates.
+Current-slice checks: all 164 API tests passed; lint, build, typechecking, formatting and diff checks passed. Final checks were completed after the usage-limit interruption. Review tests use synthetic identities, grants and money. Native PostgreSQL competing-reviewer, duplicate-task and concurrent-allocation checks are included but not run (no native PostgreSQL/Docker available). Earlier frontend browser suite passed six scenarios; this slice does not change UI. Actual provider delivery, container operation and physical browser/domain checks remain release gates.
 
 ## Next work
 
-Next code slice: platform reviewer permissions and audited mandatory task review; inspect MFA/least-privilege rules before exposing admin commands. Follow with versioned task amendments and paginated sponsor task listings. Business teams and frontend sponsor forms remain to be built. Keep confirmed-funding commands internal. Items 1-4 below are deployment release gates.
+Next code slice: real admin MFA/session assurance and controlled reviewer-grant provisioning before adding review endpoints. The internal review command intentionally has no HTTP module/controller. Do not substitute a client boolean or sponsor badge for MFA/permission. Follow with versioned task amendments and paginated sponsor listings. Business teams and frontend sponsor forms remain to be built. Keep confirmed-funding commands internal. Items 1-4 below are deployment release gates.
 
 1. Review deployment configuration for the new `email:serve` entry point: separate secret, restricted invocation, scheduler pricing/configuration, service timeouts and queue monitoring. See EMAIL_QUEUE.md. Code is ready for local verification; no scheduler or service is deployed. Do not provision resources without authorization/configuration.
 2. Execute INGRESS.md staging checks when a deployment exists. Current auth intentionally uses the socket address; proxy-derived visitor identity remains unverified. Do not invent hop counts or trust Cloudflare headers on a publicly bypassable origin.
 3. Configure Supabase endpoints, runtime/migration roles, TLS, connection limits and backups when accounts/domain/billing are available. Validate native PostgreSQL and container operation.
 4. Verify live signup/email/recovery on same-site production domains before public launch.
-5. Continue task review/participation/proof and rewards. Sponsor owner authorization and atomic task binding exist; business delegation and admin review do not. Do not start external payments without verified event ingestion and reconciliation.
+5. Continue protected admin review access, participation/proof and rewards. Sponsor owner authorization, atomic task binding and internal audited decisions exist; business delegation, admin MFA/HTTP review and publication do not. Do not start external payments without verified event ingestion and reconciliation.
 
 Remaining product modules include business/sponsor profiles, R2 evidence, notification preferences/device registrations/PWA, redemptions, offline codes, reputation/referrals, marketing/analytics, support/admin and full frontend journeys. Planned features are not implemented merely because they appear in the PRD.
 

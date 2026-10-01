@@ -29,7 +29,11 @@ import {
   authUsers,
   authAccountLinks,
   sponsorTasks,
+  taskReviewerGrants,
+  taskReviews,
 } from '../../src/database/schema.js';
+import { TaskReviewService } from '../../src/reviews/task-review.service.js';
+import { taskReviewChecklist } from '../../src/reviews/task-review.schema.js';
 import { SponsorsService } from '../../src/sponsors/sponsors.service.js';
 import {
   fundingBalance,
@@ -44,7 +48,7 @@ let database: DatabaseService;
 let config: DatabaseConfig;
 let created = false;
 
-test('native duplicate task requests create one allocation and one task', async () => {
+test('native duplicate task requests and competing reviews preserve one task and decision', async () => {
   const other = new DatabaseService(config);
   try {
     const authId = randomUUID();
@@ -116,6 +120,61 @@ test('native duplicate task requests create one allocation and one task', async 
           .where(eq(sponsorTasks.sponsorId, profile.id))
       ).length,
       1,
+    );
+    const reviewers = await database.db
+      .insert(accounts)
+      .values([{}, {}])
+      .returning();
+    await database.db.insert(taskReviewerGrants).values(
+      reviewers.map((reviewer) => ({
+        reviewerId: reviewer.id,
+        grantedBy: owner!.id,
+        reason: 'Native test only',
+        expiresAt: new Date(Date.now() + 86400000),
+      })),
+    );
+    const [task] = await database.db
+      .select()
+      .from(sponsorTasks)
+      .where(eq(sponsorTasks.id, results[0].id));
+    const decisions = await Promise.allSettled(
+      reviewers.map((reviewer, i) =>
+        new TaskReviewService(i === 0 ? database.db : other.db).decide(
+          reviewer.id,
+          {
+            requestId: randomUUID(),
+            taskId: task!.id,
+            termsVersion: task!.termsVersion,
+            termsHash: task!.requestHash,
+            decision: i === 0 ? 'approved' : 'rejected',
+            checklist: { ...taskReviewChecklist },
+            reason: 'Native competing decision',
+          },
+        ),
+      ),
+    );
+    assert.equal(
+      decisions.filter((item) => item.status === 'fulfilled').length,
+      1,
+    );
+    assert.equal(
+      decisions.filter((item) => item.status === 'rejected').length,
+      1,
+    );
+    const audits = await database.db
+      .select()
+      .from(taskReviews)
+      .where(eq(taskReviews.taskId, task!.id));
+    assert.equal(audits.length, 1);
+    const [reviewed] = await database.db
+      .select()
+      .from(sponsorTasks)
+      .where(eq(sponsorTasks.id, task!.id));
+    assert.equal(reviewed!.reviewState, audits[0]!.decision);
+    assert.equal(reviewed!.lifecycle, 'not_live');
+    assert.equal(
+      await fundingBalance(database.db, task!.allocationAccountId),
+      200n,
     );
   } finally {
     await other.onApplicationShutdown();

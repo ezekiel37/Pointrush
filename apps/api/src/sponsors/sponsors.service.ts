@@ -232,6 +232,7 @@ export class SponsorsService {
       startsAt: task.startsAt,
       endsAt: task.endsAt,
       reviewState: task.reviewState,
+      termsVersion: task.termsVersion,
       lifecycle: task.lifecycle,
       createdAt: task.createdAt,
       rewardKobo: task.rewardKobo.toString(),

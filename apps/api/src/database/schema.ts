@@ -1,4 +1,8 @@
 import { sql } from 'drizzle-orm';
+export {
+  taskReviewerGrants,
+  taskReviews,
+} from '../reviews/task-review.schema.js';
 export { sponsorProfiles, sponsorTasks } from '../sponsors/sponsor.schema.js';
 export {
   fundingAccounts,
