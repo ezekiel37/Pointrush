@@ -14,6 +14,7 @@ import { AccountsService } from './accounts/accounts.service.js';
 import { DatabaseService } from './database/database.service.js';
 import { SponsorsService } from './sponsors/sponsors.service.js';
 import { SponsorsController } from './sponsors/sponsors.controller.js';
+import { ReviewsModule } from './reviews/reviews.module.js';
 
 @Module({})
 export class AppModule {
@@ -26,6 +27,7 @@ export class AppModule {
       DatabaseModule.forRoot(database),
       AccountsModule,
     ];
+    if (database) imports.push(ReviewsModule);
     if (auth) {
       imports.push(
         AuthModule.forRoot(

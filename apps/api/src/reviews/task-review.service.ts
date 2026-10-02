@@ -37,10 +37,87 @@ const inputSchema = z
       Object.values(value.checklist).every(Boolean),
   );
 
-// Deliberately not registered in any HTTP module. A future admin boundary must
-// establish a real, recent MFA session before deriving this account identity.
+// HTTP callers still require a real, recent MFA session; grant checks remain
+// inside this service so the authorization boundary is not controller-only.
 export class TaskReviewService {
   constructor(private readonly db: FundingDatabase) {}
+
+  private async assertReviewer(reviewerId: string) {
+    const [reviewer] = await this.db
+      .select()
+      .from(accounts)
+      .where(and(eq(accounts.id, reviewerId), eq(accounts.accessState, 'active')));
+    if (!reviewer) throw new ForbiddenException('Task review permission required');
+    const [grant] = await this.db
+      .select()
+      .from(taskReviewerGrants)
+      .where(and(
+        eq(taskReviewerGrants.reviewerId, reviewerId),
+        isNull(taskReviewerGrants.revokedAt),
+        sql`${taskReviewerGrants.expiresAt} > clock_timestamp()`,
+      ));
+    if (!grant) throw new ForbiddenException('Task review permission required');
+  }
+
+  async listPending(reviewerId: string) {
+    if (!z.uuid().safeParse(reviewerId).success)
+      throw new BadRequestException('Invalid reviewer identity');
+    await this.assertReviewer(reviewerId);
+    return this.db
+      .select({
+        id: sponsorTasks.id,
+        sponsorId: sponsorTasks.sponsorId,
+        sponsorName: sponsorProfiles.name,
+        title: sponsorTasks.title,
+        instructions: sponsorTasks.instructions,
+        proofRequirements: sponsorTasks.proofRequirements,
+        rejectionCriteria: sponsorTasks.rejectionCriteria,
+        model: sponsorTasks.model,
+        capacity: sponsorTasks.capacity,
+        rewardKobo: sponsorTasks.rewardKobo,
+        budgetKobo: sponsorTasks.budgetKobo,
+        startsAt: sponsorTasks.startsAt,
+        endsAt: sponsorTasks.endsAt,
+        termsVersion: sponsorTasks.termsVersion,
+        termsHash: sponsorTasks.requestHash,
+        reviewState: sponsorTasks.reviewState,
+      })
+      .from(sponsorTasks)
+      .innerJoin(sponsorProfiles, eq(sponsorProfiles.id, sponsorTasks.sponsorId))
+      .where(eq(sponsorTasks.reviewState, 'pending_review'))
+      .orderBy(sql`${sponsorTasks.createdAt} asc`);
+  }
+
+  async getPending(reviewerId: string, taskId: string) {
+    if (!z.uuid().safeParse(reviewerId).success || !z.uuid().safeParse(taskId).success)
+      throw new BadRequestException('Invalid review identity');
+    await this.assertReviewer(reviewerId);
+    const [task] = await this.db
+      .select({
+        id: sponsorTasks.id,
+        sponsorId: sponsorTasks.sponsorId,
+        sponsorName: sponsorProfiles.name,
+        title: sponsorTasks.title,
+        instructions: sponsorTasks.instructions,
+        proofRequirements: sponsorTasks.proofRequirements,
+        rejectionCriteria: sponsorTasks.rejectionCriteria,
+        model: sponsorTasks.model,
+        capacity: sponsorTasks.capacity,
+        rewardKobo: sponsorTasks.rewardKobo,
+        budgetKobo: sponsorTasks.budgetKobo,
+        startsAt: sponsorTasks.startsAt,
+        endsAt: sponsorTasks.endsAt,
+        termsVersion: sponsorTasks.termsVersion,
+        termsHash: sponsorTasks.requestHash,
+        reviewState: sponsorTasks.reviewState,
+      })
+      .from(sponsorTasks)
+      .innerJoin(sponsorProfiles, eq(sponsorProfiles.id, sponsorTasks.sponsorId))
+      .where(and(eq(sponsorTasks.id, taskId), eq(sponsorTasks.reviewState, 'pending_review')));
+    if (!task) throw new NotFoundException();
+    return task;
+  }
+
   async decide(reviewerId: string, input: unknown) {
     const parsed = inputSchema.safeParse(input);
     if (!z.uuid().safeParse(reviewerId).success || !parsed.success)
