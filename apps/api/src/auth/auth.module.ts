@@ -9,6 +9,7 @@ import { AuthService } from './auth.service.js';
 import { AccountsModule } from '../accounts/accounts.module.js';
 import { AuthEmailBudget } from './auth.email-budget.js';
 import { authEmailJobs } from './email-queue.schema.js';
+import { SessionManagementService } from './session-management.js';
 
 @Module({})
 export class AuthModule {
@@ -22,6 +23,12 @@ export class AuthModule {
       imports: [AccountsModule],
       controllers: [AuthController],
       providers: [
+        {
+          provide: SessionManagementService,
+          inject: [DatabaseService],
+          useFactory: (database: DatabaseService) =>
+            new SessionManagementService(database.db),
+        },
         {
           provide: AuthService,
           inject: [DatabaseService],
@@ -55,7 +62,7 @@ export class AuthModule {
           },
         },
       ],
-      exports: [AuthService],
+      exports: [AuthService, SessionManagementService],
     };
   }
 }

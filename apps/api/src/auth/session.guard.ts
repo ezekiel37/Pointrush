@@ -18,7 +18,11 @@ const ACCOUNT_STATUS_READ = Symbol('ACCOUNT_STATUS_READ');
 // Only for reading the caller's own status; never a business permission.
 export const AccountStatusRead = () => SetMetadata(ACCOUNT_STATUS_READ, true);
 export const AUTH_USER_ID = Symbol('AUTH_USER_ID');
-export type AuthenticatedRequest = Request & { [AUTH_USER_ID]: string };
+export const AUTH_SESSION_ID = Symbol('AUTH_SESSION_ID');
+export type AuthenticatedRequest = Request & {
+  [AUTH_USER_ID]: string;
+  [AUTH_SESSION_ID]: string;
+};
 
 export class SessionGuard implements CanActivate {
   constructor(
@@ -68,6 +72,7 @@ export class SessionGuard implements CanActivate {
       }
     }
     request[AUTH_USER_ID] = session.user.id;
+    request[AUTH_SESSION_ID] = session.session.id;
     return true;
   }
 }
