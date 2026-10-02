@@ -133,15 +133,16 @@ Log structured request, event, job and operation IDs, actor/entity IDs where app
 
 Retain current names rather than rename working configuration:
 
-| Scope                  | Existing variables                                            |
-| ---------------------- | ------------------------------------------------------------- |
-| Web, public build-time | NEXT_PUBLIC_API_ORIGIN                                        |
-| Runtime                | NODE_ENV, PORT, CORS_ORIGINS                                  |
-| Database               | DATABASE_URL, DATABASE_SSL_MODE, DATABASE_POOL_MAX            |
-| Migration only         | MIGRATION_DATABASE_URL                                        |
-| Authentication         | AUTH_SECRET, AUTH_BASE_URL, AUTH_TRUSTED_ORIGINS              |
-| Auth email             | EMAIL_FROM, AUTH_EMAIL_ENCRYPTION_KEY, AUTH_EMAIL_DAILY_LIMIT |
-| Delivery               | RESEND_API_KEY; EMAIL_WORKER_MAX_DURATION_MS (default 60000)  |
+| Scope                  | Existing variables                                                                                                                                          |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web, public build-time | NEXT_PUBLIC_API_ORIGIN                                                                                                                                      |
+| Runtime                | NODE_ENV, PORT, CORS_ORIGINS                                                                                                                                |
+| Database               | DATABASE_URL, DATABASE_SSL_MODE, DATABASE_POOL_MAX                                                                                                          |
+| Migration only         | MIGRATION_DATABASE_URL                                                                                                                                      |
+| Reviewer provisioning  | REVIEWER_PROVISIONING_DATABASE_URL, REVIEWER_OPERATOR_ACCOUNT_ID, REVIEWER_OPERATOR_TOKEN, REVIEWER_OPERATOR_TOKEN_SHA256 (local tool only; not configured) |
+| Authentication         | AUTH_SECRET, AUTH_BASE_URL, AUTH_TRUSTED_ORIGINS                                                                                                            |
+| Auth email             | EMAIL_FROM, AUTH_EMAIL_ENCRYPTION_KEY, AUTH_EMAIL_DAILY_LIMIT                                                                                               |
+| Delivery               | RESEND_API_KEY; EMAIL_WORKER_MAX_DURATION_MS (default 60000)                                                                                                |
 
 Use stable app and api hostnames under the same HTTPS site. Current SameSite=Lax sessions do not support unrelated frontend/API provider domains. Changing NEXT_PUBLIC_API_ORIGIN requires a web rebuild; moving hosting behind the same API hostname does not.
 

@@ -11,11 +11,14 @@ export interface DatabaseConfig {
 
 export function readDatabaseConfig(
   input: NodeJS.ProcessEnv,
-  key: 'DATABASE_URL' | 'MIGRATION_DATABASE_URL' = 'DATABASE_URL',
+  key:
+    | 'DATABASE_URL'
+    | 'MIGRATION_DATABASE_URL'
+    | 'REVIEWER_PROVISIONING_DATABASE_URL' = 'DATABASE_URL',
 ): DatabaseConfig | undefined {
   const raw = input[key];
   if (!raw) {
-    if (input.NODE_ENV === 'production' || key === 'MIGRATION_DATABASE_URL') {
+    if (input.NODE_ENV === 'production' || key !== 'DATABASE_URL') {
       throw new Error(`${key} is required`);
     }
     return undefined;

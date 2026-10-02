@@ -1,6 +1,6 @@
 # Reviewer provisioning and plugin reuse
 
-Assessment and next implementation contract, 1 October 2026. This document does not enable plugins, create administrators, appoint reviewers or change infrastructure.
+Assessment and implementation contract, 1 October 2026. The local provisioning foundation exists, but it does not enable plugins, create administrators, appoint reviewers or change infrastructure.
 
 ## Current boundary
 
@@ -22,9 +22,15 @@ The Admin plugin offers role assignment and account-management operations, inclu
 
 Do not create two writable sources for review permission. A future account-management role must not implicitly grant task review, refunds, publication or permission provisioning. Keep impersonation disabled unless separately justified and audited; an impersonated session must never satisfy administrative or financial authorization.
 
-## Next code slice: narrow provisioning tool
+## Provisioning foundation implemented locally
 
-Implement a bounded operator CLI for grant/revoke using the existing grant table. Avoid a public permission-management API or a new generic role framework. Create no real grants during development.
+`apps/api/src/reviews/reviewer-provisioning.ts` contains the narrow grant/revoke service and `reviewer-provisioning-cli.ts` exposes it only as a bounded CLI. It requires a separately named provisioning database URL, an active verified operator account, a token whose SHA-256 hash is configured separately, a stable grant UUID, explicit reason and expiry. Grants are limited to 30 days by the current CLI policy, exact retries are idempotent, conflicting retries fail, and revocation is immutable.
+
+This is not deployment authorization. The API role has not been proven unable to write grants, no operator token is configured, no hosted database was contacted and no real grant was created. Native PostgreSQL role-isolation and concurrent provisioning tests remain required before production use. A preview/dry-run command remains to be added before deployment; the current CLI is apply-only. It emits only operation and record identifiers; errors are deliberately generic.
+
+## Provisioning contract and remaining deployment work
+
+The local implementation follows this contract. Deployment still needs a separately authorized database principal, authenticated operator execution and external audit. Avoid a public permission-management API or a new generic role framework. Create no real grants during development.
 
 1. Use a separately authorized database principal with scoped provisioning privileges. The API role must remain unable to insert/update grants. Do not default to the API database URL or require owner/superuser credentials.
 2. Bind operator identity through protected configuration and the authenticated operator environment/database principal. A caller-supplied grantedBy UUID is audit data, not authority. Validate this binding before commands; document credential ownership and revocation.
