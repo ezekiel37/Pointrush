@@ -8,6 +8,7 @@ import { migrate } from 'drizzle-orm/pglite/migrator';
 import { eq, sql } from 'drizzle-orm';
 import * as s from '../src/database/schema.js';
 import { assertReviewerEnrollment } from '../src/auth/admin-mfa.js';
+import { TaskQueriesService } from '../src/tasks/task-queries.service.js';
 import { TaskWorkService } from '../src/tasks/task-work.service.js';
 import { SponsorsService } from '../src/sponsors/sponsors.service.js';
 import { TaskReviewService } from '../src/reviews/task-review.service.js';
@@ -314,4 +315,55 @@ test('ended tasks reject new claims and late first proofs without releasing prot
   await assert.rejects(work.submit(user.user, claim.id, proof()));
   assert.equal((await work.join(user.user, created.id)).id, claim.id);
   assert.equal(await fundingBalance(db, created.allocationAccountId), 200n);
+});
+
+test('discovery and work lists are bounded, searchable and isolated by session identity', async () => {
+  const queries = new TaskQueriesService(db);
+  const { sponsor, created } = await task();
+  const user = await identity();
+  const outsider = await identity();
+  const claim = await work.join(user.user, created.id);
+  const result = await queries.discover(user.user, {
+    limit: '1',
+    q: 'Original',
+  });
+  assert.equal(result.items.length, 1);
+  assert.doesNotThrow(() => JSON.stringify(result));
+  if (result.nextCursor) {
+    const next = await queries.discover(user.user, {
+      limit: '1',
+      q: 'Original',
+      after: result.nextCursor,
+    });
+    assert.notEqual(result.items[0]!.id, next.items[0]?.id);
+  }
+  assert.equal((await queries.discover(user.user, { q: '%' })).items.length, 0);
+  await assert.rejects(queries.discover(user.user, { limit: '51' }));
+  await assert.rejects(
+    queries.mine(user.user, { accountId: outsider.account }),
+  );
+  const mine = await queries.mine(user.user);
+  assert.equal(mine.items[0]!.id, claim.id);
+  assert.equal(mine.items[0]!.approvedBackingKobo, '0');
+  assert.equal((await queries.mine(outsider.user)).items.length, 0);
+  assert.equal(
+    (await queries.sponsorTasks(sponsor.user)).items[0]!.id,
+    created.id,
+  );
+  assert.equal((await queries.sponsorTasks(outsider.user)).items.length, 0);
+  assert.equal(
+    (await queries.participants(sponsor.user, created.id)).items[0]!.id,
+    claim.id,
+  );
+  await assert.rejects(queries.participants(outsider.user, created.id));
+  const submitted = await work.submit(user.user, claim.id, proof());
+  assert.equal(
+    (await queries.mine(user.user)).items[0]!.latestProofId,
+    submitted.id,
+  );
+  await work.decide(sponsor.user, submitted.id, decision('approved'));
+  assert.equal(
+    (await queries.mine(user.user)).items[0]!.approvedBackingKobo,
+    '200',
+  );
 });

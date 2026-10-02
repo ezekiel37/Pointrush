@@ -59,3 +59,14 @@ Use runtime SELECT-only privileges on permission tables. Appeal permissions requ
 Local PGlite tests execute real migrations and cover publication gates, legacy records, capacity, ownership, proof retries, corrections, decision receipts, independent arbitration, exact single credit, forged credit rejection and atomic rollback. HTTP tests mount the workflow module and check session, Origin, unpublished read and arbitration permission boundaries. Native multi-connection PostgreSQL concurrency has not been verified in this environment. PGlite serial tests are not evidence of production race testing.
 
 Next integration work: sponsor/tasker/arbitrator screens, task and review queues, notifications/overdue escalation, file evidence, operational permission provisioning, approved points conversion, settlement/release policies and native concurrency tests. Until these are connected and validated, this is a backend workflow, not a launch-ready earning journey. No hosted migration or real funding has occurred.
+
+## Discovery and return visits
+
+The following authenticated GET routes now accept `limit` (default 25, maximum 50) and `after` (UUID cursor), returning `{items, nextCursor}`:
+
+- `/api/v1/work/tasks`: published, approved tasks from active sponsors whose end time has not passed. Optional `q` searches the title using a literal case-insensitive substring. Scheduled/full tasks remain visible with dates and claimed capacity; listing is not a guarantee of claim eligibility.
+- `/api/v1/work/claims`: only the session owner's commitments, with latest proof ID and approved backing as a decimal string. Expired tasks remain accessible here.
+- `/api/v1/work/sponsor/tasks`: only the sponsor owner's tasks, including unpublished ones.
+- `/api/v1/work/tasks/:id/claims`: participant claims visible only to that task's sponsor owner. This list does not disclose proof text or participant contact information.
+
+UUID cursor ordering is stable for existing rows but is not chronological or a snapshot; refresh the first page to find newly inserted work. Unknown query fields, including caller-supplied ownership filters, are rejected. Title search is intentionally simple; PostgreSQL full-text indexing can follow measured search needs. The read projections live separately from transactional task commands.

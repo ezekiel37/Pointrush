@@ -76,3 +76,9 @@ See TASK_WORKFLOW.md for migrations 0012–0013 and current API contracts. Backe
 This materially advances item 4 but does not complete its usable frontend journey. No points conversion, real payouts, refunds, file uploads or hosted migrations occurred. Overdue queues, notification delivery, operational appeal grant provisioning, UI integration and native PostgreSQL race verification remain. Do not report backend reward backing as redeemed points or cash payment. Preserve rejected/disputed backing until an explicit settlement release workflow is authorized.
 
 Verification for this continuation: 179 API tests passed with migrations 0012–0013, API typecheck/build passed, scoped API lint and touched-file formatting passed. Native database race tests and browser UI were not run. Commit contains local code/docs only and has not been pushed.
+
+## Discovery and return visits (2 October 2026)
+
+Added a separate task-query service/controller for published task title search, personal claims, owned sponsor tasks and owner-only participant lists. Pages default to 25 and cap at 50, use UUID cursors and reject editable ownership fields. Personal claims include latest proof reference and exact approved backing; discovery excludes unpublished, ended and inactive-sponsor tasks. See TASK_WORKFLOW.md for contracts. Next integration work remains the sponsor/tasker screens, notifications and operational review queues; these APIs make those screens navigable without manually entering record IDs.
+
+Verification: 180 API tests passed, including HTTP list routing/authentication and service ownership/pagination checks. API build, scoped lint and formatting passed. No migration, infrastructure change, branch, workflow or remote push was introduced in this slice.

@@ -554,6 +554,31 @@ test('review HTTP boundary rejects missing MFA, expired assurance and missing gr
     .expect(200);
   assert.equal(detail.body.rewardKobo, '9007199254740993');
   assert.equal(detail.body.budgetKobo, '9007199254740993');
+  await request(server).get('/api/v1/work/tasks').expect(401);
+  const discovery = await request(server)
+    .get('/api/v1/work/tasks?limit=1')
+    .set('Cookie', cookie)
+    .expect(200);
+  assert.ok(Array.isArray(discovery.body.items));
+  assert.ok(
+    !discovery.body.items.some(
+      (item: { id: string }) => item.id === created.body.id,
+    ),
+  );
+  await request(server)
+    .get('/api/v1/work/tasks?limit=51')
+    .set('Cookie', cookie)
+    .expect(400);
+  await request(server)
+    .get('/api/v1/work/claims?accountId=forged')
+    .set('Cookie', cookie)
+    .expect(400);
+  const owned = await request(server)
+    .get('/api/v1/work/sponsor/tasks')
+    .set('Cookie', cookie)
+    .expect(200);
+  assert.equal(owned.body.items[0].id, created.body.id);
+
   await request(server)
     .post(`/api/v1/work/tasks/${created.body.id}/publish`)
     .set('Origin', origin)
