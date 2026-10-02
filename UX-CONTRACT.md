@@ -90,5 +90,14 @@ The account slice uses Nigerian English (`en-NG`), light mode and document scrol
 - Login routes to `/account`. The API decides whether to show setup, account summary or restriction. Status reads are private; client navigation is not authorization.
 - Submission locks prevent duplicate clicks. Writes are never retried automatically. Network errors acknowledge an uncertain outcome; onboarding retries use the server's existing idempotent behavior.
 - An expired session during onboarding keeps the form in memory and offers sign-in in another tab. Safe revalidation runs on return/reconnect; closing or reloading the tab discards the form. No draft is persisted on shared devices.
-- Pre-launch help explicitly identifies unavailable tasks, rewards and support. No fake amounts, earnings, tasks, sponsor approvals or verified-identity labels appear.
+- Pre-launch help explicitly identifies available task discovery/joining and unavailable proof submission, redemption and support screens. No fake amounts, earnings, tasks, sponsor approvals or verified-identity labels appear.
 - No offline cache, push registration or service worker is included yet. PWA delivery remains a separate feature; do not cache private account/auth responses when adding it.
+
+## Implemented task discovery and joining
+
+- `/tasks` owns published task discovery; `/tasks/[id]` owns the brief and join confirmation; `/my-tasks` owns the participant's paginated claims. These routes use existing account layout, Button/Input and Feedback components. Task title search is URL-backed, debounced, composition-aware and clears the cursor when changed. Clearing returns focus to the search input.
+- `components/work/work-frame.tsx` owns task navigation and recoverable read failures. `lib/use-work-read.ts` owns cancellation, timeout, reconnect/visibility refresh and clearing stale private data. `lib/work.ts` validates API response shapes. Cookies and the existing configurable API origin remain the transport contract.
+- `lib/work-format.ts` owns exact kobo-to-naira display and Lagos dates marked WAT. Approved backing is explicitly not redeemable cash or spendable points. Do not invent balances or proof outcomes.
+- Joining requires reading the task conditions. `useSubmit` prevents concurrent clicks; the backend remains authoritative for capacity and idempotency. Writes do not auto-retry. A failed/uncertain join links to My tasks for reconciliation.
+- Proof submission, decision acknowledgement, correction and appeal screens are still pending. Merely opening a task or My tasks must not acknowledge a decision or start its correction/appeal clock.
+- Verification owners: `test/work-format.test.mjs` for monetary precision/timezone, `test/browser/work.spec.ts` for search, join locks and session expiry. Browser execution requires installed Chromium; unexecuted assertions are not evidence of passing UX.

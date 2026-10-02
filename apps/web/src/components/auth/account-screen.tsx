@@ -170,12 +170,12 @@ export function AccountScreen() {
                   <p className="eyebrow">What comes next</p>
                   <h2>You’re ready for the next step.</h2>
                   <p>
-                    Tasks and rewards are not available yet. When they open,
-                    each opportunity will explain what to do, who is eligible
-                    and how rewards are approved.
+                    Browse published tasks, read the requirements and track the
+                    work you have joined. Rewards require approval. Redemption
+                    is not available yet.
                   </p>
-                  <Link className="text-link" href="/help">
-                    Understand how PointRush works
+                  <Link className="text-link" href="/tasks">
+                    Browse tasks
                   </Link>
                 </section>
                 <section className="account-panel">

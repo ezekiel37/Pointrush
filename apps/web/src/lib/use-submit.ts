@@ -1,7 +1,7 @@
 'use client';
 import { useRef, useState } from 'react';
 import { errorMessage } from './auth-client';
-export function useSubmit() {
+export function useSubmit(mapError: (error: unknown) => string = errorMessage) {
   const lock = useRef(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -13,7 +13,7 @@ export function useSubmit() {
     try {
       await action();
     } catch (cause) {
-      setError(errorMessage(cause));
+      setError(mapError(cause));
     } finally {
       lock.current = false;
       setBusy(false);

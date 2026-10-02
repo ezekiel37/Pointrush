@@ -71,3 +71,7 @@ The first account UI implements the established palette without a rebrand. Runti
 Account entry uses a blue story panel beside a restrained white form on desktop. The story panel becomes a compact brand header on mobile, leaving the task prominent. The real three-step account setup track is the account-flow variant of the progress signature; it makes no reward promise. Controls are at least 48px tall; password toggles are 44px. Document scrolling preserves mobile keyboard and zoom reachability.
 
 Reconcile result: original brand tokens, Manrope headings, flat surfaces, light theme and 8px corners are retained. Previously unresolved semantic colors now have runtime owners. Browser screenshots and automated accessibility tests cover signup/login and account summary; physical device keyboard and screen-reader checks remain release verification.
+
+## Task journey continuation
+
+Task discovery, detail and My tasks extend the account shell using the same light palette, document scrolling, Manrope headings, shared controls and persistent Feedback states. Briefs use plain wrapped text; capacity, deadlines and conditional reward value are visible before joining. Search and paging live in the URL. No new component library, celebratory earning animation, cash balance or identity badge is introduced. Shared owners and verification cases are recorded in UX-CONTRACT.md.
