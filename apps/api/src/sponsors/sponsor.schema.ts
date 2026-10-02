@@ -3,6 +3,7 @@ import {
   bigint,
   check,
   integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -10,6 +11,7 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+import type { WorkTerms } from '../tasks/task-terms.js';
 import { accounts } from '../database/schema.js';
 import { fundingAccounts } from '../funding/funding.schema.js';
 
@@ -47,6 +49,7 @@ export const sponsorTasks = pgTable(
     allocationAccountId: uuid('allocation_account_id')
       .notNull()
       .references(() => fundingAccounts.id),
+    workTerms: jsonb('work_terms').$type<WorkTerms>(),
     title: varchar('title', { length: 160 }).notNull(),
     instructions: text('instructions').notNull(),
     proofRequirements: text('proof_requirements').notNull(),
@@ -78,7 +81,7 @@ export const sponsorTasks = pgTable(
     // No publication path is implemented until reviewer authorization exists.
     check(
       'sponsor_task_review_gate',
-      sql`${t.reviewState} in ('pending_review', 'approved', 'changes_required', 'rejected') and ${t.lifecycle} = 'not_live' and ${t.termsVersion} > 0`,
+      sql`${t.reviewState} in ('pending_review', 'approved', 'changes_required', 'rejected') and ${t.lifecycle} in ('not_live', 'published') and ${t.termsVersion} > 0`,
     ),
   ],
 );

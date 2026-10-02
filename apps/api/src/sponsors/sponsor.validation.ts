@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { z } from 'zod';
+import { workTermsSchema } from '../tasks/task-terms.js';
 
 const plain = (max: number) =>
   z
@@ -28,6 +29,7 @@ const money = z
 export const taskInput = z
   .object({
     requestId: z.uuid(),
+    workTerms: workTermsSchema.optional(),
     title: plain(160),
     instructions: plain(10000),
     proofRequirements: plain(5000),

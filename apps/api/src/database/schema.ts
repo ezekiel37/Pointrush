@@ -122,3 +122,14 @@ export const verifiedPhones = pgTable(
     ),
   ],
 );
+
+export {
+  taskPublications,
+  taskClaims,
+  taskProofs,
+  proofDecisions,
+  taskAppeals,
+  appealReviewerGrants,
+  appealResolutions,
+} from '../tasks/task-work.schema.js';
+export { proofDecisionReceipts } from '../tasks/task-work.schema.js';

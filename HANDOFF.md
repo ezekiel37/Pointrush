@@ -68,3 +68,11 @@ Local commits f90ba4f, f57e607 and 03cb14b added operator MFA recovery, session-
 Next: implement reviewed participation and settlement terms, then publication, commitments, proof, correction/appeals and exactly-once reward backing. The PRD leaves numerical dispute timings and conversion/settlement decisions as release gates. Do not make publication-time terms bypass review; legacy task records without terms remain not_live. Do not describe sponsor reward backing as a cash payout or enable sponsor refunds on proof rejection.
 
 Remaining debt from the prior batch: migration 0011 lacks its Drizzle snapshot; recovery needs stronger concurrency/rollback/immutable-history verification; session controls have no frontend yet. Full repository lint also reports an unescaped apostrophe in the existing two-factor UI. Native PostgreSQL concurrency and browser E2E remain unverified. No hosted database, provider or infrastructure changes were made.
+
+## Funded-task backend continuation (1 October 2026)
+
+See TASK_WORKFLOW.md for migrations 0012–0013 and current API contracts. Backend now supports reviewed explicit workTerms, capped-fixed publication, capacity claims, text proof/correction, sponsor decisions, decision receipts, independent appeal decisions and atomic exactly-once reward backing. Task creation/review reads include the terms. Legacy records without terms cannot publish; selected assignments remain unsupported by participation routes. Migrations include updated Drizzle snapshots covering the earlier recovery table without rerunning its DDL.
+
+This materially advances item 4 but does not complete its usable frontend journey. No points conversion, real payouts, refunds, file uploads or hosted migrations occurred. Overdue queues, notification delivery, operational appeal grant provisioning, UI integration and native PostgreSQL race verification remain. Do not report backend reward backing as redeemed points or cash payment. Preserve rejected/disputed backing until an explicit settlement release workflow is authorized.
+
+Verification for this continuation: 179 API tests passed with migrations 0012–0013, API typecheck/build passed, scoped API lint and touched-file formatting passed. Native database race tests and browser UI were not run. Commit contains local code/docs only and has not been pushed.

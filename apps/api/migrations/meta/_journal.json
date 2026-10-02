@@ -85,6 +85,20 @@
       "when": 1790865000000,
       "tag": "0011_auth_mfa_recovery",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790887942445,
+      "tag": "0012_task_workflow",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790888320819,
+      "tag": "0013_decision_receipts",
+      "breakpoints": true
     }
   ]
 }

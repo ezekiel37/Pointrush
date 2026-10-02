@@ -224,6 +224,7 @@ export class SponsorsService {
       requestId: task.requestId,
       allocationAccountId: task.allocationAccountId,
       title: task.title,
+      workTerms: task.workTerms,
       instructions: task.instructions,
       proofRequirements: task.proofRequirements,
       rejectionCriteria: task.rejectionCriteria,

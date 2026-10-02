@@ -1,6 +1,6 @@
 # Sponsor ownership and funded task creation
 
-Migration 0008 adds owner-bound sponsor profiles and private funded task records. No provider integration, participant joining, publication, public sponsor page or frontend form is included. This slice does not make the product ready to accept real money.
+Migration 0008 adds owner-bound sponsor profiles and private funded task records. This document describes the creation slice. Publication and capped-fixed participation now exist in TASK_WORKFLOW.md; provider integration, public sponsor pages and frontend forms remain separate work. This slice does not make the product ready to accept real money.
 
 ## Access and onboarding
 
@@ -46,7 +46,7 @@ Required text is bounded (name 120, title 160, instructions 10,000, proof and re
 
 The transaction locks the owner and available funding account, creates a task allocation and immutable ledger transfer, then creates the task. Failure rolls back everything. The allocation has a foreign-key binding to the task record through `allocationAccountId`; a database trigger additionally checks that its allocation UUID equals the task UUID, owner matches, and backing equals the calculated budget. Unique constraints prevent reuse of an allocation by two tasks. Caller request IDs are scoped to the sponsor and bind to a hash of normalized terms. Changed terms under the same ID return 409; identical retries return the original task without a second lock.
 
-Every task starts `pending_review` and `not_live`. Migration 0009 now supports internal permission-checked, audited review decisions; see TASK_REVIEW.md. There is still no admin HTTP endpoint or publication/amendment path. Funds stay locked through review, including rejection and changes-required. No sponsor flag or reputation level bypasses review. Cancellation and refunds need explicit settlement rules before an endpoint is introduced.
+Every task starts `pending_review` and `not_live`. Migration 0009 now supports internal permission-checked, audited review decisions; see TASK_REVIEW.md. Protected admin review HTTP routes and capped-fixed publication now exist; see TASK_REVIEW.md and TASK_WORKFLOW.md. There is no amendment path. Funds stay locked through review, including rejection and changes-required. No sponsor flag or reputation level bypasses review. Cancellation and refunds need explicit settlement rules before an endpoint is introduced.
 
 ## Verification and next work
 

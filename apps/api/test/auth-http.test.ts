@@ -12,6 +12,7 @@ import { migrate } from 'drizzle-orm/pglite/migrator';
 import { eq } from 'drizzle-orm';
 import request from 'supertest';
 import { postFundingTransfer } from '../src/funding/funding-ledger.js';
+import { TaskWorkModule } from '../src/tasks/task-work.module.js';
 import { ReviewsModule } from '../src/reviews/reviews.module.js';
 import { AppModule } from '../src/app.module.js';
 import { AuthService } from '../src/auth/auth.service.js';
@@ -52,7 +53,11 @@ const password = 'An actual HTTP test password 123!';
 before(async () => {
   await migrate(db, { migrationsFolder: resolve('migrations') });
   const module = await Test.createTestingModule({
-    imports: [AppModule.forRoot(undefined, config, 'test-v1'), ReviewsModule],
+    imports: [
+      AppModule.forRoot(undefined, config, 'test-v1'),
+      ReviewsModule,
+      TaskWorkModule,
+    ],
     controllers: [PrivateProbe],
   })
     .overrideProvider(DatabaseService)
@@ -549,6 +554,36 @@ test('review HTTP boundary rejects missing MFA, expired assurance and missing gr
     .expect(200);
   assert.equal(detail.body.rewardKobo, '9007199254740993');
   assert.equal(detail.body.budgetKobo, '9007199254740993');
+  await request(server)
+    .post(`/api/v1/work/tasks/${created.body.id}/publish`)
+    .set('Origin', origin)
+    .expect(401);
+  await request(server)
+    .post(`/api/v1/work/tasks/${created.body.id}/publish`)
+    .set('Cookie', cookie)
+    .send({})
+    .expect(403);
+  await request(server)
+    .post(`/api/v1/work/tasks/${created.body.id}/publish`)
+    .set('Cookie', cookie)
+    .set('Origin', origin)
+    .send({})
+    .expect(409);
+  await request(server)
+    .get(`/api/v1/work/tasks/${created.body.id}`)
+    .set('Cookie', cookie)
+    .expect(404);
+  await request(server)
+    .post(`/api/v1/work/appeals/${randomUUID()}/resolutions`)
+    .set('Cookie', cookie)
+    .set('Origin', origin)
+    .send({
+      id: randomUUID(),
+      decision: 'approved',
+      reason: 'Task review grant is not arbitration permission',
+    })
+    .expect(403);
+
   await request(server)
     .post(`/api/v1/admin/reviews/tasks/${created.body.id}/decision`)
     .set('Cookie', cookie)

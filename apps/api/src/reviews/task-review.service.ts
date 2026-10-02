@@ -204,6 +204,7 @@ export class TaskReviewService {
 }
 
 const reviewFields = {
+  workTerms: sponsorTasks.workTerms,
   id: sponsorTasks.id,
   sponsorId: sponsorTasks.sponsorId,
   sponsorName: sponsorProfiles.name,

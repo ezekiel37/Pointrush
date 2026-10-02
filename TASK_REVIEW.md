@@ -44,4 +44,4 @@ All routes require a verified authenticated identity, active linked account, rec
 
 HTTP regression tests now mount ReviewsModule explicitly alongside the real authentication and session guard. They cover unauthenticated reads, missing/expired assurance, missing grants, Origin protection, malformed pagination, funded-task JSON serialization and self-review denial. Synthetic assurance rows isolate this boundary; actual TOTP verification is tested separately in admin-mfa.test.ts.
 
-Publication remains unavailable. The task model has no structured correction/appeal deadlines or settlement terms yet. Those terms must be captured before review and protected for existing participants; adding them only when publishing would bypass review. Approved tasks cannot be silently amended to add these fields. The next workflow slice must account for legacy tasks without the new terms.
+Publication now exists for approved capped-fixed tasks with immutable structured workTerms. The task review projection includes these terms, which are hashed at creation. See TASK_WORKFLOW.md. Legacy tasks without complete terms remain not_live; no publication-time amendment bypass is allowed.

@@ -1,5 +1,5 @@
 import { createHmac } from 'node:crypto';
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { APIError } from 'better-auth/api';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import type * as schema from '../database/schema.js';
@@ -7,6 +7,7 @@ import {
   accounts,
   authAccountLinks,
   taskReviewerGrants,
+  appealReviewerGrants,
 } from '../database/schema.js';
 import {
   authMfaCodes,
@@ -54,9 +55,8 @@ export async function assertReviewerEnrollment(
   userId: string,
 ) {
   const [grant] = await db
-    .select({ id: taskReviewerGrants.id })
-    .from(taskReviewerGrants)
-    .innerJoin(accounts, eq(accounts.id, taskReviewerGrants.reviewerId))
+    .select({ id: accounts.id })
+    .from(accounts)
     .innerJoin(authAccountLinks, eq(authAccountLinks.accountId, accounts.id))
     .innerJoin(authUsers, eq(authUsers.id, authAccountLinks.authUserId))
     .where(
@@ -64,8 +64,8 @@ export async function assertReviewerEnrollment(
         eq(authUsers.id, userId),
         eq(authUsers.emailVerified, true),
         eq(accounts.accessState, 'active'),
-        isNull(taskReviewerGrants.revokedAt),
-        sql`${taskReviewerGrants.expiresAt} > clock_timestamp()`,
+        sql`(exists (select 1 from ${taskReviewerGrants} where ${taskReviewerGrants.reviewerId}=${accounts.id} and ${taskReviewerGrants.revokedAt} is null and ${taskReviewerGrants.expiresAt}>clock_timestamp())
+          or exists (select 1 from ${appealReviewerGrants} where ${appealReviewerGrants.accountId}=${accounts.id} and ${appealReviewerGrants.revokedAt} is null and ${appealReviewerGrants.expiresAt}>clock_timestamp()))`,
       ),
     );
   if (!grant)
