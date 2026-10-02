@@ -33,11 +33,19 @@ export class SessionManagementService {
     }));
   }
 
-  async revoke(userId: string, sessionId: string): Promise<{ revoked: boolean }> {
+  async revoke(
+    userId: string,
+    sessionId: string,
+  ): Promise<{ revoked: boolean }> {
     const id = sessionIdSchema.parse(sessionId);
     const deleted = await this.db
       .delete(schema.authSessions)
-      .where(and(eq(schema.authSessions.id, id), eq(schema.authSessions.userId, userId)))
+      .where(
+        and(
+          eq(schema.authSessions.id, id),
+          eq(schema.authSessions.userId, userId),
+        ),
+      )
       .returning({ id: schema.authSessions.id });
     return { revoked: deleted.length > 0 };
   }
@@ -46,7 +54,12 @@ export class SessionManagementService {
     const id = sessionIdSchema.parse(currentSessionId);
     const deleted = await this.db
       .delete(schema.authSessions)
-      .where(and(eq(schema.authSessions.userId, userId), ne(schema.authSessions.id, id)))
+      .where(
+        and(
+          eq(schema.authSessions.userId, userId),
+          ne(schema.authSessions.id, id),
+        ),
+      )
       .returning({ id: schema.authSessions.id });
     return { revoked: deleted.length };
   }

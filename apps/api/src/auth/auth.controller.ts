@@ -44,10 +44,7 @@ export class AuthController {
 
   @Get('sessions')
   async listSessions(@Req() request: AuthenticatedRequest) {
-    return this.sessions.list(
-      request[AUTH_USER_ID],
-      request[AUTH_SESSION_ID],
-    );
+    return this.sessions.list(request[AUTH_USER_ID], request[AUTH_SESSION_ID]);
   }
 
   @Delete('sessions/:sessionId')

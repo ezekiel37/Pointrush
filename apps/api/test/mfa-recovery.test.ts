@@ -20,20 +20,36 @@ before(async () => {
   const operatorUserId = randomUUID();
   targetUserId = randomUUID();
   await db.insert(schema.authUsers).values([
-    { id: operatorUserId, email: 'mfa-operator@example.test', name: 'Operator', emailVerified: true },
-    { id: targetUserId, email: 'mfa-target@example.test', name: 'Target', emailVerified: true, twoFactorEnabled: true },
+    {
+      id: operatorUserId,
+      email: 'mfa-operator@example.test',
+      name: 'Operator',
+      emailVerified: true,
+    },
+    {
+      id: targetUserId,
+      email: 'mfa-target@example.test',
+      name: 'Target',
+      emailVerified: true,
+      twoFactorEnabled: true,
+    },
   ]);
   const [operator] = await db.insert(schema.accounts).values({}).returning();
   assert.ok(operator);
   operatorId = operator.id;
-  await db.insert(schema.authAccountLinks).values({ accountId: operator.id, authUserId: operatorUserId });
-  const [factor] = await db.insert(schema.authTwoFactors).values({
-    id: randomUUID(),
-    userId: targetUserId,
-    secret: 'synthetic-secret',
-    backupCodes: 'synthetic-backup',
-    verified: true,
-  }).returning();
+  await db
+    .insert(schema.authAccountLinks)
+    .values({ accountId: operator.id, authUserId: operatorUserId });
+  const [factor] = await db
+    .insert(schema.authTwoFactors)
+    .values({
+      id: randomUUID(),
+      userId: targetUserId,
+      secret: 'synthetic-secret',
+      backupCodes: 'synthetic-backup',
+      verified: true,
+    })
+    .returning();
   assert.ok(factor);
   await db.insert(schema.authSessions).values({
     id: randomUUID(),
@@ -60,11 +76,25 @@ test('operator recovery is audited, idempotent and revokes factor-bound sessions
   assert.equal(event.requestId, requestId);
   assert.equal((await db.select().from(schema.authTwoFactors)).length, 0);
   assert.equal((await db.select().from(schema.authSessions)).length, 0);
-  assert.equal((await db.select().from(schema.authUsers).where(eq(schema.authUsers.id, targetUserId)))[0]?.twoFactorEnabled, false);
+  assert.equal(
+    (
+      await db
+        .select()
+        .from(schema.authUsers)
+        .where(eq(schema.authUsers.id, targetUserId))
+    )[0]?.twoFactorEnabled,
+    false,
+  );
   assert.equal((await service.resetFactor(input)).id, event.id);
-  await assert.rejects(service.resetFactor({ ...input, reason: 'Changed request' }), /already bound/);
   await assert.rejects(
-    db.update(schema.authMfaRecoveryEvents).set({ reason: 'tampered' }).where(eq(schema.authMfaRecoveryEvents.id, event.id)),
+    service.resetFactor({ ...input, reason: 'Changed request' }),
+    /already bound/,
+  );
+  await assert.rejects(
+    db
+      .update(schema.authMfaRecoveryEvents)
+      .set({ reason: 'tampered' })
+      .where(eq(schema.authMfaRecoveryEvents.id, event.id)),
     /immutable|Failed query/,
   );
 });

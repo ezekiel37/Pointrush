@@ -133,7 +133,8 @@ export function TwoFactorScreen() {
           <p>
             In your authenticator app, add a new account and choose manual
             setup. Copy this link into the app if it supports importing an
-            otpauth link; otherwise use the app's manual secret-entry option.
+            otpauth link; otherwise use the app&apos;s manual secret-entry
+            option.
           </p>
           <div
             className="setup-uri"

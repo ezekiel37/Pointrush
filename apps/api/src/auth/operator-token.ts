@@ -1,7 +1,8 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 
 export function hashOperatorToken(token: string): string {
-  if (!token || token.length < 32) throw new Error('Operator token is too short');
+  if (!token || token.length < 32)
+    throw new Error('Operator token is too short');
   return createHash('sha256').update(token).digest('hex');
 }
 
