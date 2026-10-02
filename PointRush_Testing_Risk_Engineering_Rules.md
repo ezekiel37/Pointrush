@@ -4,6 +4,29 @@ Related contracts: [PRD](PointRush_PRD.md), [validation and approval](PointRush_
 
 ## 1. Purpose
 
+Team/project and revenue requirements: [TEAMS_AND_REVENUE.md](TEAMS_AND_REVENUE.md). The following planned acceptance cases are not implemented tests.
+
+| Case | Required outcome |
+| --- | --- |
+| Invite accepted by another identity, after expiry or after revocation | Reject without granting membership; concurrent duplicate acceptance creates one membership |
+| Lead attempts unrelated-team access or personal-balance access | Deny; membership grants only scoped permissions |
+| Same person joins a task through two teams or individually and as a team | Apply published person-level eligibility without duplicate rewards |
+| Team applies to individual-only task | Reject; existing task endpoints cannot infer team support |
+| Lead changes shares after acceptance; stale client accepts old amendment | Preserve the effective version; require affected consent and reject stale writes |
+| Concurrent membership removal and project assignment | Recheck membership transactionally; preserve already committed obligations |
+| Accepted contributor leaves or is removed before settlement | Preserve their reward, contribution evidence and personal dispute access |
+| Team owner leaves, transfers ownership or archives team | Require valid accepted ownership transfer and preserve unsettled commitments |
+| Milestone retry or two simultaneous approvals | Exactly one settlement, no excess over milestone/task backing |
+| Milestone rejected after another milestone succeeds | Preserve accepted rewards; keep disputed backing reserved under published rules |
+| Rounding across several members | Integer allocations sum exactly to the backed total |
+| Sponsor and team collude to approve fake work | No automatic reputation from internal approval; investigate related-party patterns |
+| New member claims old team accomplishments | Team history remains; no retroactive personal contribution credit |
+| Portfolio publication exposes private proof | Publish only authorized material; retain access controls on original evidence |
+| Fee collection retries, cancellation or provider chargeback | No duplicate fee; apply versioned policy without silently consuming member reward backing |
+| Launch-pool rewards shown as sponsor revenue | Report acquisition expenditure separately from genuine external sponsor revenue |
+
+Bind these cases to TEAM-01 through TEAM-05 and REV-01 when those features are implemented. Use native concurrency tests for membership/settlement races and API/browser tests for consent, isolation and dispute access.
+
 This document exists to break the product before real users do.
 
 The goal is to identify abuse paths, real-world failure cases, operational risks, software architecture rules, UI/UX rules, and testing standards before implementation starts.

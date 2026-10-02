@@ -131,6 +131,17 @@ REP-06: Public profiles distinguish labels such as Identity verified / Business 
 
 ## 8. Unresolved Launch Gates
 
+Team/project rules are in TEAMS_AND_REVENUE.md. These apply only when the corresponding feature ships; current individual-task endpoints do not accept team participation.
+
+- TEAM-01: Require accepted identity-bound membership and project-scoped permission. Team owner, project lead and platform reviewer are distinct authorities.
+- TEAM-02: Require a versioned accepted roster, responsibilities and exact reward allocations before commitment. Check person-level eligibility across all teams and publish the capacity unit explicitly.
+- TEAM-03: Changed assignments/shares require affected members' consent; changed sponsor scope/budget also requires sponsor approval, funding and material-change platform reapproval. Preserve prior obligations until replacement is valid.
+- TEAM-04: Departure, removal, suspension or ownership transfer cannot erase completed work, reward liabilities or dispute access. New members cannot inherit personal reputation from old work.
+- TEAM-05: Internal approvals cannot release funds or create public trust automatically. Enforce independent outcome evidence and counterparty-abuse checks.
+- REV-01: Reward backing and platform fees are separately disclosed and recorded. No numeric fee, cash withdrawal or shared team wallet is approved here. Version refund, fee-earning and chargeback rules before billing.
+
+Additional feature gates: team invitation limits, roster amendment deadlines, milestone partial acceptance, dispute staffing, reputation attribution and accepted fee policy. Until resolved, keep the affected capability disabled.
+
 - Identity recovery and personal-data retention policies. Age eligibility is outside the current decision; no age rule should be inferred.
 - OTP provider/cost and exact security limits; mandatory phone verification has an operating cost separate from the reward pool.
 - First-redemption waiting period, Starter cap, redemption window and restriction-review deadlines.

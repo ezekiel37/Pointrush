@@ -6,6 +6,7 @@
 - [Testing and engineering rules](PointRush_Testing_Risk_Engineering_Rules.md): abuse cases and traceable acceptance scenarios.
 - [Design direction](DESIGN.md): components, colours, typography and branding.
 - [UX contract](UX-CONTRACT.md): forms, search, feedback and recovery.
+- [Teams and revenue](TEAMS_AND_REVENUE.md): optional tasker collaboration, project leadership, reward allocation and commercial priorities; planned, not implemented.
 
 Task means an individual mission; a campaign may contain multiple tasks. Funding belongs to explicit task allocations and must never be counted twice at campaign level. Rules marked proposed remain planning defaults until resolved before launch.
 
@@ -264,6 +265,8 @@ Sponsors fund missions by defining:
 
 ### 12.1 Sponsor Revenue Options
 
+These are candidate revenue models, not approved prices. The October 1 direction prioritises fees on successful funded work and repeat hiring; see section 30 and TEAMS_AND_REVENUE.md. Reward backing and fees must be separately disclosed and accounted for.
+
 | Revenue Type | Example |
 | --- | --- |
 | Campaign setup fee | Sponsor pays ₦5,000 to create a campaign |
@@ -275,10 +278,10 @@ Sponsors fund missions by defining:
 
 ### 12.2 Day-One Earning Strategy for Admin
 
-From day one, the platform should avoid relying only on user growth. Admin should earn from:
+The platform should avoid relying only on user growth. Candidate revenue sources, subject to disclosed pricing and refund rules, include:
 
 - Charging early sponsors campaign setup fees.
-- Taking a margin between sponsor-funded reward value and user reward value.
+- Charging a separately disclosed service fee without deducting from the participant's agreed reward allocation.
 - Selling featured mission placement.
 - Offering managed campaign support.
 - Building verified creator/job-seeker segments sponsors can pay to reach.
@@ -864,3 +867,18 @@ For the admin/business:
 - Identity verification remains a separate planned capability alongside earned reputation. Provider, cost, evidence and user verification triggers are undecided. No provider integration or compulsory user ID gate is authorised by this clarification.
 - Age eligibility is deferred. Do not infer an approved 18+ gate or an affirmative policy permitting all ages.
 - Earlier suggested 10% fee, twice-weekly fulfilment, seven-day waiting period and revised referral payouts remain unapproved proposals; this update does not adopt them. Existing tentative economics remain subject to their documented open decisions.
+
+## 30. Teams and Commercial Priorities (2026-10-01)
+
+Tasker teams are an optional participation model alongside individual earners. PointRush continues to support missions, creators, job seekers, offline offers and redemption campaigns; team projects do not replace these audiences or turn every task into a project.
+
+- A team has an owner and accepted members. Each project can appoint its own lead and contributors; the team owner need not lead every project. Start without nested departments or custom role builders.
+- Sponsors explicitly choose individual, team or either participation. Existing tasks remain individual until the team model is implemented. Team membership does not multiply eligibility, slots or individual rewards.
+- Members agree to responsibilities and exact reward allocations before committing to work. Record individual contributions, deadlines, internal feedback and final acceptance. Leadership does not confer access to members' personal balances or authority to release sponsor funds.
+- Credit accepted rewards directly to members' individual PointRush balances under published redemption rules. No shared team wallet or cash-withdrawal capability is approved by this change.
+- Preserve earned rewards and contribution history when members leave, are removed or ownership changes. Handle incomplete work through agreed amendment, cancellation and dispute rules.
+- Reputation distinguishes individual contributions, team outcomes and leadership history. Titles, paid subscriptions and reciprocal internal approvals do not manufacture public trust.
+- Basic team creation should be free. Prioritise successful funded work, milestones when supported, team applications, evidence-backed portfolios and repeat hiring. Paid team tools and sponsor subscriptions require demonstrated demand; no pay-to-apply gate is introduced.
+- The ₦100,000 launch reward pool remains a reward/acquisition budget, not revenue or an infrastructure budget. Fees, provider costs and refund liabilities must be tracked separately. The illustrative 8% service fee is unapproved, as are the earlier numeric examples.
+
+Build order: complete controlled reviewer access and MFA journeys, then sponsor funding and reviewed publication through participation, proof, acceptance and reward credit; deliver usable sponsor/tasker screens; add team participation and milestone workflows after that core journey works. Pilot sponsor demand and contribution margin before committing the entire launch pool. Feature-specific pricing, dispute deadlines and settlement rules remain release gates, not invented defaults.

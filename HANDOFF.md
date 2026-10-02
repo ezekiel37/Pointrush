@@ -36,6 +36,8 @@ Current-slice checks: all 165 API tests passed; lint, build, test compilation, f
 
 ## Next work
 
+October 1 product update: optional tasker teams, project-specific leadership, accepted reward shares, reputation safeguards and revenue priorities are documented in TEAMS_AND_REVENUE.md and linked from the PRD/rules. Planned only: no team routes, milestone settlement, team wallet or cash withdrawals have been added. The 8% fee remains illustrative. Complete the core paid-work journey before team collaboration. Documentation-only checks use formatting, internal-link validation and diff inspection; the 165-test result above belongs to the preceding MFA implementation.
+
 Next code slice: controlled reviewer-grant provisioning, followed by MFA enrollment/challenge and audited recovery journeys before adding review endpoints. The internal review command intentionally has no HTTP module/controller. Do not enroll real reviewers before those journeys exist: factor disabling is currently blocked. Do not substitute a client boolean or sponsor badge for MFA/permission. Follow with versioned task amendments and paginated sponsor listings. Business teams and frontend sponsor forms remain to be built. Keep confirmed-funding commands internal. Items 1-4 below are deployment release gates.
 
 1. Review deployment configuration for the new `email:serve` entry point: separate secret, restricted invocation, scheduler pricing/configuration, service timeouts and queue monitoring. See EMAIL_QUEUE.md. Code is ready for local verification; no scheduler or service is deployed. Do not provision resources without authorization/configuration.
