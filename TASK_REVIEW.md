@@ -4,6 +4,8 @@ Migration 0009 adds an internal review command and audit records. It is not regi
 
 ## Permission boundary
 
+See ADMIN_ACCESS_PLAN.md for the plugin comparison and next provisioning-tool contract. Better Auth's raw endpoints bypass Nest guards; an admin plugin does not automatically inherit PointRush's recent-MFA or reviewer checks.
+
 `task_reviewer_grants` grants only the ability to review tasks. It does not grant funding, refunds, publication, user suspension or permission management. Grants identify the reviewer, granting operator, reason, creation time and required expiry. One unrevoked grant per reviewer is allowed; explicitly revoke an expired grant before renewal. Revocation records its operator, reason and time. Grant content cannot be silently edited, extended, deleted or unrevoked.
 
 Grant provisioning is a separate administrative operation that remains unimplemented. A database operator can insert rows, so deployments must give the application runtime SELECT access only on this permission table, with grant/revoke writes reserved for a separately authorized administrative identity. This is a required deployment privilege boundary, not a claim that SQL rows authorize their own creator. Do not run production with database-owner credentials. Synthetic grants in tests are not real administrative appointments.
