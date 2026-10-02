@@ -33,7 +33,7 @@ The API no longer needs RESEND_API_KEY. Worker needs its database settings, queu
 
 ## Verification
 
-Current-slice checks: all 169 API tests passed; lint, build, test compilation, formatting and diff checks passed. MFA integration exercises real Better Auth enrollment, login, step-up, replay rejection, backup-code restrictions, guard enforcement, expiry and logout with synthetic data. Provisioning tests cover token binding, active/verified identities, duration bounds, exact retries, conflicting retries and immutable revocation. Native PostgreSQL role-isolation, competing-reviewer, duplicate-task and concurrent-allocation checks are included or required but not run (no native PostgreSQL/Docker available). Earlier frontend browser suite passed six scenarios; this slice does not change UI. Actual provider delivery, container operation and physical browser/domain checks remain release gates.
+Current-slice checks: all 170 API tests passed; lint, build, test compilation, formatting and diff checks passed. MFA integration exercises real Better Auth enrollment, login, step-up, replay rejection, backup-code restrictions, guard enforcement, expiry and logout with synthetic data. Provisioning tests cover token binding, active/verified identities, duration bounds, exact retries, conflicting retries, read-only preview and immutable revocation. Native PostgreSQL role-isolation, competing-reviewer, duplicate-task and concurrent-allocation checks are included or required but not run (no native PostgreSQL/Docker available). Earlier frontend browser suite passed six scenarios; this slice does not change UI. Actual provider delivery, container operation and physical browser/domain checks remain release gates.
 
 ## Next work
 

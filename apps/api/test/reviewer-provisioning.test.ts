@@ -108,6 +108,47 @@ test('grant is bounded, reviewer-bound and exactly retryable', async () => {
   );
 });
 
+test('preview validates without writing', async () => {
+  const previewReviewer = (await identity('preview@example.test')).accountId;
+  const id = randomUUID();
+  const input = {
+    grantId: id,
+    reviewerId: previewReviewer,
+    reason: 'Preview appointment',
+    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+  };
+  const before = (await db.select().from(schema.taskReviewerGrants)).length;
+  assert.deepEqual(await service.previewGrant(operatorId, input), {
+    operation: 'grant',
+    status: 'ready',
+    grantId: id,
+    reviewerId: previewReviewer,
+  });
+  assert.equal(
+    (await db.select().from(schema.taskReviewerGrants)).length,
+    before,
+  );
+  const created = await service.grant(operatorId, input);
+  assert.deepEqual(
+    await service.previewRevoke(operatorId, {
+      grantId: id,
+      reason: 'Preview revocation',
+    }),
+    {
+      operation: 'revoke',
+      status: 'ready',
+      grantId: id,
+      reviewerId: previewReviewer,
+    },
+  );
+  assert.equal(
+    (await db.select().from(schema.taskReviewerGrants)).find(
+      (grant) => grant.id === created.id,
+    )?.revokedAt,
+    null,
+  );
+});
+
 test('revoke is immutable and exactly retryable', async () => {
   const id = randomUUID();
   await service.grant(operatorId, {

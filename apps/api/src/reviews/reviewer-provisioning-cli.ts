@@ -15,14 +15,16 @@ function option(name: string): string {
 
 function usage(): never {
   throw new Error(
-    'Usage: grant --grant-id UUID --reviewer-id UUID --reason TEXT --expires-at ISO_DATE | revoke --grant-id UUID --reason TEXT',
+    'Usage: [--preview] grant --grant-id UUID --reviewer-id UUID --reason TEXT --expires-at ISO_DATE | [--preview] revoke --grant-id UUID --reason TEXT',
   );
 }
 
 let database: DatabaseService | undefined;
 try {
   const operation = process.argv[2];
-  if (operation !== 'grant' && operation !== 'revoke') usage();
+  const preview = process.argv.includes('--preview');
+  const command = preview ? process.argv[3] : operation;
+  if (command !== 'grant' && command !== 'revoke') usage();
   const operatorId = process.env.REVIEWER_OPERATOR_ACCOUNT_ID;
   const token = process.env.REVIEWER_OPERATOR_TOKEN;
   if (!operatorId || !token)
@@ -41,22 +43,36 @@ try {
     30 * 24 * 60 * 60 * 1000,
   );
   const result =
-    operation === 'grant'
-      ? await service.grant(operatorId, {
-          grantId: option('grant-id'),
-          reviewerId: option('reviewer-id'),
-          reason: option('reason'),
-          expiresAt: new Date(option('expires-at')),
-        })
-      : await service.revoke(operatorId, {
-          grantId: option('grant-id'),
-          reason: option('reason'),
-        });
+    command === 'grant'
+      ? preview
+        ? await service.previewGrant(operatorId, {
+            grantId: option('grant-id'),
+            reviewerId: option('reviewer-id'),
+            reason: option('reason'),
+            expiresAt: new Date(option('expires-at')),
+          })
+        : await service.grant(operatorId, {
+            grantId: option('grant-id'),
+            reviewerId: option('reviewer-id'),
+            reason: option('reason'),
+            expiresAt: new Date(option('expires-at')),
+          })
+      : preview
+        ? await service.previewRevoke(operatorId, {
+            grantId: option('grant-id'),
+            reason: option('reason'),
+          })
+        : await service.revoke(operatorId, {
+            grantId: option('grant-id'),
+            reason: option('reason'),
+          });
   process.stdout.write(
     JSON.stringify({
-      operation,
-      grantId: result.id,
-      reviewerId: result.reviewerId,
+      operation: command,
+      preview,
+      grantId: 'id' in result ? result.id : result.grantId,
+      reviewerId: 'reviewerId' in result ? result.reviewerId : undefined,
+      status: 'status' in result ? result.status : 'applied',
     }) + '\n',
   );
 } catch {

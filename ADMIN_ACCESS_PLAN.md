@@ -26,7 +26,7 @@ Do not create two writable sources for review permission. A future account-manag
 
 `apps/api/src/reviews/reviewer-provisioning.ts` contains the narrow grant/revoke service and `reviewer-provisioning-cli.ts` exposes it only as a bounded CLI. It requires a separately named provisioning database URL, an active verified operator account, a token whose SHA-256 hash is configured separately, a stable grant UUID, explicit reason and expiry. Grants are limited to 30 days by the current CLI policy, exact retries are idempotent, conflicting retries fail, and revocation is immutable.
 
-This is not deployment authorization. The API role has not been proven unable to write grants, no operator token is configured, no hosted database was contacted and no real grant was created. Native PostgreSQL role-isolation and concurrent provisioning tests remain required before production use. A preview/dry-run command remains to be added before deployment; the current CLI is apply-only. It emits only operation and record identifiers; errors are deliberately generic.
+This is not deployment authorization. The API role has not been proven unable to write grants, no operator token is configured, no hosted database was contacted and no real grant was created. Native PostgreSQL role-isolation and concurrent provisioning tests remain required before production use. The CLI now supports an explicit read-only preview mode; apply still requires the normal write path. It emits only operation and record identifiers; errors are deliberately generic.
 
 ## Provisioning contract and remaining deployment work
 

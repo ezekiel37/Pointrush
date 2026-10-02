@@ -31,6 +31,14 @@ export interface RevokeReviewerInput {
   reason: string;
 }
 
+export interface ReviewerProvisioningPreview {
+  operation: 'grant' | 'revoke';
+  status: 'ready' | 'already_applied' | 'blocked' | 'not_found';
+  grantId: string;
+  reviewerId?: string;
+  message?: string;
+}
+
 function fail(message: string): never {
   throw new Error(message);
 }
@@ -140,6 +148,61 @@ export class ReviewerProvisioningService {
     });
   }
 
+  async previewGrant(
+    operatorId: string,
+    input: GrantReviewerInput,
+  ): Promise<ReviewerProvisioningPreview> {
+    const value = validateGrantInput(input);
+    if (value.expiresAt.getTime() - Date.now() > this.maxGrantDurationMs)
+      fail('Grant expiry exceeds the allowed duration');
+    return this.db.transaction(async (tx) => {
+      await this.activeAccount(tx, operatorId, true);
+      await this.activeAccount(tx, value.reviewerId, true);
+      const [existing] = await tx
+        .select()
+        .from(schema.taskReviewerGrants)
+        .where(eq(schema.taskReviewerGrants.id, value.grantId));
+      if (existing) {
+        if (
+          existing.reviewerId === value.reviewerId &&
+          existing.reason === value.reason &&
+          existing.expiresAt.getTime() === value.expiresAt.getTime() &&
+          existing.revokedAt === null
+        )
+          return {
+            operation: 'grant',
+            status: 'already_applied',
+            grantId: value.grantId,
+            reviewerId: value.reviewerId,
+          };
+        fail('Grant identifier is already bound to another operation');
+      }
+      const [unrevoked] = await tx
+        .select({ id: schema.taskReviewerGrants.id })
+        .from(schema.taskReviewerGrants)
+        .where(
+          and(
+            eq(schema.taskReviewerGrants.reviewerId, value.reviewerId),
+            isNull(schema.taskReviewerGrants.revokedAt),
+          ),
+        );
+      if (unrevoked)
+        return {
+          operation: 'grant',
+          status: 'blocked',
+          grantId: value.grantId,
+          reviewerId: value.reviewerId,
+          message: 'Reviewer already has an unrevoked grant',
+        };
+      return {
+        operation: 'grant',
+        status: 'ready',
+        grantId: value.grantId,
+        reviewerId: value.reviewerId,
+      };
+    });
+  }
+
   async revoke(operatorId: string, input: RevokeReviewerInput) {
     const value = validateRevokeInput(input);
     return this.db.transaction(async (tx) => {
@@ -169,6 +232,43 @@ export class ReviewerProvisioningService {
         .returning();
       if (!revoked) fail('Reviewer grant was not revoked');
       return revoked;
+    });
+  }
+
+  async previewRevoke(
+    operatorId: string,
+    input: RevokeReviewerInput,
+  ): Promise<ReviewerProvisioningPreview> {
+    const value = validateRevokeInput(input);
+    return this.db.transaction(async (tx) => {
+      await this.activeAccount(tx, operatorId, true);
+      const [grant] = await tx
+        .select()
+        .from(schema.taskReviewerGrants)
+        .where(eq(schema.taskReviewerGrants.id, value.grantId));
+      if (!grant)
+        return {
+          operation: 'revoke',
+          status: 'not_found',
+          grantId: value.grantId,
+          message: 'Reviewer grant was not found',
+        };
+      if (grant.revokedAt) {
+        if (grant.revocationReason === value.reason)
+          return {
+            operation: 'revoke',
+            status: 'already_applied',
+            grantId: value.grantId,
+            reviewerId: grant.reviewerId,
+          };
+        fail('Reviewer grant was already revoked');
+      }
+      return {
+        operation: 'revoke',
+        status: 'ready',
+        grantId: value.grantId,
+        reviewerId: grant.reviewerId,
+      };
     });
   }
 
