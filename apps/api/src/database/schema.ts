@@ -14,6 +14,7 @@ export {
   authTwoFactors,
   authMfaSessions,
   authMfaCodes,
+  authMfaRecoveryEvents,
   authSessions,
   authCredentials,
   authVerifications,

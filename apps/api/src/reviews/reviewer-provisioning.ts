@@ -1,8 +1,11 @@
-import { createHash, timingSafeEqual } from 'node:crypto';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import { z } from 'zod';
 import * as schema from '../database/schema.js';
+import {
+  authorizeOperatorToken,
+  hashOperatorToken,
+} from '../auth/operator-token.js';
 
 type ProvisioningDatabase = PgDatabase<PgQueryResultHKT, typeof schema>;
 type ProvisioningTransaction = Parameters<
@@ -52,15 +55,20 @@ export function authorizeReviewerOperator(
   operator: ReviewerOperator,
   presentedToken: string,
 ): void {
-  const expected = Buffer.from(assertTokenHash(operator.tokenHash), 'hex');
-  const actual = createHash('sha256').update(presentedToken).digest();
-  if (expected.length !== actual.length || !timingSafeEqual(expected, actual))
+  const tokenHash = assertTokenHash(operator.tokenHash);
+  try {
+    authorizeOperatorToken(tokenHash, presentedToken);
+  } catch {
     fail('Reviewer provisioning authorization failed');
+  }
 }
 
 export function hashReviewerOperatorToken(token: string): string {
-  if (!token || token.length < 32) fail('Operator token is too short');
-  return createHash('sha256').update(token).digest('hex');
+  try {
+    return hashOperatorToken(token);
+  } catch {
+    fail('Operator token is too short');
+  }
 }
 
 function validateGrantInput(input: GrantReviewerInput): GrantReviewerInput {

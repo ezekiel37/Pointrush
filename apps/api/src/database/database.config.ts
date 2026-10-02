@@ -14,7 +14,8 @@ export function readDatabaseConfig(
   key:
     | 'DATABASE_URL'
     | 'MIGRATION_DATABASE_URL'
-    | 'REVIEWER_PROVISIONING_DATABASE_URL' = 'DATABASE_URL',
+    | 'REVIEWER_PROVISIONING_DATABASE_URL'
+    | 'MFA_RECOVERY_DATABASE_URL' = 'DATABASE_URL',
 ): DatabaseConfig | undefined {
   const raw = input[key];
   if (!raw) {

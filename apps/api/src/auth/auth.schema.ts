@@ -164,6 +164,33 @@ export const authMfaCodes = pgTable('auth_mfa_codes', {
   usedAt: timestamp('used_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+// Operator-only recovery is deliberately separate from Better Auth's factor
+// tables. The row is the audit record; factor/session changes happen in the
+// same database transaction as the record.
+export const authMfaRecoveryEvents = pgTable(
+  'auth_mfa_recovery_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    requestId: uuid('request_id').notNull().unique(),
+    operatorAccountId: uuid('operator_account_id')
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'restrict' }),
+    targetAuthUserId: text('target_auth_user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'restrict' }),
+    previousFactorId: text('previous_factor_id'),
+    reason: text('reason').notNull(),
+    evidenceRef: text('evidence_ref'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index('auth_mfa_recovery_target_idx').on(table.targetAuthUserId),
+    index('auth_mfa_recovery_operator_idx').on(table.operatorAccountId),
+  ],
+);
+
 export const authAdapterSchema = {
   twoFactor: authTwoFactors,
   authEmailJob: authEmailJobs,

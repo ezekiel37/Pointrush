@@ -13,6 +13,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node --env-file-if-exists=.env dist/database/migrate-cli.js",
     "reviewers:provision": "node --env-file-if-exists=.env dist/reviews/reviewer-provisioning-cli.js",
+    "auth:mfa-recover": "node --env-file-if-exists=.env dist/auth/mfa-recovery-cli.js",
     "email:work": "node --env-file-if-exists=.env dist/auth/email-worker-cli.js",
     "email:serve": "node --env-file-if-exists=.env dist/auth/email-http-main.js"
   },

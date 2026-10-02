@@ -78,6 +78,13 @@
       "when": 1790863717758,
       "tag": "0010_admin_mfa",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790865000000,
+      "tag": "0011_auth_mfa_recovery",
+      "breakpoints": true
     }
   ]
 }
