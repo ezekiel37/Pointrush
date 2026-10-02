@@ -43,79 +43,81 @@ export class TaskReviewService {
   constructor(private readonly db: FundingDatabase) {}
 
   private async assertReviewer(reviewerId: string) {
-    const [reviewer] = await this.db
-      .select()
-      .from(accounts)
-      .where(and(eq(accounts.id, reviewerId), eq(accounts.accessState, 'active')));
-    if (!reviewer) throw new ForbiddenException('Task review permission required');
+    if (!z.uuid().safeParse(reviewerId).success)
+      throw new BadRequestException('Invalid reviewer identity');
     const [grant] = await this.db
-      .select()
+      .select({ id: taskReviewerGrants.id })
       .from(taskReviewerGrants)
-      .where(and(
-        eq(taskReviewerGrants.reviewerId, reviewerId),
-        isNull(taskReviewerGrants.revokedAt),
-        sql`${taskReviewerGrants.expiresAt} > clock_timestamp()`,
-      ));
+      .innerJoin(accounts, eq(accounts.id, taskReviewerGrants.reviewerId))
+      .where(
+        and(
+          eq(accounts.id, reviewerId),
+          eq(accounts.accessState, 'active'),
+          isNull(taskReviewerGrants.revokedAt),
+          sql`${taskReviewerGrants.expiresAt} > clock_timestamp()`,
+        ),
+      );
     if (!grant) throw new ForbiddenException('Task review permission required');
   }
 
-  async listPending(reviewerId: string) {
-    if (!z.uuid().safeParse(reviewerId).success)
-      throw new BadRequestException('Invalid reviewer identity');
-    await this.assertReviewer(reviewerId);
-    return this.db
-      .select({
-        id: sponsorTasks.id,
-        sponsorId: sponsorTasks.sponsorId,
-        sponsorName: sponsorProfiles.name,
-        title: sponsorTasks.title,
-        instructions: sponsorTasks.instructions,
-        proofRequirements: sponsorTasks.proofRequirements,
-        rejectionCriteria: sponsorTasks.rejectionCriteria,
-        model: sponsorTasks.model,
-        capacity: sponsorTasks.capacity,
-        rewardKobo: sponsorTasks.rewardKobo,
-        budgetKobo: sponsorTasks.budgetKobo,
-        startsAt: sponsorTasks.startsAt,
-        endsAt: sponsorTasks.endsAt,
-        termsVersion: sponsorTasks.termsVersion,
-        termsHash: sponsorTasks.requestHash,
-        reviewState: sponsorTasks.reviewState,
+  async listPending(reviewerId: string, query: unknown = {}) {
+    const parsed = z
+      .object({
+        after: z.uuid().optional(),
+        limit: z
+          .string()
+          .regex(/^[1-9][0-9]?$/)
+          .transform(Number)
+          .pipe(z.number().max(50))
+          .optional(),
       })
+      .strict()
+      .safeParse(query);
+    if (!parsed.success) throw new BadRequestException('Invalid review query');
+    await this.assertReviewer(reviewerId);
+    const limit = parsed.data.limit ?? 25;
+    const rows = await this.db
+      .select(reviewFields)
       .from(sponsorTasks)
-      .innerJoin(sponsorProfiles, eq(sponsorProfiles.id, sponsorTasks.sponsorId))
-      .where(eq(sponsorTasks.reviewState, 'pending_review'))
-      .orderBy(sql`${sponsorTasks.createdAt} asc`);
+      .innerJoin(
+        sponsorProfiles,
+        eq(sponsorProfiles.id, sponsorTasks.sponsorId),
+      )
+      .where(
+        and(
+          eq(sponsorTasks.reviewState, 'pending_review'),
+          parsed.data.after
+            ? sql`${sponsorTasks.id} > ${parsed.data.after}::uuid`
+            : undefined,
+        ),
+      )
+      .orderBy(sponsorTasks.id)
+      .limit(limit + 1);
+    return {
+      items: rows.slice(0, limit).map(reviewResult),
+      nextCursor: rows.length > limit ? rows[limit - 1]!.id : null,
+    };
   }
 
   async getPending(reviewerId: string, taskId: string) {
-    if (!z.uuid().safeParse(reviewerId).success || !z.uuid().safeParse(taskId).success)
-      throw new BadRequestException('Invalid review identity');
+    if (!z.uuid().safeParse(taskId).success)
+      throw new BadRequestException('Invalid task identifier');
     await this.assertReviewer(reviewerId);
     const [task] = await this.db
-      .select({
-        id: sponsorTasks.id,
-        sponsorId: sponsorTasks.sponsorId,
-        sponsorName: sponsorProfiles.name,
-        title: sponsorTasks.title,
-        instructions: sponsorTasks.instructions,
-        proofRequirements: sponsorTasks.proofRequirements,
-        rejectionCriteria: sponsorTasks.rejectionCriteria,
-        model: sponsorTasks.model,
-        capacity: sponsorTasks.capacity,
-        rewardKobo: sponsorTasks.rewardKobo,
-        budgetKobo: sponsorTasks.budgetKobo,
-        startsAt: sponsorTasks.startsAt,
-        endsAt: sponsorTasks.endsAt,
-        termsVersion: sponsorTasks.termsVersion,
-        termsHash: sponsorTasks.requestHash,
-        reviewState: sponsorTasks.reviewState,
-      })
+      .select(reviewFields)
       .from(sponsorTasks)
-      .innerJoin(sponsorProfiles, eq(sponsorProfiles.id, sponsorTasks.sponsorId))
-      .where(and(eq(sponsorTasks.id, taskId), eq(sponsorTasks.reviewState, 'pending_review')));
+      .innerJoin(
+        sponsorProfiles,
+        eq(sponsorProfiles.id, sponsorTasks.sponsorId),
+      )
+      .where(
+        and(
+          eq(sponsorTasks.id, taskId),
+          eq(sponsorTasks.reviewState, 'pending_review'),
+        ),
+      );
     if (!task) throw new NotFoundException();
-    return task;
+    return reviewResult(task);
   }
 
   async decide(reviewerId: string, input: unknown) {
@@ -199,4 +201,32 @@ export class TaskReviewService {
       return review!;
     });
   }
+}
+
+const reviewFields = {
+  id: sponsorTasks.id,
+  sponsorId: sponsorTasks.sponsorId,
+  sponsorName: sponsorProfiles.name,
+  title: sponsorTasks.title,
+  instructions: sponsorTasks.instructions,
+  proofRequirements: sponsorTasks.proofRequirements,
+  rejectionCriteria: sponsorTasks.rejectionCriteria,
+  model: sponsorTasks.model,
+  capacity: sponsorTasks.capacity,
+  rewardKobo: sponsorTasks.rewardKobo,
+  budgetKobo: sponsorTasks.budgetKobo,
+  startsAt: sponsorTasks.startsAt,
+  endsAt: sponsorTasks.endsAt,
+  termsVersion: sponsorTasks.termsVersion,
+  termsHash: sponsorTasks.requestHash,
+  reviewState: sponsorTasks.reviewState,
+};
+function reviewResult<T extends { rewardKobo: bigint; budgetKobo: bigint }>(
+  row: T,
+) {
+  return {
+    ...row,
+    rewardKobo: row.rewardKobo.toString(),
+    budgetKobo: row.budgetKobo.toString(),
+  };
 }

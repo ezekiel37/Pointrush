@@ -332,3 +332,30 @@ test('permission grants cannot be extended, silently deleted or unrevoked', asyn
       .where(eq(schema.taskReviewerGrants.id, permission.id)),
   );
 });
+
+test('review reads return exact JSON-safe money and bounded pages', async () => {
+  const reviewer = await account();
+  await grant(reviewer);
+  const { row } = await task();
+  const detail = await service.getPending(reviewer, row.id);
+  assert.equal(detail.rewardKobo, '200');
+  assert.equal(detail.budgetKobo, '200');
+  assert.doesNotThrow(() => JSON.stringify(detail));
+  const page = await service.listPending(reviewer, { limit: '1' });
+  assert.equal(page.items.length, 1);
+  if (page.nextCursor) {
+    const next = await service.listPending(reviewer, {
+      limit: '1',
+      after: page.nextCursor,
+    });
+    assert.notEqual(page.items[0]!.id, next.items[0]?.id);
+  }
+  await assert.rejects(
+    service.listPending(reviewer, { limit: '999' }),
+    BadRequestException,
+  );
+  await assert.rejects(
+    service.getPending(await account(), row.id),
+    ForbiddenException,
+  );
+});

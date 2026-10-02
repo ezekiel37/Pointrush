@@ -26,7 +26,7 @@ Next.js/Vercel; NestJS/Cloud Run; Supabase Free PostgreSQL only; Drizzle/pg; Bet
 - Internal sponsor funding ledger and task-allocation lock primitives, migration 0007 (4569fad).
 - Authenticated sponsor profile ownership and atomic funded task creation, migration 0008 (3a8fa60); selected assignments and capped fixed rewards only.
 - Internal task review, expiring reviewer permission grants, immutable decision audit and version/state checks, migration 0009 (2397614). Reviews do not publish tasks or release funding; there are no default grants.
-- Current slice: reviewer-only authenticator enrollment, session-bound 15-minute admin MFA assurance, replay protection and an opt-in protected-route guard, migration 0010. See ADMIN_MFA.md. Backup-code login does not grant admin assurance. No admin review routes or MFA frontend journeys yet.
+- Current slice: reviewer-only authenticator enrollment, session-bound 15-minute admin MFA assurance, replay protection and an opt-in protected-route guard, migration 0010. See ADMIN_MFA.md. Backup-code login does not grant admin assurance. Admin review routes and MFA frontend journeys now exist; see the current local continuation below.
 - Current local slice: bounded reviewer grant/revoke service and CLI with verified operator binding, 30-day maximum CLI grants, stable retry IDs and immutable revocation. See ADMIN_ACCESS_PLAN.md. No operator secret, real grant or hosted database was used.
 - Current web slice: `/two-factor` MFA enrollment/challenge journey, Better Auth client integration, setup-link copy, in-memory backup-code display and backup-code warning. No MFA secret is persisted in browser storage. Browser E2E could not run because the Playwright Chromium executable is unavailable in this workspace.
 
@@ -60,3 +60,11 @@ Remaining product modules include business/sponsor profiles, R2 evidence, notifi
 - Provider free quotas, scheduled-work costs and encrypted backup retention need deployment verification.
 - Keep sponsor allocations locked and tasks reviewed before publication. Reputation is distinct from verification; sponsor ID and age requirements are deferred per product decisions.
 - Update this file with each completed slice, including checks, blockers and the next concrete task. Git log is authoritative for final commit IDs.
+
+## Local continuation: review HTTP verification (1 October 2026)
+
+Local commits f90ba4f, f57e607 and 03cb14b added operator MFA recovery, session-management API controls and review routes. They did not complete the participant workflow. This continuation fixes review money serialization, removes duplicated read projections, adds bounded cursor pagination and explicitly tests ReviewsModule through HTTP using real Better Auth sessions. Tests previously omitted that module because their AppModule database configuration was undefined.
+
+Next: implement reviewed participation and settlement terms, then publication, commitments, proof, correction/appeals and exactly-once reward backing. The PRD leaves numerical dispute timings and conversion/settlement decisions as release gates. Do not make publication-time terms bypass review; legacy task records without terms remain not_live. Do not describe sponsor reward backing as a cash payout or enable sponsor refunds on proof rejection.
+
+Remaining debt from the prior batch: migration 0011 lacks its Drizzle snapshot; recovery needs stronger concurrency/rollback/immutable-history verification; session controls have no frontend yet. Full repository lint also reports an unescaped apostrophe in the existing two-factor UI. Native PostgreSQL concurrency and browser E2E remain unverified. No hosted database, provider or infrastructure changes were made.

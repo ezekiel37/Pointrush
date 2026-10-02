@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { before, after, test } from 'node:test';
 import { Controller, Get } from '@nestjs/common';
@@ -11,6 +11,8 @@ import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { eq } from 'drizzle-orm';
 import request from 'supertest';
+import { postFundingTransfer } from '../src/funding/funding-ledger.js';
+import { ReviewsModule } from '../src/reviews/reviews.module.js';
 import { AppModule } from '../src/app.module.js';
 import { AuthService } from '../src/auth/auth.service.js';
 import { createAuth } from '../src/auth/auth.factory.js';
@@ -50,7 +52,7 @@ const password = 'An actual HTTP test password 123!';
 before(async () => {
   await migrate(db, { migrationsFolder: resolve('migrations') });
   const module = await Test.createTestingModule({
-    imports: [AppModule.forRoot(undefined, config, 'test-v1')],
+    imports: [AppModule.forRoot(undefined, config, 'test-v1'), ReviewsModule],
     controllers: [PrivateProbe],
   })
     .overrideProvider(DatabaseService)
@@ -449,4 +451,156 @@ test('rotating forged client IP headers cannot evade the authentication rate lim
   } finally {
     await db.delete(schema.authRateLimits);
   }
+});
+
+test('review HTTP boundary rejects missing MFA, expired assurance and missing grants', async () => {
+  const login = await request(server)
+    .post('/api/v1/auth/sign-in/email')
+    .set('Origin', origin)
+    .send({ email, password })
+    .expect(200);
+  const headers = login.headers['set-cookie'] as unknown as string[];
+  cookie = headers
+    .find((value) => value.includes('session_token'))!
+    .split(';')[0]!;
+
+  await request(server).get('/api/v1/admin/reviews/tasks').expect(401);
+  await request(server)
+    .get('/api/v1/admin/reviews/tasks')
+    .set('Cookie', cookie)
+    .expect(403);
+  const session = await service.getSession({ cookie });
+  assert.ok(session);
+  const factorId = randomUUID();
+  await db.insert(schema.authTwoFactors).values({
+    id: factorId,
+    userId: session.user.id,
+    secret: 'synthetic-factor',
+    backupCodes: 'synthetic-backups',
+    verified: true,
+  });
+  await db
+    .update(schema.authUsers)
+    .set({ twoFactorEnabled: true })
+    .where(eq(schema.authUsers.id, session.user.id));
+  // Synthetic assurance isolates the Nest boundary. Real TOTP is tested in admin-mfa.test.
+  await db
+    .insert(schema.authMfaSessions)
+    .values({ sessionId: session.session.id, factorId });
+  await request(server)
+    .get('/api/v1/admin/reviews/tasks')
+    .set('Cookie', cookie)
+    .expect(403);
+  const [link] = await db
+    .select()
+    .from(schema.authAccountLinks)
+    .where(eq(schema.authAccountLinks.authUserId, session.user.id));
+  assert.ok(link);
+  const [grant] = await db
+    .insert(schema.taskReviewerGrants)
+    .values({
+      reviewerId: link.accountId,
+      grantedBy: link.accountId,
+      reason: 'Synthetic HTTP appointment',
+      expiresAt: new Date(Date.now() + 3600000),
+    })
+    .returning();
+  assert.ok(grant);
+  const [available] = await db
+    .select()
+    .from(schema.fundingAccounts)
+    .where(eq(schema.fundingAccounts.ownerId, link.accountId));
+  assert.ok(available);
+  const [clearing] = await db
+    .insert(schema.fundingAccounts)
+    .values({ bucket: 'clearing' })
+    .returning();
+  assert.ok(clearing);
+  await postFundingTransfer(db, {
+    id: randomUUID(),
+    sourceId: clearing.id,
+    destinationId: available.id,
+    actorId: link.accountId,
+    amountKobo: 9007199254740993n,
+    kind: 'funding_confirmed',
+    reference: `http-test:${randomUUID()}`,
+    reason: 'Synthetic HTTP test funding',
+  });
+  const created = await request(server)
+    .post('/api/v1/sponsor/tasks')
+    .set('Cookie', cookie)
+    .set('Origin', origin)
+    .send({
+      requestId: randomUUID(),
+      title: 'Funded HTTP task',
+      instructions: 'Write original guide',
+      proofRequirements: 'Guide document',
+      rejectionCriteria: 'Copied work',
+      model: 'capped_fixed',
+      capacity: 1,
+      rewardKobo: '9007199254740993',
+      startsAt: new Date(Date.now() + 86400000).toISOString(),
+      endsAt: new Date(Date.now() + 172800000).toISOString(),
+    })
+    .expect(201);
+  const detail = await request(server)
+    .get(`/api/v1/admin/reviews/tasks/${created.body.id}`)
+    .set('Cookie', cookie)
+    .expect(200);
+  assert.equal(detail.body.rewardKobo, '9007199254740993');
+  assert.equal(detail.body.budgetKobo, '9007199254740993');
+  await request(server)
+    .post(`/api/v1/admin/reviews/tasks/${created.body.id}/decision`)
+    .set('Cookie', cookie)
+    .set('Origin', origin)
+    .send({
+      requestId: randomUUID(),
+      termsVersion: detail.body.termsVersion,
+      termsHash: detail.body.termsHash,
+      decision: 'approved',
+      reason: 'Self-review must fail',
+      checklist: {
+        permittedObjective: true,
+        clearInstructions: true,
+        feasibleProof: true,
+        fairRewardTerms: true,
+        safeDestinations: true,
+      },
+    })
+    .expect(403);
+  const result = await request(server)
+    .get('/api/v1/admin/reviews/tasks?limit=1')
+    .set('Cookie', cookie)
+    .expect(200);
+  assert.ok(Array.isArray(result.body.items));
+  await request(server)
+    .get('/api/v1/admin/reviews/tasks?limit=999')
+    .set('Cookie', cookie)
+    .expect(400);
+  await request(server)
+    .post(`/api/v1/admin/reviews/tasks/${randomUUID()}/decision`)
+    .set('Cookie', cookie)
+    .send({})
+    .expect(403);
+  await request(server)
+    .post(`/api/v1/admin/reviews/tasks/${randomUUID()}/decision`)
+    .set('Cookie', cookie)
+    .set('Origin', origin)
+    .send({ taskId: randomUUID() })
+    .expect(400);
+  await db
+    .update(schema.authMfaSessions)
+    .set({ verifiedAt: new Date(Date.now() - 16 * 60000) })
+    .where(eq(schema.authMfaSessions.sessionId, session.session.id));
+  await request(server)
+    .get('/api/v1/admin/reviews/tasks')
+    .set('Cookie', cookie)
+    .expect(403);
+  await db
+    .delete(schema.authTwoFactors)
+    .where(eq(schema.authTwoFactors.id, factorId));
+  await db
+    .update(schema.authUsers)
+    .set({ twoFactorEnabled: false })
+    .where(eq(schema.authUsers.id, session.user.id));
 });

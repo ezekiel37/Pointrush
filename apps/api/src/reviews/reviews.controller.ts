@@ -1,10 +1,17 @@
-import { Body, Controller, Get, Param, Post, Req } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  Post,
+  Query,
+  Req,
+} from '@nestjs/common';
 import { ForbiddenException } from '@nestjs/common';
 import { AccountsService } from '../accounts/accounts.service.js';
-import {
-  AdminMfaRequired,
-  AUTH_USER_ID,
-} from '../auth/session.guard.js';
+import { AdminMfaRequired, AUTH_USER_ID } from '../auth/session.guard.js';
 import type { AuthenticatedRequest } from '../auth/session.guard.js';
 import { TaskReviewService } from './task-review.service.js';
 
@@ -12,13 +19,13 @@ import { TaskReviewService } from './task-review.service.js';
 @AdminMfaRequired()
 export class ReviewsController {
   constructor(
-    private readonly reviews: TaskReviewService,
-    private readonly accounts: AccountsService,
+    @Inject(TaskReviewService) private readonly reviews: TaskReviewService,
+    @Inject(AccountsService) private readonly accounts: AccountsService,
   ) {}
 
   @Get('tasks')
-  async list(@Req() request: AuthenticatedRequest) {
-    return this.reviews.listPending(await this.accountId(request));
+  async list(@Req() request: AuthenticatedRequest, @Query() query: unknown) {
+    return this.reviews.listPending(await this.accountId(request), query);
   }
 
   @Get('tasks/:taskId')
@@ -36,7 +43,9 @@ export class ReviewsController {
     @Body() input: unknown,
   ) {
     if (!input || typeof input !== 'object' || Array.isArray(input))
-      throw new ForbiddenException('Invalid review command');
+      throw new BadRequestException('Invalid review command');
+    if ('taskId' in input)
+      throw new BadRequestException('Task identifier belongs in the route');
     return this.reviews.decide(await this.accountId(request), {
       ...(input as Record<string, unknown>),
       taskId,

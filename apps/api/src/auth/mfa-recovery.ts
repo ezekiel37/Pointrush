@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import * as schema from '../database/schema.js';
@@ -38,7 +38,11 @@ export class MfaRecoveryService {
         )
         .where(eq(schema.accounts.id, value.operatorAccountId))
         .for('update');
-      if (!operator || operator.accessState !== 'active' || !operator.emailVerified)
+      if (
+        !operator ||
+        operator.accessState !== 'active' ||
+        !operator.emailVerified
+      )
         throw new Error('Recovery operator is not active and verified');
 
       const [existing] = await tx
