@@ -1,4 +1,18 @@
 import { createAuthClient } from 'better-auth/react';
+import { twoFactorClient } from 'better-auth/client/plugins';
+type AuthClientOptions = {
+  baseURL: string;
+  basePath: string;
+  fetchOptions: {
+    credentials: 'include';
+    timeout: number;
+    retry: number;
+  };
+  plugins: [ReturnType<typeof twoFactorClient>];
+};
+type PointRushAuthClient = ReturnType<
+  typeof createAuthClient<AuthClientOptions>
+>;
 export function apiOrigin(): string {
   const value = process.env.NEXT_PUBLIC_API_ORIGIN;
   if (!value) throw new Error('API configuration unavailable');
@@ -11,10 +25,11 @@ export function apiOrigin(): string {
     throw new Error('Invalid API configuration');
   return value;
 }
-let client: ReturnType<typeof createAuthClient> | undefined;
+let client: PointRushAuthClient | undefined;
 // Lazy: missing configuration produces a recoverable UI error, not a broken build.
 export function authClient() {
-  return (client ??= createAuthClient({
+  return (client ??= createAuthClient<AuthClientOptions>({
+    plugins: [twoFactorClient({ twoFactorPage: '/two-factor' })],
     baseURL: apiOrigin(),
     basePath: '/api/v1/auth',
     fetchOptions: { credentials: 'include', timeout: 15000, retry: 0 },

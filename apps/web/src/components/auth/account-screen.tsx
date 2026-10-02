@@ -199,6 +199,18 @@ export function AccountScreen() {
                     identity verification badge.
                   </p>
                 </section>
+                <section className="account-panel security-panel">
+                  <p className="eyebrow">Reviewer security</p>
+                  <h2>Use an authenticator app</h2>
+                  <p>
+                    Appointed reviewers need a recent authenticator check before
+                    sensitive review actions. Basic accounts can leave this
+                    unavailable.
+                  </p>
+                  <Link className="text-link" href="/two-factor?mode=enroll">
+                    Set up authenticator security
+                  </Link>
+                </section>
               </div>
             )}
           </>

@@ -16,11 +16,15 @@ export function AuthFrame({
   description,
   children,
   step = 0,
+  journeyLabels = ['Create your account', 'Verify your email', 'Make it yours'],
+  journeyLabel = 'Account setup steps',
 }: {
   title: string;
   description: string;
   children: ReactNode;
   step?: number;
+  journeyLabels?: string[];
+  journeyLabel?: string;
 }) {
   return (
     <div className="auth-layout">
@@ -39,20 +43,18 @@ export function AuthFrame({
             A place for people and businesses to turn meaningful actions into
             opportunities.
           </p>
-          <ol className="journey" aria-label="Account setup steps">
-            {['Create your account', 'Verify your email', 'Make it yours'].map(
-              (label, i) => (
-                <li
-                  key={label}
-                  aria-current={step === i + 1 ? 'step' : undefined}
-                >
-                  <span>
-                    {step > i + 1 ? <Check size={16} aria-hidden /> : i + 1}
-                  </span>
-                  {label}
-                </li>
-              ),
-            )}
+          <ol className="journey" aria-label={journeyLabel}>
+            {journeyLabels.map((label, i) => (
+              <li
+                key={label}
+                aria-current={step === i + 1 ? 'step' : undefined}
+              >
+                <span>
+                  {step > i + 1 ? <Check size={16} aria-hidden /> : i + 1}
+                </span>
+                {label}
+              </li>
+            ))}
           </ol>
         </div>
         <p className="story-footer">

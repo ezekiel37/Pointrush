@@ -71,6 +71,8 @@ Exercise successful/invalid forms, conflict, double submit, expired session, off
 
 ## Implemented account UI ownership
 
+The `/two-factor` route owns authenticator enrollment for appointed reviewers and the sign-in challenge for accounts with MFA enabled. It uses Better Auth's client plugin for transport, but the API remains authoritative for reviewer eligibility, session assurance and backup-code limits. Enrollment shows the setup URI and backup codes only in memory; it does not persist secrets in browser storage. Authenticator codes require six digits client-side and server-side. Backup-code sign-in is clearly labelled as insufficient for reviewer actions. Setup-link copying is optional and reports its result inline.
+
 The account slice uses Nigerian English (`en-NG`), light mode and document scrolling. Sources: `AUTH.md` for session and email behavior, `ACCOUNTS.md` for account states, and shared `@pointrush/contracts` for identity validation. No existing sibling UI preceded this slice; signup and recovery establish the first shared form behavior.
 
 | Capability | Canonical owner | Source of truth | Allowed variants | Verification |
@@ -80,6 +82,7 @@ The account slice uses Nigerian English (`en-NG`), light mode and document scrol
 | Feedback | `apps/web/src/components/ui/feedback.tsx` | This contract | Persistent error or status; no toast-only outcomes | Browser role/status assertions |
 | Account reads | `account-screen.tsx` and `lib/account.ts` | ACCOUNTS.md | Initial load, reconnect, visibility return, explicit retry | Browser failure and expiry scenarios |
 | Button/Input | `components/ui/button.tsx`, `input.tsx` | DESIGN.md | Primary, outline, ghost; native text/password | Keyboard, password reveal, automated accessibility |
+| MFA journey | `components/auth/two-factor-screen.tsx` | AUTH.md, ADMIN_MFA.md | Enrollment, TOTP challenge, backup-code challenge | Authenticated API integration, keyboard, failure and narrow viewport |
 
 - Forms are disabled until hydration and declare POST as a fallback, preventing native GET submission of credentials. Shared Form owns `noValidate`; call sites declare it explicitly too.
 - Authentication uses Better Auth's client. Cookies remain HTTP-only; no password/token/session storage or analytics are introduced. Reset tokens are held in memory and removed from the address bar; refreshing requires reopening the email link.

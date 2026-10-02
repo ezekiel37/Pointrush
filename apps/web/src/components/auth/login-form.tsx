@@ -41,7 +41,14 @@ export function LoginForm() {
         noValidate
         onSubmit={handleSubmit((values) =>
           submit.run(async () => {
-            requireSuccess(await authClient().signIn.email(values));
+            const result = await authClient().signIn.email(values);
+            requireSuccess(result);
+            if (
+              result.data &&
+              'twoFactorRedirect' in result.data &&
+              result.data.twoFactorRedirect
+            )
+              return;
             router.replace('/account');
           }),
         )}
