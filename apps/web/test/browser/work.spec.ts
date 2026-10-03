@@ -126,3 +126,132 @@ test('session expiry clears private claim data on reconnect', async ({
   await expect(page.getByRole('alert')).toContainText('Your session has ended');
   await expect(page.getByRole('link', { name: task.title })).toHaveCount(0);
 });
+
+test('proof retries retain their identity and text after a dropped response', async ({
+  page,
+}) => {
+  const bodies: Record<string, unknown>[] = [];
+  await page.route(`**/api/v1/work/claims/${id}`, (route) =>
+    route.fulfill({
+      json: {
+        participant: true,
+        observedAt: '2026-10-02T12:00:00Z',
+        claim: { id, taskId: id, accountId: id, createdAt: task.startsAt },
+        task: {
+          ...task,
+          instructions: 'Write an account of your work.',
+          proofRequirements: 'Include the reference.',
+          rejectionCriteria: 'Copied work.',
+          workTerms: { reviewHours: 48, correctionHours: 24, appealHours: 48 },
+        },
+        proofs:
+          bodies.length > 1
+            ? [
+                {
+                  proof: {
+                    ...bodies[1],
+                    claimId: id,
+                    createdAt: task.startsAt,
+                  },
+                  decision: null,
+                  receipt: null,
+                  appeal: null,
+                  resolution: null,
+                },
+              ]
+            : [],
+      },
+    }),
+  );
+  await page.route(`**/api/v1/work/claims/${id}/proofs`, async (route) => {
+    bodies.push(route.request().postDataJSON());
+    if (bodies.length === 1) return route.abort();
+    return route.fulfill({
+      json: { ...bodies[1], claimId: id, createdAt: task.startsAt },
+    });
+  });
+  await page.goto(`/my-tasks/${id}`);
+  await page.getByRole('button', { name: 'Submit proof', exact: true }).click();
+  await expect(page.getByLabel('Submit proof', { exact: true })).toBeFocused();
+  await page
+    .getByLabel('Submit proof', { exact: true })
+    .fill('My evidence reference 123');
+  await page.getByRole('button', { name: 'Submit proof', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('could not confirm');
+  await expect(
+    page.getByLabel('Submit proof', { exact: true }),
+  ).toHaveAttribute('readonly', '');
+  await page.getByRole('button', { name: 'Retry same submission' }).click();
+  await expect(page.getByText('Awaiting sponsor review')).toBeVisible();
+  expect(bodies).toHaveLength(2);
+  expect(bodies[0]).toEqual(bodies[1]);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+});
+
+test('viewing a rejection never acknowledges it automatically', async ({
+  page,
+}) => {
+  let acknowledgements = 0;
+  await page.route(`**/api/v1/work/claims/${id}`, (route) =>
+    route.fulfill({
+      json: {
+        participant: true,
+        observedAt: '2026-10-02T12:00:00Z',
+        claim: { id, taskId: id, accountId: id, createdAt: task.startsAt },
+        task: {
+          ...task,
+          instructions: 'Brief',
+          proofRequirements: 'Reference',
+          rejectionCriteria: 'Missing reference',
+          workTerms: { reviewHours: 48, correctionHours: 24, appealHours: 48 },
+        },
+        proofs: [
+          {
+            proof: {
+              id,
+              claimId: id,
+              revision: 1,
+              evidence: 'Work',
+              createdAt: task.startsAt,
+            },
+            decision: {
+              decision: 'rejected',
+              reason: 'Missing reference',
+              createdAt: task.startsAt,
+            },
+            receipt: acknowledgements
+              ? { proofId: id, createdAt: '2026-10-02T12:00:00Z' }
+              : null,
+            appeal: null,
+            resolution: null,
+          },
+        ],
+      },
+    }),
+  );
+  await page.route(`**/api/v1/work/proofs/${id}/acknowledgements`, (route) => {
+    acknowledgements++;
+    return route.fulfill({
+      json: { proofId: id, createdAt: '2026-10-02T12:00:00Z' },
+    });
+  });
+  await page.goto(`/my-tasks/${id}`);
+  await expect(
+    page.getByRole('button', {
+      name: 'Acknowledge decision and start response window',
+    }),
+  ).toBeVisible();
+  expect(acknowledgements).toBe(0);
+  await expect(
+    page.getByRole('button', { name: 'Submit appeal', exact: true }),
+  ).toHaveCount(0);
+  await page
+    .getByRole('button', {
+      name: 'Acknowledge decision and start response window',
+    })
+    .click();
+  await expect(
+    page.getByRole('button', { name: 'Submit appeal', exact: true }),
+  ).toBeVisible();
+  expect(acknowledgements).toBe(1);
+});

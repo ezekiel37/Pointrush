@@ -52,9 +52,16 @@ export async function workRequest<T>(
   schema: z.ZodType<T>,
   signal?: AbortSignal,
   post = false,
+  body?: unknown,
 ): Promise<T> {
   const response = await fetch(`${apiOrigin()}/api/v1/work/${path}`, {
     method: post ? 'POST' : 'GET',
+    ...(body === undefined
+      ? {}
+      : {
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        }),
     credentials: 'include',
     cache: 'no-store',
     signal: signal

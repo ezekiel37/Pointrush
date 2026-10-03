@@ -16,7 +16,7 @@ const questions = [
   ],
   [
     'Do I earn points for signing up?',
-    'No. Creating an account does not award points or guarantee earnings. You can browse published tasks and reserve a place. Rewards depend on approved work; proof submission screens and reward redemption are still being built.',
+    'No. Creating an account does not award points or guarantee earnings. You can browse published tasks and reserve a place. Rewards depend on approved work; you can submit text proof, respond to correction requests and appeal rejections from My tasks. File uploads and reward redemption are still being built.',
   ],
   [
     'What does New reputation mean?',

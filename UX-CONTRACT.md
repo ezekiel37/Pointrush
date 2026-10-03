@@ -90,7 +90,7 @@ The account slice uses Nigerian English (`en-NG`), light mode and document scrol
 - Login routes to `/account`. The API decides whether to show setup, account summary or restriction. Status reads are private; client navigation is not authorization.
 - Submission locks prevent duplicate clicks. Writes are never retried automatically. Network errors acknowledge an uncertain outcome; onboarding retries use the server's existing idempotent behavior.
 - An expired session during onboarding keeps the form in memory and offers sign-in in another tab. Safe revalidation runs on return/reconnect; closing or reloading the tab discards the form. No draft is persisted on shared devices.
-- Pre-launch help explicitly identifies available task discovery/joining and unavailable proof submission, redemption and support screens. No fake amounts, earnings, tasks, sponsor approvals or verified-identity labels appear.
+- Pre-launch help explicitly identifies available task discovery/joining and unavailable file uploads, redemption and support screens. No fake amounts, earnings, tasks, sponsor approvals or verified-identity labels appear.
 - No offline cache, push registration or service worker is included yet. PWA delivery remains a separate feature; do not cache private account/auth responses when adding it.
 
 ## Implemented task discovery and joining
@@ -99,5 +99,11 @@ The account slice uses Nigerian English (`en-NG`), light mode and document scrol
 - `components/work/work-frame.tsx` owns task navigation and recoverable read failures. `lib/use-work-read.ts` owns cancellation, timeout, reconnect/visibility refresh and clearing stale private data. `lib/work.ts` validates API response shapes. Cookies and the existing configurable API origin remain the transport contract.
 - `lib/work-format.ts` owns exact kobo-to-naira display and Lagos dates marked WAT. Approved backing is explicitly not redeemable cash or spendable points. Do not invent balances or proof outcomes.
 - Joining requires reading the task conditions. `useSubmit` prevents concurrent clicks; the backend remains authoritative for capacity and idempotency. Writes do not auto-retry. A failed/uncertain join links to My tasks for reconciliation.
-- Proof submission, decision acknowledgement, correction and appeal screens are still pending. Merely opening a task or My tasks must not acknowledge a decision or start its correction/appeal clock.
+- Proof submission, decision acknowledgement, correction and appeal now live in the participant claim screen described below. Merely opening a task or My tasks must not acknowledge a decision or start its correction/appeal clock.
 - Verification owners: `test/work-format.test.mjs` for monetary precision/timezone, `test/browser/work.spec.ts` for search, join locks and session expiry. Browser execution requires installed Chromium; unexecuted assertions are not evidence of passing UX.
+
+## Participant evidence and appeals
+
+`/my-tasks/[id]` now owns text proof, one correction, explicit decision receipt and one appeal. `claim.ts` validates the read contract and derives available actions from server-observed time; the server always enforces authorization and exact deadlines. `EvidenceForm` is the shared text-entry owner, using Form/Button and existing tokens, field-associated validation, focus on invalid submission and an expandable writing area. `ProofHistory` renders evidence and decisions as plain text, never executable links or markup.
+
+Draft text and pending command identity stay in ClaimScreen memory across read refreshes and transient failures. Uncertain writes keep the exact payload and UUID for deliberate retry; writes never retry automatically. Opening the screen never acknowledges a decision. The explicit acknowledgement names the consequence before recording receipt. In-app link navigation offers an inline discard decision and page unload warns about unsaved text. Browser back/forward and tab/process loss can discard drafts; there is no persistent draft storage. Expired sessions offer sign-in in another tab. No file upload or redemption is implied.

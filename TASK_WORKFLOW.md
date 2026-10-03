@@ -70,3 +70,7 @@ The following authenticated GET routes now accept `limit` (default 25, maximum 5
 - `/api/v1/work/tasks/:id/claims`: participant claims visible only to that task's sponsor owner. This list does not disclose proof text or participant contact information.
 
 UUID cursor ordering is stable for existing rows but is not chronological or a snapshot; refresh the first page to find newly inserted work. Unknown query fields, including caller-supplied ownership filters, are rejected. Title search is intentionally simple; PostgreSQL full-text indexing can follow measured search needs. The read projections live separately from transactional task commands.
+
+## Participant frontend
+
+`/my-tasks/[id]` provides text evidence, submission/decision history, explicit acknowledgement, receipt-based correction and appeal. My tasks links to the claim rather than only the public brief. The protected claim read now also returns `participant`, `observedAt` and the immutable task brief/terms; sponsor reads remain authorized but do not receive participant UI actions. Evidence/appeal retries retain their command UUID and original payload after uncertain responses. No migrations or changes to reward settlement accompany this UI.

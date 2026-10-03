@@ -18,8 +18,7 @@ export function MyTasks() {
   return (
     <WorkFrame title="My tasks">
       <p className="work-intro">
-        Your confirmed places and the reward value approved so far. Proof
-        submission is not yet available in this interface.
+        Your confirmed places, submissions and approved reward value.
       </p>
       {loading ? (
         <Loading>Loading your tasks…</Loading>
@@ -42,7 +41,7 @@ export function MyTasks() {
                     <h2>
                       <Link
                         className="text-link"
-                        href={`/tasks/${claim.taskId}`}
+                        href={`/my-tasks/${claim.id}`}
                       >
                         {claim.title}
                       </Link>

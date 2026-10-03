@@ -437,7 +437,24 @@ export class TaskWorkService {
         )
         .where(eq(s.taskProofs.claimId, claimId))
         .orderBy(s.taskProofs.revision);
-      return { claim, proofs };
+      const [task] = await tx
+        .select()
+        .from(s.sponsorTasks)
+        .where(eq(s.sponsorTasks.id, claim.taskId));
+      return {
+        claim,
+        proofs,
+        participant: claim.accountId === actor,
+        observedAt: new Date().toISOString(),
+        task: {
+          title: task!.title,
+          instructions: task!.instructions,
+          proofRequirements: task!.proofRequirements,
+          rejectionCriteria: task!.rejectionCriteria,
+          endsAt: task!.endsAt,
+          workTerms: task!.workTerms,
+        },
+      };
     });
   }
 }

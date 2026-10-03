@@ -190,6 +190,11 @@ test('published task -> one claim -> proof -> approval credits backing exactly o
   assert.equal(await fundingBalance(db, created.allocationAccountId), 0n);
   const view = await work.readClaim(user.user, claim.id);
   assert.equal(view.proofs[0]?.decision?.decision, 'approved');
+  assert.equal(view.participant, true);
+  assert.ok(view.task.proofRequirements);
+  assert.ok(Number.isFinite(Date.parse(view.observedAt)));
+  const sponsorView = await work.readClaim(sponsor.user, claim.id);
+  assert.equal(sponsorView.participant, false);
   await assert.rejects(work.readClaim(other.user, claim.id));
 });
 
