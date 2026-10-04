@@ -106,3 +106,11 @@ Implemented sponsor task/participant lists and proof-decision screens, plus inde
 Verification: formatting/lint/typechecks, 180 API tests and 10 web tests passed. After strengthening queue HTTP coverage, the 17 relevant HTTP/workflow tests passed again. Tests cover valid/absent/revoked appeal grants, self-involvement exclusions, bounded queries, resolved removal, and expired MFA. API production build and Next webpack production build passed; default Turbopack is blocked by the environment's port-binding restriction. Static UI audit reports zero findings. Browser tests were attempted but Chromium is missing; new scenarios are authored, not browser-verified.
 
 Next: sponsor registration/task creation and publication screens, platform task review UI, evidence uploads, notifications and controlled appeal-reviewer provisioning. No live reviewer permission or real money action occurred. This feature is committed locally until a subsequent publication is explicitly reported.
+
+## Product refocus and purchase campaigns (4 October 2026)
+
+PRODUCT.md now sets direction: purchase campaigns, jobs and a derived credibility profile, with points, referrals and tiers as a fraud-controlled platform layer. Paid follow/share engagement missions are removed. Migration 0014 adds purchase campaigns; see CAMPAIGNS.md.
+
+Verification: full `npm run check` passed (185 API tests, 10 web tests, lint, typecheck, builds). Native PostgreSQL 16 was available in this environment: `npm run test:db` passed 15/15, the first native run of the existing concurrency suite plus a new campaign capacity and release race test.
+
+Next: points, referrals and tiers (migration 0015), credibility profile, then the shopper/merchant frontend and PWA.

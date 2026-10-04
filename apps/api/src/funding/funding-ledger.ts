@@ -11,7 +11,12 @@ const command = z
     destinationId: z.uuid(),
     actorId: z.uuid(),
     amountKobo: z.bigint().positive().max(9223372036854775807n),
-    kind: z.enum(['funding_confirmed', 'task_lock', 'task_reward']),
+    kind: z.enum([
+      'funding_confirmed',
+      'task_lock',
+      'task_reward',
+      'purchase_cashback',
+    ]),
     reference: z.string().trim().min(1).max(200),
     reason: z.string().trim().min(1).max(500),
   })

@@ -44,6 +44,20 @@ export class ApiExceptionFilter implements ExceptionFilter {
             : details && 'message' in details
               ? details.message
               : 'Request failed';
-    response.status(status).json({ statusCode: status, message, requestId });
+    // A stable machine-readable reason lets clients explain conflicts precisely.
+    const reason =
+      status === 409 &&
+      details &&
+      typeof details === 'object' &&
+      'reason' in details &&
+      typeof details.reason === 'string'
+        ? details.reason
+        : undefined;
+    response.status(status).json({
+      statusCode: status,
+      message,
+      requestId,
+      ...(reason && { reason }),
+    });
   }
 }

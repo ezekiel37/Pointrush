@@ -16,6 +16,7 @@ import { SponsorsService } from './sponsors/sponsors.service.js';
 import { SponsorsController } from './sponsors/sponsors.controller.js';
 import { TaskWorkModule } from './tasks/task-work.module.js';
 import { ReviewsModule } from './reviews/reviews.module.js';
+import { CampaignsModule } from './campaigns/campaigns.module.js';
 
 @Module({})
 export class AppModule {
@@ -28,7 +29,7 @@ export class AppModule {
       DatabaseModule.forRoot(database),
       AccountsModule,
     ];
-    if (database) imports.push(ReviewsModule, TaskWorkModule);
+    if (database) imports.push(ReviewsModule, TaskWorkModule, CampaignsModule);
     if (auth) {
       imports.push(
         AuthModule.forRoot(

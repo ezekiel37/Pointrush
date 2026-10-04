@@ -99,6 +99,13 @@
       "when": 1790888320819,
       "tag": "0013_decision_receipts",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791139973649,
+      "tag": "0014_purchase_campaigns",
+      "breakpoints": true
     }
   ]
 }

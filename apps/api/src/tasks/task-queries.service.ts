@@ -116,7 +116,10 @@ export class TaskQueriesService {
         endsAt: s.sponsorTasks.endsAt,
         capacity: s.sponsorTasks.capacity,
         rewardBackingKobo: sql<string>`${s.sponsorTasks.rewardKobo}::text`,
-        claimed: sql<number>`(select count(*)::integer from ${s.taskClaims} where ${s.taskClaims.taskId}=${s.sponsorTasks.id})`,
+        model: s.sponsorTasks.model,
+        campaignTerms: s.sponsorTasks.campaignTerms,
+        // Campaign places are consumed by confirmed, unvoided purchases.
+        claimed: sql<number>`case when ${s.sponsorTasks.model}='purchase_cashback' then (select count(*)::integer from ${s.purchaseConfirmations} p where p.task_id=${s.sponsorTasks.id} and not exists (select 1 from ${s.purchaseVoids} v where v.confirmation_id=p.id)) else (select count(*)::integer from ${s.taskClaims} where ${s.taskClaims.taskId}=${s.sponsorTasks.id}) end`,
       })
       .from(s.sponsorTasks)
       .innerJoin(

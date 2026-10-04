@@ -225,6 +225,7 @@ export class SponsorsService {
       allocationAccountId: task.allocationAccountId,
       title: task.title,
       workTerms: task.workTerms,
+      campaignTerms: task.campaignTerms,
       instructions: task.instructions,
       proofRequirements: task.proofRequirements,
       rejectionCriteria: task.rejectionCriteria,

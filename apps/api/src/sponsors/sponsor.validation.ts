@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { z } from 'zod';
-import { workTermsSchema } from '../tasks/task-terms.js';
+import { campaignTermsSchema, workTermsSchema } from '../tasks/task-terms.js';
 
 const plain = (max: number) =>
   z
@@ -30,11 +30,12 @@ export const taskInput = z
   .object({
     requestId: z.uuid(),
     workTerms: workTermsSchema.optional(),
+    campaignTerms: campaignTermsSchema.optional(),
     title: plain(160),
     instructions: plain(10000),
     proofRequirements: plain(5000),
     rejectionCriteria: plain(5000),
-    model: z.enum(['capped_fixed', 'selected_assignment']),
+    model: z.enum(['capped_fixed', 'selected_assignment', 'purchase_cashback']),
     capacity: z.number().int().positive().max(2147483647),
     rewardKobo: money,
     startsAt: z.iso.datetime({ offset: true }).transform((v) => new Date(v)),
@@ -44,7 +45,10 @@ export const taskInput = z
   .refine(
     (v) =>
       v.endsAt > v.startsAt &&
-      v.rewardKobo * BigInt(v.capacity) <= 9223372036854775807n,
+      v.rewardKobo * BigInt(v.capacity) <= 9223372036854775807n &&
+      // Purchase campaigns need campaign terms and never carry work terms.
+      (v.model === 'purchase_cashback') === (v.campaignTerms !== undefined) &&
+      (v.model !== 'purchase_cashback' || v.workTerms === undefined),
   );
 export function parseSponsorInput<T>(schema: z.ZodType<T>, value: unknown): T {
   const result = schema.safeParse(value);

@@ -8,6 +8,7 @@ import { and, eq, isNull, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { FundingDatabase } from '../funding/funding-ledger.js';
 import * as s from '../database/schema.js';
+import { actorTransaction } from './actor-transaction.js';
 
 const id = z.uuid();
 const reason = z.string().trim().min(1).max(2000);
@@ -38,46 +39,11 @@ function parse<T>(schema: z.ZodType<T>, input: unknown): T {
 export class TaskWorkService {
   constructor(private readonly db: FundingDatabase) {}
 
-  private async run<T>(
+  private run<T>(
     authUserId: string,
     action: (tx: FundingDatabase, actor: string) => Promise<T>,
   ) {
-    try {
-      return await this.db.transaction(async (tx) => {
-        const [actor] = await tx
-          .select({ id: s.accounts.id })
-          .from(s.accounts)
-          .innerJoin(
-            s.authAccountLinks,
-            eq(s.authAccountLinks.accountId, s.accounts.id),
-          )
-          .innerJoin(
-            s.authUsers,
-            eq(s.authUsers.id, s.authAccountLinks.authUserId),
-          )
-          .where(
-            and(
-              eq(s.authUsers.id, authUserId),
-              eq(s.authUsers.emailVerified, true),
-              eq(s.accounts.accessState, 'active'),
-            ),
-          )
-          .for('share', { of: s.accounts });
-        if (!actor)
-          throw new ForbiddenException('Active linked account required');
-        return action(tx, actor.id);
-      });
-    } catch (error) {
-      const cause = error instanceof Error ? error.cause : undefined;
-      const code =
-        (cause as { code?: string })?.code ??
-        (error as { code?: string })?.code;
-      if (['23514', '23505', '23503'].includes(code ?? ''))
-        throw new ConflictException(
-          'Task state changed or command is not eligible; reload current details',
-        );
-      throw error;
-    }
+    return actorTransaction(this.db, authUserId, action);
   }
 
   async readTask(user: string, taskId: string) {
@@ -93,10 +59,25 @@ export class TaskWorkService {
           ),
         );
       if (!task) throw new NotFoundException();
-      const [count] = await tx
-        .select({ used: sql<number>`count(*)::integer` })
-        .from(s.taskClaims)
-        .where(eq(s.taskClaims.taskId, taskId));
+      const [count] =
+        task.model === 'purchase_cashback'
+          ? await tx
+              .select({ used: sql<number>`count(*)::integer` })
+              .from(s.purchaseConfirmations)
+              .leftJoin(
+                s.purchaseVoids,
+                eq(s.purchaseVoids.confirmationId, s.purchaseConfirmations.id),
+              )
+              .where(
+                and(
+                  eq(s.purchaseConfirmations.taskId, taskId),
+                  isNull(s.purchaseVoids.confirmationId),
+                ),
+              )
+          : await tx
+              .select({ used: sql<number>`count(*)::integer` })
+              .from(s.taskClaims)
+              .where(eq(s.taskClaims.taskId, taskId));
       return {
         id: task.id,
         title: task.title,
@@ -106,6 +87,8 @@ export class TaskWorkService {
         startsAt: task.startsAt,
         endsAt: task.endsAt,
         workTerms: task.workTerms,
+        model: task.model,
+        campaignTerms: task.campaignTerms,
         rewardBackingKobo: task.rewardKobo.toString(),
         capacity: task.capacity,
         claimed: count!.used,

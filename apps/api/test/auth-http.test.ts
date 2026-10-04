@@ -14,6 +14,7 @@ import request from 'supertest';
 import { postFundingTransfer } from '../src/funding/funding-ledger.js';
 import { TaskWorkModule } from '../src/tasks/task-work.module.js';
 import { ReviewsModule } from '../src/reviews/reviews.module.js';
+import { CampaignsModule } from '../src/campaigns/campaigns.module.js';
 import { AppModule } from '../src/app.module.js';
 import { AuthService } from '../src/auth/auth.service.js';
 import { createAuth } from '../src/auth/auth.factory.js';
@@ -57,6 +58,7 @@ before(async () => {
       AppModule.forRoot(undefined, config, 'test-v1'),
       ReviewsModule,
       TaskWorkModule,
+      CampaignsModule,
     ],
     controllers: [PrivateProbe],
   })
@@ -583,6 +585,40 @@ test('review HTTP boundary rejects missing MFA, expired assurance and missing gr
     .set('Cookie', cookie)
     .expect(200);
   assert.equal(owned.body.items[0].id, created.body.id);
+
+  // Purchase campaign routes share session, Origin and conflict-reason handling.
+  await request(server).get('/api/v1/purchases').expect(401);
+  await request(server)
+    .post(`/api/v1/campaigns/${created.body.id}/codes`)
+    .set('Cookie', cookie)
+    .send({})
+    .expect(403);
+  const unpublished = await request(server)
+    .post(`/api/v1/campaigns/${created.body.id}/codes`)
+    .set('Cookie', cookie)
+    .set('Origin', origin)
+    .send({})
+    .expect(409);
+  assert.equal(unpublished.body.reason, 'offer_unavailable');
+  await request(server)
+    .post('/api/v1/campaigns/not-a-uuid/codes')
+    .set('Cookie', cookie)
+    .set('Origin', origin)
+    .send({})
+    .expect(400);
+  await request(server)
+    .get(`/api/v1/campaigns/${created.body.id}/summary`)
+    .set('Cookie', cookie)
+    .expect(404);
+  const purchases = await request(server)
+    .get('/api/v1/purchases?limit=5')
+    .set('Cookie', cookie)
+    .expect(200);
+  assert.deepEqual(purchases.body.items, []);
+  await request(server)
+    .get('/api/v1/purchases?accountId=forged')
+    .set('Cookie', cookie)
+    .expect(400);
 
   await request(server)
     .post(`/api/v1/work/tasks/${created.body.id}/publish`)

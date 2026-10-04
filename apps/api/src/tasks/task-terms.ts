@@ -11,3 +11,17 @@ export const workTermsSchema = z
   })
   .strict();
 export type WorkTerms = z.infer<typeof workTermsSchema>;
+
+// Reviewed with the campaign. Hold covers the business's refund window.
+export const campaignTermsSchema = z
+  .object({
+    minSpendKobo: z
+      .string()
+      .regex(/^(0|[1-9][0-9]{0,14})$/)
+      .refine((v) => BigInt(v) <= 100000000000000n),
+    holdHours: z.number().int().min(24).max(720),
+    placeName: z.string().trim().min(1).max(160),
+    placeAddress: z.string().trim().min(1).max(300),
+  })
+  .strict();
+export type CampaignTerms = z.infer<typeof campaignTermsSchema>;

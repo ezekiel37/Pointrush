@@ -5,6 +5,10 @@ import { resolve } from 'node:path';
 import { after, before, test } from 'node:test';
 import { Client, Pool } from 'pg';
 import { eq } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import * as schema from '../../src/database/schema.js';
+import { CampaignsService } from '../../src/campaigns/campaigns.service.js';
+import { TaskWorkService } from '../../src/tasks/task-work.service.js';
 import { readMigrationFiles } from 'drizzle-orm/migrator';
 import { AccountsService } from '../../src/accounts/accounts.service.js';
 import { AccountsRepository } from '../../src/accounts/accounts.repository.js';
@@ -564,3 +568,153 @@ test(
     }
   },
 );
+
+test('native concurrent tills cannot exceed campaign capacity and concurrent releases pay once', async () => {
+  const other = new DatabaseService(config);
+  // Separate pools whose clock is shifted past the hold, via a test-only schema.
+  const shifted = () =>
+    new Pool({
+      ...config,
+      options:
+        '-c search_path=test_clock,pg_catalog,public -c test.offset=PT25H',
+    });
+  const later = [shifted(), shifted()];
+  try {
+    await pool.query(`
+      CREATE SCHEMA IF NOT EXISTS test_clock;
+      CREATE OR REPLACE FUNCTION test_clock.clock_timestamp() RETURNS timestamptz LANGUAGE sql VOLATILE AS
+        $$ SELECT pg_catalog.clock_timestamp() + coalesce(nullif(current_setting('test.offset', true), ''), '0')::interval $$;
+    `);
+    const identity = async () => {
+      const user = randomUUID();
+      await database.db.insert(authUsers).values({
+        id: user,
+        name: 'Native',
+        email: `${user}@example.test`,
+        emailVerified: true,
+      });
+      const [account] = await database.db
+        .insert(accounts)
+        .values({})
+        .returning();
+      await database.db
+        .insert(authAccountLinks)
+        .values({ accountId: account!.id, authUserId: user });
+      return { user, account: account!.id };
+    };
+    const merchant = await identity();
+    const sponsors = new SponsorsService(database, 'test-v1');
+    await sponsors.createProfile(merchant.user, {
+      name: 'Native kiosk',
+      acceptTerms: true,
+      termsVersion: 'test-v1',
+    });
+    await database.db
+      .insert(fundingAccounts)
+      .values({ bucket: 'clearing' })
+      .onConflictDoNothing();
+    const [clearing] = await database.db
+      .select()
+      .from(fundingAccounts)
+      .where(eq(fundingAccounts.bucket, 'clearing'));
+    const [available] = await database.db
+      .select()
+      .from(fundingAccounts)
+      .where(eq(fundingAccounts.ownerId, merchant.account));
+    await postFundingTransfer(database.db, {
+      id: randomUUID(),
+      sourceId: clearing!.id,
+      destinationId: available!.id,
+      amountKobo: 5000n,
+      actorId: merchant.account,
+      kind: 'funding_confirmed',
+      reference: `test:${randomUUID()}`,
+      reason: 'Native test',
+    });
+    const start = new Date(Date.now() + 1000);
+    const created = await sponsors.createTask(merchant.user, {
+      requestId: randomUUID(),
+      title: 'Native cash back',
+      instructions: 'Buy and show your code',
+      proofRequirements: 'Till confirmation',
+      rejectionCriteria: 'Refunds',
+      model: 'purchase_cashback',
+      capacity: 1,
+      rewardKobo: '5000',
+      startsAt: start.toISOString(),
+      endsAt: new Date(start.getTime() + 3 * 86400000).toISOString(),
+      campaignTerms: {
+        minSpendKobo: '0',
+        holdHours: 24,
+        placeName: 'Native kiosk',
+        placeAddress: 'Test street',
+      },
+    });
+    const [reviewer] = await database.db
+      .insert(accounts)
+      .values({})
+      .returning();
+    await database.db.insert(taskReviewerGrants).values({
+      reviewerId: reviewer!.id,
+      grantedBy: reviewer!.id,
+      reason: 'Native test',
+      expiresAt: new Date(Date.now() + 3600000),
+    });
+    const [row] = await database.db
+      .select()
+      .from(sponsorTasks)
+      .where(eq(sponsorTasks.id, created.id));
+    await new TaskReviewService(database.db).decide(reviewer!.id, {
+      taskId: row!.id,
+      requestId: randomUUID(),
+      termsVersion: row!.termsVersion,
+      termsHash: row!.requestHash,
+      decision: 'approved',
+      reason: 'Native approval',
+      checklist: { ...taskReviewChecklist },
+    });
+    await new TaskWorkService(database.db).publish(merchant.user, created.id);
+    await new Promise((r) => setTimeout(r, start.getTime() - Date.now() + 50));
+    const shoppers = [await identity(), await identity()];
+    const campaigns = new CampaignsService(database.db);
+    const codes = await Promise.all(
+      shoppers.map((shopper) => campaigns.activate(shopper.user, created.id)),
+    );
+    const outcomes = await Promise.allSettled(
+      codes.map((code, i) =>
+        new CampaignsService(i === 0 ? database.db : other.db).confirm(
+          merchant.user,
+          created.id,
+          { id: randomUUID(), code: code.code, amountKobo: '100' },
+        ),
+      ),
+    );
+    const won = outcomes.filter((r) => r.status === 'fulfilled');
+    assert.equal(won.length, 1);
+    assert.equal(outcomes.filter((r) => r.status === 'rejected').length, 1);
+    const confirmation = (won[0] as PromiseFulfilledResult<{ id: string }>)
+      .value;
+    const winner = shoppers[outcomes.indexOf(won[0]!)]!;
+    await Promise.all(
+      later.map((p) =>
+        new CampaignsService(drizzle(p, { schema })).release(
+          winner.user,
+          confirmation.id,
+        ),
+      ),
+    );
+    const [wallet] = await database.db
+      .select()
+      .from(fundingAccounts)
+      .where(eq(fundingAccounts.ownerId, winner.account));
+    assert.equal(wallet?.bucket, 'reward_wallet');
+    assert.equal(await fundingBalance(database.db, wallet!.id), 5000n);
+    assert.equal(
+      await fundingBalance(database.db, created.allocationAccountId),
+      0n,
+    );
+  } finally {
+    await Promise.all(later.map((p) => p.end()));
+    await other.onApplicationShutdown();
+  }
+});

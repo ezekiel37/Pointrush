@@ -133,3 +133,9 @@ export {
   appealResolutions,
 } from '../tasks/task-work.schema.js';
 export { proofDecisionReceipts } from '../tasks/task-work.schema.js';
+export {
+  purchaseCodes,
+  purchaseConfirmations,
+  purchaseVoids,
+  purchaseReleases,
+} from '../campaigns/campaign.schema.js';
