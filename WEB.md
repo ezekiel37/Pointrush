@@ -23,6 +23,20 @@ Use the same hostname on both services. Mixing localhost and 127.0.0.1 creates a
 
 The web app sends requests directly to NestJS with credentials and no-store caching. There is no general-purpose proxy, duplicated auth server or client-readable session token. Static page shells contain no private account data; only the authenticated browser request obtains account details. Client route handling is UX, not authorization.
 
+## Screens (October 2026)
+
+| Route                                                                | Purpose                                                                                                                                 |
+| -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                                                                  | Public landing page (the only indexable page)                                                                                           |
+| `/offers`, `/offers/[id]`                                            | Cash back offers; the ticket with QR and 15-minute countdown. A live code is kept in localStorage so it opens at a till without signal. |
+| `/claim`                                                             | Enter a prize code (`?code=` prefills); idempotent retries                                                                              |
+| `/wallet`                                                            | Wallet balance, held cash back, release, points and tier                                                                                |
+| `/profile`, `/p/[username]`                                          | Own proof profile with publish toggle; public server-rendered profile                                                                   |
+| `/business`, `/business/campaigns/[id]`, `/business/promotions/[id]` | Business home, till (camera QR scan where supported, typed code always), prize batches (codes shown once, CSV download)                 |
+| `/offline`                                                           | Offline fallback                                                                                                                        |
+
+PWA: `app/manifest.ts`, icons in `public/icons` (generated from `app/icon.svg`), `public/sw.js` (cache-first for hashed static assets and icons, network-first page shells with offline fallback; API responses and public profiles are never cached). Pages send `Cache-Control: no-store`; static assets keep long-lived caching. The camera is permitted for this origin only, for till scanning.
+
 ## UI and validation ownership
 
 Shared shadcn-derived Button/Input primitives use Tailwind semantic tokens; Field owns labels, help, errors and password visibility. React Hook Form owns form state and focus; Zod validates input. Identity schemas and password-length constants live in `packages/contracts` and are consumed by both API and web. Backend transaction and permission checks remain authoritative.

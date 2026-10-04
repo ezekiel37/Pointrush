@@ -36,6 +36,7 @@ export function authClient() {
   }));
 }
 export class RequestError extends Error {
+  // `code` carries Better Auth codes or the API's stable conflict `reason`.
   constructor(
     public readonly status: number,
     public readonly code?: string,

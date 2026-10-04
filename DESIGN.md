@@ -10,20 +10,26 @@ Communicate real opportunities, visible progress and dependable rewards. Playful
 
 Use shadcn/ui with Tailwind and one maintained set of shared primitives for Next.js. Use React Hook Form with Zod for form feedback; NestJS remains authoritative. Use Lucide icons. Do not mix shadcn and Material UI across portals. Material UI remains a viable alternative, but editable shadcn primitives better support the proposed identity. Source ownership includes maintenance and accessibility verification; adopting components does not guarantee accessible finished screens.
 
-## Proposed Tokens
+## Tokens (Acticlaim, October 2026)
 
-| Token | Value | Use |
+Superseded the earlier blue palette and Manrope. Runtime owner: `apps/web/src/app/globals.css` (`@theme`). Language: receipts and proof — warm paper, ink, monospaced money and codes, and one electric accent reserved for the single most important action on a screen.
+
+| Role | Token | Value |
 | --- | --- | --- |
-| brand-primary | #2457E0 | Main actions, selected navigation and links |
-| progress-surface | #DDF7ED | Mint progress backgrounds, with dark foreground |
-| reward-accent | #F4C84A | Restrained yellow milestone emphasis, with dark foreground |
-| page-background | #F7F8FA | Main light canvas |
-| surface | #FFFFFF | Inputs, menus and repeated mission items |
-| text-primary | #182026 | Headings, copy and balances |
+| Canvas / surface / sunken | `--color-canvas` / `--color-surface` / `--color-sunken` | #F3F0E8 / #FFFDF8 / #EBE6DA |
+| Ink (text, primary buttons, focus) | `--color-ink` | #141210 |
+| Muted text | `--color-muted` | #5E584E |
+| Input border / divider | `--color-border` / `--color-divider` | #8A8377 / #E2DCCF |
+| Accent (one key action, current tab) | `--color-accent` | #D7FF3C, ink text |
+| Earned / paid | `--color-success` on `--color-mint` | #136B3E on #E3F5E9 |
+| Pending / held money | `--color-pending` on `--color-pending-surface` | #8A5300 on #FFF3DC |
+| Error | `--color-danger` on `--color-danger-surface` | #A3261F on #FDECEA |
 
-The account slice defines the semantic tokens it uses below. Additional warning and notification treatments require verification when implemented. Pending rewards must never resemble confirmed earnings. Never communicate status through colour alone. Target WCAG 2.2 AA; proposed hex values are not proof of conformance.
+Measured WCAG contrast: body ink 16.4:1; muted on canvas 6.2:1; pending 5.8:1; success 5.8:1; danger 6.4:1; ink on accent 16.3:1; input border 3.7:1 (non-text). Held money always carries a text label and amber colour and never uses the earned style. Light theme only; dark mode needs separately tested tokens.
 
-Light-first identity. Dark mode requires separately designed and tested tokens before being offered. Define tokens once in shared CSS custom properties and map Tailwind/shared components to them; no screen-local colour copies. The account-shell mapping is implemented below.
+Type: Bricolage Grotesque (variable, self-hosted) for headings; system sans-serif for body; JetBrains Mono for money, codes, labels and counts with tabular numerals.
+
+Signature element: the ticket — a perforated card with an ink header, large monospaced code, QR and countdown. It is used for purchase codes and echoed on the landing page.
 
 ## Typography, Geometry and Motion
 
@@ -49,28 +55,9 @@ Show earned user/sponsor reputation separately from identity/business verificati
 
 Claim codes should be readable on low-quality print and easy to type on mobile. Use grouped uppercase text, generous spacing and a visible copy button. The standard visual treatment is `PR-ABC-7K4M-9X2QD`; QR may sit beside it when available but is never the only path. Discovery QR and reward claim QR use different labels so users do not confuse scanning a page with claiming a reward.
 
-## Runtime mapping: account shell
+## Navigation and shells
 
-The first account UI implements the established palette without a rebrand. Runtime owner: `apps/web/src/app/globals.css` (`@theme`); Tailwind and shared primitives consume the same semantic properties. This document mirrors the values and explains their use. Manrope 600/700 is self-hosted through `@fontsource/manrope`; body copy uses the system stack. No external font request is required.
-
-| Document role | Runtime token | Value / consumers |
-| --- | --- | --- |
-| brand-primary | `--color-primary` | #2457E0; actions, links, focus, story panel |
-| progress-surface | `--color-mint` | #DDF7ED; status feedback |
-| reward-accent | `--color-reward` | #F4C84A; brand mark and setup step |
-| page-background | `--color-canvas` | #F7F8FA; account canvas |
-| surface / text-primary | `--color-surface` / `--color-ink` | #FFFFFF / #182026 |
-| muted text | `--color-muted` | #56636E; help text |
-| input border / divider | `--color-border` / `--color-divider` | #798793 / #DCE2E8 |
-| error foreground / surface | `--color-danger` / `--color-danger-surface` | #A82727 / #FFF1F0 |
-| primary hover / active | `--color-primary-hover` / `--color-primary-active` | #1945BB / #133792 |
-| success foreground | `--color-success` | #186347 |
-| scrollbar thumb / track / hover / active | `--color-scroll-*` | #798793 / #F7F8FA / #56636E / #182026 |
-| control radius | `--radius-control` | 0.5rem; shared fields, buttons, panels |
-
-Account entry uses a blue story panel beside a restrained white form on desktop. The story panel becomes a compact brand header on mobile, leaving the task prominent. The real three-step account setup track is the account-flow variant of the progress signature; it makes no reward promise. Controls are at least 48px tall; password toggles are 44px. Document scrolling preserves mobile keyboard and zoom reachability.
-
-Reconcile result: original brand tokens, Manrope headings, flat surfaces, light theme and 8px corners are retained. Previously unresolved semantic colors now have runtime owners. Browser screenshots and automated accessibility tests cover signup/login and account summary; physical device keyboard and screen-reader checks remain release verification.
+`AppShell` provides one model: a sticky top bar with Offers, Claim, Jobs, Wallet and Profile on wide screens, and a bottom tab bar on phones, with Business separated in the bar. Auth journeys keep the split story layout with an ink story panel. All screens are verified at 390px for no horizontal overflow and with automated axe checks.
 
 ## Task journey continuation
 

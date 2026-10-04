@@ -4,10 +4,12 @@ import { cva } from 'class-variance-authority';
 import type { VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 // Adapted from the shadcn/ui Radix Button (MIT); shared Acticlaim tokens.
+// `accent` is reserved for the single most important action on a screen.
 export const buttonVariants = cva('button', {
   variants: {
     variant: {
       default: 'button-primary',
+      accent: 'button-accent',
       outline: 'button-outline',
       ghost: 'button-ghost',
     },

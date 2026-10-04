@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { Brand } from '@/components/auth/auth-frame';
+import { AppShell } from '@/components/shell/app-shell';
 import { Button } from '@/components/ui/button';
 import { Feedback } from '@/components/ui/feedback';
 import { RequestError } from '@/lib/auth-client';
@@ -13,21 +13,12 @@ export function WorkFrame({
   children: ReactNode;
 }) {
   return (
-    <>
-      <header className="account-header">
-        <Brand />
-        <nav aria-label="Task navigation">
-          <Link href="/tasks">Tasks</Link>
-          <Link href="/my-tasks">My tasks</Link>
-          <Link href="/sponsor/tasks">Sponsor tasks</Link>
-          <Link href="/account">Account</Link>
-        </nav>
-      </header>
-      <main id="main-content" className="account-content work-content">
+    <AppShell>
+      <main id="main-content" className="app-main work-content">
         <h1>{title}</h1>
         {children}
       </main>
-    </>
+    </AppShell>
   );
 }
 export function WorkFailure({

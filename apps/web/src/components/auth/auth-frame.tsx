@@ -1,13 +1,13 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { ArrowUpRight, Check, MoveUpRight } from 'lucide-react';
+import { ArrowUpRight, Check, TicketCheck } from 'lucide-react';
 export function Brand() {
   return (
     <Link href="/" className="brand" aria-label="Acticlaim home">
       <span className="brand-mark">
-        <MoveUpRight aria-hidden size={22} />
+        <TicketCheck aria-hidden size={18} strokeWidth={2.25} />
       </span>
-      Acticlaim<span className="brand-dot">.</span>
+      Acticlaim
     </Link>
   );
 }
@@ -31,17 +31,17 @@ export function AuthFrame({
       <aside className="auth-story">
         <Brand />
         <div className="story-body">
-          <p className="eyebrow">A little effort. A new possibility.</p>
+          <p className="eyebrow">Proof pays</p>
           <h2>
-            Make your
+            Buy. Work.
             <br />
-            next move
+            Get paid
             <br />
-            <span>count.</span>
+            <span>back.</span>
           </h2>
           <p className="story-copy">
-            A place for people and businesses to turn meaningful actions into
-            opportunities.
+            Businesses lock the money before you act. Cash back for real
+            purchases, prizes for real codes, pay for real work.
           </p>
           <ol className="journey" aria-label={journeyLabel}>
             {journeyLabels.map((label, i) => (
@@ -58,7 +58,8 @@ export function AuthFrame({
           </ol>
         </div>
         <p className="story-footer">
-          Your progress, at your pace. <ArrowUpRight size={18} aria-hidden />
+          Every naira is locked before it is promised.{' '}
+          <ArrowUpRight size={18} aria-hidden />
         </p>
       </aside>
       <div className="auth-main">
@@ -72,7 +73,7 @@ export function AuthFrame({
           {children}
         </main>
         <footer className="auth-footer">
-          <span>Built for real progress.</span>
+          <span>Money locked first. Paid once.</span>
           <Link href="/help">Account help</Link>
         </footer>
       </div>

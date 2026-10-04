@@ -4,6 +4,7 @@ import type { ComponentProps } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { Input } from './input';
 import { Button } from './button';
+import { cn } from '@/lib/utils';
 export function Field({
   label,
   hint,
@@ -29,7 +30,7 @@ export function Field({
           type={password && visible ? 'text' : type}
           aria-invalid={Boolean(error)}
           aria-describedby={`${id}-help`}
-          className={password ? 'password-input' : undefined}
+          className={cn(props.className, password && 'password-input')}
         />
         {password && (
           <Button

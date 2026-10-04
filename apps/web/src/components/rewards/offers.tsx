@@ -1,0 +1,85 @@
+'use client';
+import Link from 'next/link';
+import { MapPin } from 'lucide-react';
+import { Page } from '@/components/shell/app-shell';
+import { Loading } from '@/components/ui/feedback';
+import { WorkFailure } from '@/components/work/work-frame';
+import { naira, shortDate } from '@/lib/api';
+import { offerPage } from '@/lib/rewards';
+import { useApiRead } from '@/lib/use-api-read';
+
+export function OfferList() {
+  const offers = useApiRead('work/tasks?kind=offers&limit=24', offerPage);
+  return (
+    <Page
+      eyebrow="Cash back near you"
+      title="Offers"
+      intro="Buy where you already shop and get money back. The business locks every naira before the offer goes live."
+    >
+      {offers.loading && !offers.data ? (
+        <Loading>Loading offers…</Loading>
+      ) : offers.error ? (
+        <WorkFailure error={offers.error} retry={offers.refresh} />
+      ) : offers.data?.items.length ? (
+        <ul className="grid-cards">
+          {offers.data.items.map((offer) => {
+            const left = Math.max(0, offer.capacity - offer.claimed);
+            return (
+              <li key={offer.id}>
+                <Link href={`/offers/${offer.id}`} className="card card-link">
+                  <div className="row" style={{ alignItems: 'flex-start' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <p className="eyebrow truncate">{offer.businessName}</p>
+                      <h2 style={{ fontSize: '1.15rem' }}>{offer.title}</h2>
+                    </div>
+                    <span
+                      className={
+                        left > 0 ? 'chip chip-ready' : 'chip chip-muted'
+                      }
+                    >
+                      {left > 0 ? `${left} left` : 'Full'}
+                    </span>
+                  </div>
+                  <p style={{ margin: '0.75rem 0 0.25rem' }}>
+                    <span className="amount" style={{ fontSize: '1.9rem' }}>
+                      {naira(offer.rewardBackingKobo)}
+                    </span>{' '}
+                    <span className="small-note">back</span>
+                  </p>
+                  {offer.campaignTerms && (
+                    <p className="small-note">
+                      Spend {naira(offer.campaignTerms.minSpendKobo)} or more
+                    </p>
+                  )}
+                  {offer.campaignTerms && (
+                    <p
+                      className="small-note row"
+                      style={{
+                        justifyContent: 'flex-start',
+                        marginTop: '0.75rem',
+                      }}
+                    >
+                      <MapPin size={15} aria-hidden />
+                      <span className="truncate">
+                        {offer.campaignTerms.placeName}
+                      </span>
+                    </p>
+                  )}
+                  <p className="small-note">Ends {shortDate(offer.endsAt)}</p>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <section className="card">
+          <h2>No offers running yet</h2>
+          <p className="small-note">
+            New cash back offers appear here as soon as businesses fund them and
+            they pass review.
+          </p>
+        </section>
+      )}
+    </Page>
+  );
+}

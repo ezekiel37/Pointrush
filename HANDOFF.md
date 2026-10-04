@@ -119,4 +119,6 @@ Migration 0016 adds the opt-in credibility profile (POINTS.md). Native test tear
 
 Migration 0017 adds claim-code prize promotions (PROMOTIONS.md). Full check: 197 API tests; native 16/16. The product is now named Acticlaim (user-facing); internal identifiers keep the earlier name. Browser E2E ran for the first time using the preinstalled Chromium (`PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium`): all 13 scenarios pass after scoping three work-test alert locators to `main`, because Next's route announcer also has role alert. The earlier 390px overflow on /tasks disappeared with the shorter brand name; the header layout is still fragile and is replaced in the redesign.
 
-Next: shopper/merchant frontend and PWA.
+Frontend redesign and PWA (4 October 2026): new Acticlaim design system (DESIGN.md), app shell with phone tab bar, landing, offers and purchase ticket, prize claim, wallet, proof profile (own and public), business home, till and prize batch manager, manifest, icons, service worker and offline page (WEB.md). The points summary now returns the reward-wallet balance. Verification: full check (197 API, 10 web unit tests, builds), native 16/16, 20/20 browser scenarios with axe and 390px overflow checks; screens were also reviewed from screenshots.
+
+Next: physical-prize vouchers, business campaign creation forms (blocked on funding), Bachs funding and payouts after confirming its payout API, SMS phone verification (blocks prize claims and referral rewards), and rate limiting on public routes.
