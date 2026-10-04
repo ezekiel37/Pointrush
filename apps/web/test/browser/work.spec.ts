@@ -123,7 +123,9 @@ test('session expiry clears private claim data on reconnect', async ({
   await expect(page.getByRole('link', { name: task.title })).toBeVisible();
   expired = true;
   await page.evaluate(() => window.dispatchEvent(new Event('online')));
-  await expect(page.getByRole('alert')).toContainText('Your session has ended');
+  await expect(page.locator('main').getByRole('alert')).toContainText(
+    'Your session has ended',
+  );
   await expect(page.getByRole('link', { name: task.title })).toHaveCount(0);
 });
 
@@ -177,7 +179,9 @@ test('proof retries retain their identity and text after a dropped response', as
     .getByLabel('Submit proof', { exact: true })
     .fill('My evidence reference 123');
   await page.getByRole('button', { name: 'Submit proof', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('could not confirm');
+  await expect(page.locator('main').getByRole('alert')).toContainText(
+    'could not confirm',
+  );
   await expect(
     page.getByLabel('Submit proof', { exact: true }),
   ).toHaveAttribute('readonly', '');
@@ -318,7 +322,9 @@ test('sponsor review requires confirmation and replays an uncertain decision unc
   await page
     .getByRole('button', { name: 'Confirm decision', exact: true })
     .click();
-  await expect(page.getByRole('alert')).toContainText('could not confirm');
+  await expect(page.locator('main').getByRole('alert')).toContainText(
+    'could not confirm',
+  );
   await expect(
     page.getByRole('button', { name: 'Back to editing' }),
   ).toHaveCount(0);
@@ -342,7 +348,7 @@ test('appeal access failures expose a recovery path without displaying private e
     route.fulfill({ status: 403, json: {} }),
   );
   await page.goto('/review/appeals');
-  await expect(page.getByRole('alert')).toBeVisible();
+  await expect(page.locator('main').getByRole('alert')).toBeVisible();
   await expect(
     page.getByRole('link', { name: 'Verify authenticator in another tab' }),
   ).toHaveAttribute('target', '_blank');

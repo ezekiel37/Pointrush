@@ -145,7 +145,7 @@ export function AccountScreen() {
               <div>
                 <p className="eyebrow">Your starting point</p>
                 <h1>Hello, {account.displayName}.</h1>
-                <p>Your PointRush profile is set up.</p>
+                <p>Your Acticlaim profile is set up.</p>
               </div>
               <span className="badge">
                 <Check size={16} aria-hidden />

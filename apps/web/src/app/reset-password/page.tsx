@@ -7,7 +7,7 @@ export default function Page() {
   return (
     <AuthFrame
       title={'A fresh start'}
-      description={'Choose a new password for your PointRush account.'}
+      description={'Choose a new password for your Acticlaim account.'}
       step={0}
     >
       <Suspense fallback={<Loading>Loading form…</Loading>}>

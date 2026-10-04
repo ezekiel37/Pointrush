@@ -25,7 +25,7 @@ async function bootstrap(): Promise<void> {
 
 void bootstrap().catch(() => {
   process.stderr.write(
-    'PointRush API startup failed. Check configuration and service logs.\n',
+    'Acticlaim API startup failed. Check configuration and service logs.\n',
   );
   process.exitCode = 1;
 });

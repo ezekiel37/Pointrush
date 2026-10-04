@@ -55,7 +55,7 @@ export class ReviewsController {
   private async accountId(request: AuthenticatedRequest): Promise<string> {
     const result = await this.accounts.getForAuth(request[AUTH_USER_ID]);
     if (result.onboarding !== 'complete' || !result.account)
-      throw new ForbiddenException('PointRush account is required');
+      throw new ForbiddenException('Acticlaim account is required');
     return result.account.id;
   }
 }

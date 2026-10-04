@@ -1,8 +1,8 @@
-# PointRush Validation and Approval Rules
+# Acticlaim Validation and Approval Rules
 
 Status: planning specification, 2026-09-27. Funding-at-creation, task-specific participation and later public verification badges are confirmed decisions. Numeric field limits below are adopted planning defaults from the review. Review timings are proposals; unresolved commercial/security policy is listed explicitly and must not be silently invented in code.
 
-Related: [PRD](PointRush_PRD.md), [test cases](PointRush_Testing_Risk_Engineering_Rules.md), [UX contract](UX-CONTRACT.md), [design](DESIGN.md).
+Related: [PRD](Acticlaim_PRD.md), [test cases](Acticlaim_Testing_Risk_Engineering_Rules.md), [UX contract](UX-CONTRACT.md), [design](DESIGN.md).
 
 ## 1. Validation Ownership
 
@@ -103,7 +103,7 @@ Every task requires explicit platform review and approval before publication, re
 
 Submission progression: submitted -> under_review -> approved / changes_required / rejected. Corrections return to review. Appeals are separate records and can uphold rejection or overturn it through one audited approval transition. Approved ledger entries are immutable; corrections use compensating entries with evidence.
 
-Proposed operating targets: review within 72 hours; one correction opportunity within 48 hours when fixable; appeal within 7 days of rejection notice. Sponsor silence escalates to PointRush, never automatic rejection/payment. Capacity to staff these targets must be confirmed before launch. AI can flag, classify and assist; it cannot independently impose permanent bans or irreversible reward decisions.
+Proposed operating targets: review within 72 hours; one correction opportunity within 48 hours when fixable; appeal within 7 days of rejection notice. Sponsor silence escalates to Acticlaim, never automatic rejection/payment. Capacity to staff these targets must be confirmed before launch. AI can flag, classify and assist; it cannot independently impose permanent bans or irreversible reward decisions.
 
 ## 7. Identity Verification and Earned Reputation
 
@@ -159,4 +159,4 @@ Additional feature gates: team invitation limits, roster amendment deadlines, mi
 - [OWASP input validation](https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html)
 - [NestJS validation](https://docs.nestjs.com/techniques/validation)
 
-Sources inform implementation; PointRush-specific lengths, review periods and task policies are product decisions, not claims that these sources mandate them.
+Sources inform implementation; Acticlaim-specific lengths, review periods and task policies are product decisions, not claims that these sources mandate them.

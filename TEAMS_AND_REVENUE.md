@@ -1,6 +1,6 @@
 # Teams, paid work and revenue
 
-Agreed product direction, 1 October 2026. This is a requirements document, not a claim of implemented features. Read with PointRush_PRD.md, PointRush_Validation_Approval_Rules.md and the testing rules. Existing individual missions, physical-business campaigns and redemption offerings remain in scope.
+Agreed product direction, 1 October 2026. This is a requirements document, not a claim of implemented features. Read with Acticlaim_PRD.md, Acticlaim_Validation_Approval_Rules.md and the testing rules. Existing individual missions, physical-business campaigns and redemption offerings remain in scope.
 
 ## Useful paid-work journey
 
@@ -55,10 +55,10 @@ The ₦100,000 launch pool funds eligible launch rewards only. Do not recycle pr
 
 ## Build versus reuse
 
-Evaluate Better Auth Organization for invitations, accepted membership, team roles and ownership mechanics before implementing team identity. Its organization/team structure must be mapped to PointRush's tasker teams and sponsor workspaces; plugin roles are not automatically project roles. Do not duplicate the same membership authority in two mutable systems. PointRush owns project assignments, immutable work agreements, reputation evidence and financial records.
+Evaluate Better Auth Organization for invitations, accepted membership, team roles and ownership mechanics before implementing team identity. Its organization/team structure must be mapped to Acticlaim's tasker teams and sponsor workspaces; plugin roles are not automatically project roles. Do not duplicate the same membership authority in two mutable systems. Acticlaim owns project assignments, immutable work agreements, reputation evidence and financial records.
 
-Keep provider identifiers behind the membership boundary and use PointRush account IDs in financial and contribution records. Authorization must be checked again when accepting an invitation, assigning work or changing membership, including direct plugin endpoints. Organization membership never grants platform review permission or broad access across sponsors. No plugin installation or membership schema migration is included in this documentation change.
+Keep provider identifiers behind the membership boundary and use Acticlaim account IDs in financial and contribution records. Authorization must be checked again when accepting an invitation, assigning work or changing membership, including direct plugin endpoints. Organization membership never grants platform review permission or broad access across sponsors. No plugin installation or membership schema migration is included in this documentation change.
 
 Later: shared wallets, nested hierarchy, custom role builders, paid team subscriptions and broad project-management tools. None is necessary to demonstrate one reliably completed paid task.
 
-References checked 1 October 2026: [Better Auth Organization](https://www.better-auth.com/docs/plugins/organization), [Better Auth Admin](https://www.better-auth.com/docs/plugins/admin). Application policy above is PointRush's own contract, not a library guarantee.
+References checked 1 October 2026: [Better Auth Organization](https://www.better-auth.com/docs/plugins/organization), [Better Auth Admin](https://www.better-auth.com/docs/plugins/admin). Application policy above is Acticlaim's own contract, not a library guarantee.

@@ -50,4 +50,4 @@ The local suite exercises the real service/repository against PGlite with all ch
 
 Existing low-level account rows without profiles are not silently given invented names. Before importing real legacy users, define a backfill or onboarding-completion flow. The previous feature created no public signup endpoint and no live user migration is being performed here.
 
-Related: [validation rules](PointRush_Validation_Approval_Rules.md), [database operations](DATABASE.md), [Drizzle transactions](https://orm.drizzle.team/docs/transactions), [PostgreSQL row locks](https://www.postgresql.org/docs/current/explicit-locking.html).
+Related: [validation rules](Acticlaim_Validation_Approval_Rules.md), [database operations](DATABASE.md), [Drizzle transactions](https://orm.drizzle.team/docs/transactions), [PostgreSQL row locks](https://www.postgresql.org/docs/current/explicit-locking.html).

@@ -1,6 +1,6 @@
-# PointRush UX Contract
+# Acticlaim UX Contract
 
-Status: planning contract. Related: [design](DESIGN.md), [validation and approval rules](PointRush_Validation_Approval_Rules.md), [tests](PointRush_Testing_Risk_Engineering_Rules.md).
+Status: planning contract. Related: [design](DESIGN.md), [validation and approval rules](Acticlaim_Validation_Approval_Rules.md), [tests](Acticlaim_Testing_Risk_Engineering_Rules.md).
 
 ## Forms
 
@@ -65,7 +65,7 @@ Exercise successful/invalid forms, conflict, double submit, expired session, off
 - Show the standard code in grouped form, such as `PR-ABC-7K4M-9X2QD`, with clear copy/paste and camera-scan options where available.
 - Reusable business or campaign QR codes open discovery pages and never award points. Unique claim codes resolve to a specific task, batch, reward and expiry on the server.
 - Opening a code does not consume it. After a successful claim, show the reward, task and claim status. Repeated claims show the original outcome or a clear used/expired state.
-- Do not ask offline sellers to enter every sale in PointRush. The business receives controlled code batches for packaging, tickets, inserts or receipts; batch activation draws from already locked task funds.
+- Do not ask offline sellers to enter every sale in Acticlaim. The business receives controlled code batches for packaging, tickets, inserts or receipts; batch activation draws from already locked task funds.
 - Online businesses may pass a code or authenticated event reference from checkout. A click alone is not a purchase; the UI must state what qualifies before participation.
 - Customers cannot edit the reward value. Different code batches may resolve to different points, airtime, data, vouchers or discounts.
 

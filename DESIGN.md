@@ -1,6 +1,6 @@
-# PointRush Design Direction
+# Acticlaim Design Direction
 
-Status: account shell implemented from the 2026-09-27 design direction. Browser verification and remaining release checks are recorded below. Related: [PRD](PointRush_PRD.md), [UX contract](UX-CONTRACT.md).
+Status: account shell implemented from the 2026-09-27 design direction. Browser verification and remaining release checks are recorded below. Related: [PRD](Acticlaim_PRD.md), [UX contract](UX-CONTRACT.md).
 
 ## Intent
 

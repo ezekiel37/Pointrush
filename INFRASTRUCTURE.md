@@ -1,4 +1,4 @@
-# PointRush infrastructure decisions
+# Acticlaim infrastructure decisions
 
 Agreed 30 September 2026. This document records the target architecture, not a deployed system. It supersedes earlier provider suggestions in the PRD. No infrastructure, credentials, workflows or runtime code are introduced by this decision.
 
@@ -6,7 +6,7 @@ Agreed 30 September 2026. This document records the target architecture, not a d
 
 Target approximately $0 fixed infrastructure cost during validation, excluding the domain, reward backing and external transaction costs. Free allowances are finite and can change; this is not a guarantee of a zero bill or capacity for a particular user count. Use recurring allowances first. Eligible Google Cloud trial credit is a temporary buffer, not the operating model.
 
-Preserve working components. Every infrastructure addition must solve a concrete PointRush problem. Keep one modular backend and one primary database; no Kubernetes, Kafka, Terraform or microservices.
+Preserve working components. Every infrastructure addition must solve a concrete Acticlaim problem. Keep one modular backend and one primary database; no Kubernetes, Kafka, Terraform or microservices.
 
 ## Selected services
 

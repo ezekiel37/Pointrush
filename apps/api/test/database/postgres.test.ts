@@ -264,7 +264,7 @@ test('two native workers claim a queued email only once while its lease is activ
       id,
       expiresAt: new Date(Date.now() + 120000),
       payload: new EmailPayloadCipher(key).seal(id, {
-        from: 'PointRush <sender@example.test>',
+        from: 'Acticlaim <sender@example.test>',
         to: 'user@example.test',
         subject: 'Test',
         text: 'Local only',

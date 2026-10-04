@@ -4,9 +4,9 @@ Status: authentication is now mounted only when the complete production configur
 
 ## Implemented boundaries
 
-- Authentication uses separate PostgreSQL tables, migrated by Drizzle with the existing application migration runner. Better Auth's credential `account` model is explicitly mapped to `auth_credentials`, never PointRush `accounts`.
+- Authentication uses separate PostgreSQL tables, migrated by Drizzle with the existing application migration runner. Better Auth's credential `account` model is explicitly mapped to `auth_credentials`, never Acticlaim `accounts`.
 - Signup creates only an authentication identity. It does not claim a username, verify a phone, establish legal identity, grant a role or approve a sponsor.
-- `POST /api/v1/accounts/me` is the authenticated onboarding command. It derives the auth user from the session and atomically creates the PointRush account, profile, username and one-to-one identity link. Retrying a successful command cannot create a second PointRush account.
+- `POST /api/v1/accounts/me` is the authenticated onboarding command. It derives the auth user from the session and atomically creates the Acticlaim account, profile, username and one-to-one identity link. Retrying a successful command cannot create a second Acticlaim account.
 - Onboarding locks the auth identity and rechecks email verification within the transaction. Identical retries return the existing identity; changed onboarding data returns 409. Suspended, restricted and closed accounts are denied by the Nest session guard except for the explicit private account-status read. The transaction also checks account state when returning an existing onboarding result.
 - `GET /api/v1/accounts/me` returns onboarding status and minimal account identity/access state derived solely from the session. Restricted accounts can read their own status without gaining other permissions. See [the response contract](ACCOUNTS.md#private-account-status).
 - Nest routes require a verified session by default; only health routes are explicitly public. Mutating Nest requests additionally require an exact trusted Origin header, including non-browser clients. Authentication library routes retain their own origin checks. A session grants no sponsor/admin role: future business controllers must require their specific account and role permissions.

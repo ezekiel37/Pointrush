@@ -35,7 +35,7 @@ export function createQueuedAuthEmail(
           availableAt: now,
           expiresAt,
           payload: cipher.seal(id, {
-            from: `PointRush <${sender}>`,
+            from: `Acticlaim <${sender}>`,
             to: message.to,
             ...authEmailContent(message),
           }),

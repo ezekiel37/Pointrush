@@ -3,7 +3,7 @@ dist
 .test-dist
 coverage
 package-lock.json
-PointRush_*.md
+Acticlaim_*.md
 DESIGN.md
 UX-CONTRACT.md
 

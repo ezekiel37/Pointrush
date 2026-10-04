@@ -1,6 +1,6 @@
-# PointRush product direction
+# Acticlaim product direction
 
-Agreed 4 October 2026. This document is the current product direction. Where it conflicts with PointRush_PRD.md, this document wins. The PRD remains the detailed reference for rules it does not contradict.
+Agreed 4 October 2026. This document is the current product direction. Where it conflicts with Acticlaim_PRD.md, this document wins. The PRD remains the detailed reference for rules it does not contradict.
 
 ## One sentence
 

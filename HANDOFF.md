@@ -1,4 +1,4 @@
-# PointRush handoff
+# Acticlaim handoff
 
 Updated 1 October 2026. Read this before continuing, then verify git status and the remote develop head. This file records progress, not credentials or a deployed system.
 
@@ -117,6 +117,6 @@ Migration 0015 adds points, referrals and tiers; see POINTS.md. Full check passe
 
 Migration 0016 adds the opt-in credibility profile (POINTS.md). Native test teardown now tolerates connections closed by the forced test-database drop; pg's Pool.end() resolves before sockets close, which caused an intermittent uncaught error.
 
-Migration 0017 adds claim-code prize promotions (PROMOTIONS.md). Full check: 197 API tests; native 16/16. The product is now named Acticlaim (user-facing).
+Migration 0017 adds claim-code prize promotions (PROMOTIONS.md). Full check: 197 API tests; native 16/16. The product is now named Acticlaim (user-facing); internal identifiers keep the earlier name. Browser E2E ran for the first time using the preinstalled Chromium (`PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium`): all 13 scenarios pass after scoping three work-test alert locators to `main`, because Next's route announcer also has role alert. The earlier 390px overflow on /tasks disappeared with the shorter brand name; the header layout is still fragile and is replaced in the redesign.
 
 Next: shopper/merchant frontend and PWA.

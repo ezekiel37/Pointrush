@@ -32,7 +32,7 @@ export default function Page() {
     <main id="main-content" className="help">
       <Brand />
       <h1>A little clarity goes a long way.</h1>
-      <p>Answers for getting started with your PointRush account.</p>
+      <p>Answers for getting started with your Acticlaim account.</p>
       {questions.map(([question, answer]) => (
         <details key={question}>
           <summary>{question}</summary>

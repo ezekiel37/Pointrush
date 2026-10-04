@@ -25,9 +25,9 @@ export function authEmailContent(message: AuthEmail) {
   const verify = message.kind === 'verify-email';
   return {
     subject: verify
-      ? 'Verify your PointRush email'
-      : 'Reset your PointRush password',
-    text: `${verify ? 'Verify your email address' : 'Reset your password'} using this link:\n\n${message.url}\n\nIf you did not request this, ignore this email. Never share this link. PointRush will never ask for your password.`,
+      ? 'Verify your Acticlaim email'
+      : 'Reset your Acticlaim password',
+    text: `${verify ? 'Verify your email address' : 'Reset your password'} using this link:\n\n${message.url}\n\nIf you did not request this, ignore this email. Never share this link. Acticlaim will never ask for your password.`,
   };
 }
 
@@ -45,7 +45,7 @@ export function createResendAuthEmail(
   return async (message) =>
     send(
       {
-        from: `PointRush <${from}>`,
+        from: `Acticlaim <${from}>`,
         to: message.to,
         ...authEmailContent(message),
       },

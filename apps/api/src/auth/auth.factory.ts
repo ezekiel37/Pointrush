@@ -45,9 +45,9 @@ export function createAuth(
   return betterAuth({
     plugins: [
       emailQueuePlugin,
-      twoFactor({ issuer: 'PointRush', skipVerificationOnEnable: false }),
+      twoFactor({ issuer: 'Acticlaim', skipVerificationOnEnable: false }),
     ],
-    appName: 'PointRush',
+    appName: 'Acticlaim',
     secret: config.secret,
     baseURL: config.baseURL,
     basePath: '/api/v1/auth',

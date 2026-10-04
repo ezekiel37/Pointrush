@@ -3,11 +3,11 @@ import type { ReactNode } from 'react';
 import { ArrowUpRight, Check, MoveUpRight } from 'lucide-react';
 export function Brand() {
   return (
-    <Link href="/" className="brand" aria-label="PointRush home">
+    <Link href="/" className="brand" aria-label="Acticlaim home">
       <span className="brand-mark">
         <MoveUpRight aria-hidden size={22} />
       </span>
-      PointRush<span className="brand-dot">.</span>
+      Acticlaim<span className="brand-dot">.</span>
     </Link>
   );
 }
@@ -66,7 +66,7 @@ export function AuthFrame({
           <Brand />
         </header>
         <main id="main-content" className="auth-content">
-          <p className="eyebrow">Your PointRush account</p>
+          <p className="eyebrow">Your Acticlaim account</p>
           <h1>{title}</h1>
           <p className="intro">{description}</p>
           {children}

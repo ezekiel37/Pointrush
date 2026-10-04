@@ -1,10 +1,10 @@
-# PointRush Product Requirements Document
+# Acticlaim Product Requirements Document
 
 ## Document Map
 
 - [Current product direction](PRODUCT.md): purchase campaigns, jobs, credibility, and points/referral/tier fraud controls. It overrides this document where they conflict.
-- [Validation and approval rules](PointRush_Validation_Approval_Rules.md): field constraints, task models, funding commitments, review permissions and later verification badges.
-- [Testing and engineering rules](PointRush_Testing_Risk_Engineering_Rules.md): abuse cases and traceable acceptance scenarios.
+- [Validation and approval rules](Acticlaim_Validation_Approval_Rules.md): field constraints, task models, funding commitments, review permissions and later verification badges.
+- [Testing and engineering rules](Acticlaim_Testing_Risk_Engineering_Rules.md): abuse cases and traceable acceptance scenarios.
 - [Design direction](DESIGN.md): components, colours, typography and branding.
 - [UX contract](UX-CONTRACT.md): forms, search, feedback and recovery.
 - [Teams and revenue](TEAMS_AND_REVENUE.md): optional tasker collaboration, project leadership, reward allocation and commercial priorities; planned, not implemented.
@@ -13,12 +13,12 @@ Task means an individual mission; a campaign may contain multiple tasks. Funding
 
 ## 1. Product Summary
 
-**Working name:** PointRush  
+**Working name:** Acticlaim  
 **Tagline:** Complete missions. Earn points. Redeem rewards.
 
-PointRush is a gamified earning and rewards platform where users complete verified missions, earn points, rise through trust-based tiers, and redeem points for airtime, data, subscriptions, vouchers, discounts, and other rewards.
+Acticlaim is a gamified earning and rewards platform where users complete verified missions, earn points, rise through trust-based tiers, and redeem points for airtime, data, subscriptions, vouchers, discounts, and other rewards.
 
-For sponsors, brands, creators, businesses, and opportunity owners, PointRush is a way to fund verified actions instead of paying for empty attention. They can launch campaigns, define mission rules, fund reward pools, review submissions, and track real outcomes.
+For sponsors, brands, creators, businesses, and opportunity owners, Acticlaim is a way to fund verified actions instead of paying for empty attention. They can launch campaigns, define mission rules, fund reward pools, review submissions, and track real outcomes.
 
 The platform must feel simple, interactive, and money-connected from day one, but it must not become gambling, betting, forex, prediction, or luck-based earning.
 
@@ -32,7 +32,7 @@ Many people are constantly looking for ways to earn money, especially in markets
 - Hope of moving from small wins to bigger rewards.
 - Social proof that “people like me are earning.”
 
-PointRush should borrow the psychology of progress, status, missions, and rewards without copying the harmful parts of gambling, prediction markets, or financial speculation.
+Acticlaim should borrow the psychology of progress, status, missions, and rewards without copying the harmful parts of gambling, prediction markets, or financial speculation.
 
 ## 3. Product Goals
 
@@ -45,12 +45,12 @@ PointRush should borrow the psychology of progress, status, missions, and reward
 
 ## 4. Non-Goals
 
-- PointRush is not a betting platform.
-- PointRush is not a forex, crypto, or prediction app.
-- PointRush is not an app testing marketplace.
-- PointRush is not a product review platform.
-- PointRush is not a cash wallet at launch.
-- PointRush is not promising users income, employment, or guaranteed profit.
+- Acticlaim is not a betting platform.
+- Acticlaim is not a forex, crypto, or prediction app.
+- Acticlaim is not an app testing marketplace.
+- Acticlaim is not a product review platform.
+- Acticlaim is not a cash wallet at launch.
+- Acticlaim is not promising users income, employment, or guaranteed profit.
 
 ## 5. Target Users
 
@@ -344,7 +344,7 @@ Funding and review are separate state dimensions. A funded task may be pending r
 
 ### 13.1 Business and Claim Codes
 
-Offline and online promotions may use PointRush claim codes. QR is optional: it is only a faster way to open or submit the same code.
+Offline and online promotions may use Acticlaim claim codes. QR is optional: it is only a faster way to open or submit the same code.
 
 Standard customer-facing format:
 
@@ -352,8 +352,8 @@ Standard customer-facing format:
 PR-ABC-7K4M-9X2QD
 ```
 
-- `PR` identifies PointRush.
-- `ABC` is a unique three-character business code assigned by PointRush. It is not generated directly from the business name.
+- `PR` identifies Acticlaim.
+- `ABC` is a unique three-character business code assigned by Acticlaim. It is not generated directly from the business name.
 - `7K4M9X2QD` is a cryptographically random nine-character claim section.
 - Use an unambiguous alphabet that excludes confusing characters such as `0`, `O`, `1`, `I` and `L`.
 - The full normalized code is globally unique. Database uniqueness, secure generation and collision retry enforce this.
@@ -541,13 +541,13 @@ Support tickets should link to:
 
 ## 20. User FAQs
 
-### What is PointRush?
+### What is Acticlaim?
 
-PointRush is a platform where you complete verified missions, earn points, and redeem those points for rewards like airtime, data, subscriptions, vouchers, and partner offers.
+Acticlaim is a platform where you complete verified missions, earn points, and redeem those points for rewards like airtime, data, subscriptions, vouchers, and partner offers.
 
-### Is PointRush betting or gambling?
+### Is Acticlaim betting or gambling?
 
-No. PointRush is not betting, gambling, forex, crypto, or prediction. You earn points by completing verified actions, not by luck or risk.
+No. Acticlaim is not betting, gambling, forex, crypto, or prediction. You earn points by completing verified actions, not by luck or risk.
 
 ### How do I earn points?
 
@@ -555,7 +555,7 @@ You earn points by completing missions and submitting valid proof. Points are ad
 
 ### Are points the same as cash?
 
-No. Points are reward credits inside PointRush. They can be redeemed for supported rewards when you meet the redemption rules.
+No. Points are reward credits inside Acticlaim. They can be redeemed for supported rewards when you meet the redemption rules.
 
 ### Can I withdraw cash?
 
@@ -611,7 +611,7 @@ A sponsor changing their mind does not reverse valid earnings. Fraud or erroneou
 
 ### What does a verified badge mean?
 
-Later badges identify the checks PointRush performed on identity, business representation or linked profile ownership. They are separate from contact verification, tiers and campaign approval; they do not guarantee honesty, earnings or endorsement.
+Later badges identify the checks Acticlaim performed on identity, business representation or linked profile ownership. They are separate from contact verification, tiers and campaign approval; they do not guarantee honesty, earnings or endorsement.
 
 ## 21. Technical Architecture
 
@@ -652,7 +652,7 @@ Rules:
 - Keep provider integrations behind service interfaces.
 - Store files in a portable object storage provider.
 - Persist critical state changes, ledger entries and required events/jobs atomically. In-process events are only for effects safe to lose or recompute; retries must not duplicate rewards, payments or notifications.
-- Keep notification audiences, preferences and read state in PointRush. FCM/Resend deliver messages; SMS stays disabled until its use case and spending controls are approved.
+- Keep notification audiences, preferences and read state in Acticlaim. FCM/Resend deliver messages; SMS stays disabled until its use case and spending controls are approved.
 - Introduce narrow provider interfaces with their consuming features. Do not prebuild adapters for unused providers or a generic database abstraction.
 
 ## 22. Key Data Objects
@@ -700,7 +700,7 @@ Mandatory controls:
 
 ## 24. Testing, Abuse Cases, and Engineering Standards
 
-PointRush must be designed as if users, sponsors, providers, and even internal admins can make mistakes or abuse the system. The product must not rely on trust alone.
+Acticlaim must be designed as if users, sponsors, providers, and even internal admins can make mistakes or abuse the system. The product must not rely on trust alone.
 
 ### 24.1 Critical Abuse Cases
 
@@ -785,7 +785,7 @@ Actions:
 
 ### Phase 4: Rewards and Loyalty Network
 
-Goal: make PointRush more like a loyalty economy.
+Goal: make Acticlaim more like a loyalty economy.
 
 Actions:
 
@@ -850,15 +850,15 @@ Verified sponsor and verified user/creator badges are later features, independen
 
 For users:
 
-**PointRush helps you complete simple verified missions, earn points, and redeem rewards without betting, gambling, or fake promises.**
+**Acticlaim helps you complete simple verified missions, earn points, and redeem rewards without betting, gambling, or fake promises.**
 
 For sponsors:
 
-**PointRush helps you fund verified actions from real users and track what your campaign actually achieved.**
+**Acticlaim helps you fund verified actions from real users and track what your campaign actually achieved.**
 
 For the admin/business:
 
-**PointRush turns user attention and action into a controlled rewards economy funded first by a launch pool, then increasingly by sponsors and partners.**
+**Acticlaim turns user attention and action into a controlled rewards economy funded first by a launch pool, then increasingly by sponsors and partners.**
 
 ## 29. Confirmed Launch Clarifications (2026-09-27)
 
@@ -871,12 +871,12 @@ For the admin/business:
 
 ## 30. Teams and Commercial Priorities (2026-10-01)
 
-Tasker teams are an optional participation model alongside individual earners. PointRush continues to support missions, creators, job seekers, offline offers and redemption campaigns; team projects do not replace these audiences or turn every task into a project.
+Tasker teams are an optional participation model alongside individual earners. Acticlaim continues to support missions, creators, job seekers, offline offers and redemption campaigns; team projects do not replace these audiences or turn every task into a project.
 
 - A team has an owner and accepted members. Each project can appoint its own lead and contributors; the team owner need not lead every project. Start without nested departments or custom role builders.
 - Sponsors explicitly choose individual, team or either participation. Existing tasks remain individual until the team model is implemented. Team membership does not multiply eligibility, slots or individual rewards.
 - Members agree to responsibilities and exact reward allocations before committing to work. Record individual contributions, deadlines, internal feedback and final acceptance. Leadership does not confer access to members' personal balances or authority to release sponsor funds.
-- Credit accepted rewards directly to members' individual PointRush balances under published redemption rules. No shared team wallet or cash-withdrawal capability is approved by this change.
+- Credit accepted rewards directly to members' individual Acticlaim balances under published redemption rules. No shared team wallet or cash-withdrawal capability is approved by this change.
 - Preserve earned rewards and contribution history when members leave, are removed or ownership changes. Handle incomplete work through agreed amendment, cancellation and dispute rules.
 - Reputation distinguishes individual contributions, team outcomes and leadership history. Titles, paid subscriptions and reciprocal internal approvals do not manufacture public trust.
 - Basic team creation should be free. Prioritise successful funded work, milestones when supported, team applications, evidence-backed portfolios and repeat hiring. Paid team tools and sponsor subscriptions require demonstrated demand; no pay-to-apply gate is introduced.

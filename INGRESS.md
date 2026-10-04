@@ -27,7 +27,7 @@ Do not add a load balancer, Worker or tunnel simply to make the diagram complete
 
 1. List API and worker URLs, domain mappings, preview/tag endpoints, ingress settings and IAM invokers. Use synthetic accounts.
 2. Test from two independent networks. Confirm expected visitor separation, including IPv6, without exposing a public diagnostic endpoint or recording raw credentials.
-3. Send forged X-Forwarded-For chains, Forwarded, CF-Connecting-IP, True-Client-IP and the internal PointRush header. Vary addresses and duplicate headers. Rate limits must not reset because of caller-controlled input.
+3. Send forged X-Forwarded-For chains, Forwarded, CF-Connecting-IP, True-Client-IP and the internal Acticlaim header. Vary addresses and duplicate headers. Rate limits must not reset because of caller-controlled input.
 4. Repeat through the intended hostname and directly against every origin path. Either reject bypasses or apply an independently verified identity policy to them.
 5. Verify host/protocol spoofing cannot alter auth redirects, cookie security or allowed origins. Keep AUTH_BASE_URL explicit and test real browser cookies on the production domain arrangement.
 6. Verify unauthorized worker invocation is denied before provider work. Exercise valid scheduler calls, overlap, timeout recovery and stable provider idempotency keys. Do not disable worker URLs needed by the scheduler without a replacement path.

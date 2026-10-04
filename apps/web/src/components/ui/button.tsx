@@ -3,7 +3,7 @@ import { Slot } from '@radix-ui/react-slot';
 import { cva } from 'class-variance-authority';
 import type { VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
-// Adapted from the shadcn/ui Radix Button (MIT); shared PointRush tokens.
+// Adapted from the shadcn/ui Radix Button (MIT); shared Acticlaim tokens.
 export const buttonVariants = cva('button', {
   variants: {
     variant: {

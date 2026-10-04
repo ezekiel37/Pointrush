@@ -1,6 +1,6 @@
-# PointRush Testing, Risk, and Engineering Rules
+# Acticlaim Testing, Risk, and Engineering Rules
 
-Related contracts: [PRD](PointRush_PRD.md), [validation and approval](PointRush_Validation_Approval_Rules.md), [design](DESIGN.md), [UX behaviour](UX-CONTRACT.md). Acceptance cases below describe required future tests, not tests already implemented.
+Related contracts: [PRD](Acticlaim_PRD.md), [validation and approval](Acticlaim_Validation_Approval_Rules.md), [design](DESIGN.md), [UX behaviour](UX-CONTRACT.md). Acceptance cases below describe required future tests, not tests already implemented.
 
 ## 1. Purpose
 
@@ -31,7 +31,7 @@ This document exists to break the product before real users do.
 
 The goal is to identify abuse paths, real-world failure cases, operational risks, software architecture rules, UI/UX rules, and testing standards before implementation starts.
 
-PointRush touches rewards, trust, sponsors, user incentives, referrals, and redemption. That means weak product rules or messy code can quickly become financial loss, user anger, sponsor churn, or fraud.
+Acticlaim touches rewards, trust, sponsors, user incentives, referrals, and redemption. That means weak product rules or messy code can quickly become financial loss, user anger, sponsor churn, or fraud.
 
 ## 2. Core Testing Mindset
 
@@ -73,7 +73,7 @@ The system must survive these situations without losing money, breaking trust, o
 
 | Scenario | What Can Break | Required Rule |
 | --- | --- | --- |
-| Vague mission instructions | Users submit wrong proof and blame PointRush | Mission template must require clear steps, proof example, and rejection reasons |
+| Vague mission instructions | Users submit wrong proof and blame Acticlaim | Mission template must require clear steps, proof example, and rejection reasons |
 | Sponsor rejects valid submissions | Users lose trust | Admin arbitration must exist |
 | Sponsor underfunds campaign | Users complete missions without guaranteed reward | Budget must be reserved before launch |
 | Sponsor asks for spam | Platform reputation suffers | Admin campaign approval and prohibited campaign policy |
@@ -360,7 +360,7 @@ Required test types:
 
 ## 14. Minimum Quality Bar Before Launch
 
-PointRush should not launch until:
+Acticlaim should not launch until:
 
 - Points ledger is working.
 - Wallet states are clear.

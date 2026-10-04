@@ -215,7 +215,7 @@ test('unknown and existing reset requests have the same public response', async 
   assert.deepEqual(await known.json(), await unknown.json());
 });
 
-test('authenticated onboarding links one auth identity atomically to one PointRush account', async () => {
+test('authenticated onboarding links one auth identity atomically to one Acticlaim account', async () => {
   const email = 'onboarding@example.test';
   assert.equal(
     (await request('/sign-up/email', { email, password, name: 'Onboarding' }))

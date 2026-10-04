@@ -111,7 +111,7 @@ export async function campaignFixture() {
     const created = await sponsors.createTask(owner.user, {
       requestId: randomUUID(),
       title: 'Lunch cash back',
-      instructions: 'Buy any meal and show your PointRush code at the counter.',
+      instructions: 'Buy any meal and show your Acticlaim code at the counter.',
       proofRequirements: 'Purchase confirmed by the business at the till.',
       rejectionCriteria: 'Refunded or cancelled orders.',
       model: 'purchase_cashback',

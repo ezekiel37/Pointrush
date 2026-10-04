@@ -37,7 +37,7 @@ async function bootstrap() {
 
 void bootstrap().catch(() => {
   process.stderr.write(
-    'PointRush email HTTP worker startup failed. Check configuration.\n',
+    'Acticlaim email HTTP worker startup failed. Check configuration.\n',
   );
   process.exitCode = 1;
 });

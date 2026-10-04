@@ -3,7 +3,7 @@ import { and, eq } from 'drizzle-orm';
 import type { FundingDatabase } from '../funding/funding-ledger.js';
 import * as s from '../database/schema.js';
 
-// Database rule violations raised by PointRush triggers. Their messages are stable
+// Database rule violations raised by Acticlaim triggers. Their messages are stable
 // product reasons; constraint names and other driver detail are never returned.
 const reasons: Record<string, string> = {
   'Campaign is full': 'campaign_full',

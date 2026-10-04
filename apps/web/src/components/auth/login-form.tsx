@@ -82,7 +82,7 @@ export function LoginForm() {
         </Button>
       </Form>
       <p className="form-switch">
-        New to PointRush? <Link href="/signup">Create an account</Link>
+        New to Acticlaim? <Link href="/signup">Create an account</Link>
       </p>
       <p className="small-note">
         <Link href="/verify-email">Resend verification email</Link>

@@ -66,7 +66,7 @@ export function TwoFactorScreen() {
         <div className="security-intro">
           <ShieldCheck size={24} aria-hidden />
           <p>
-            This setup is for appointed PointRush reviewers. Your authenticator
+            This setup is for appointed Acticlaim reviewers. Your authenticator
             secret is shown only during setup. Save the backup codes privately
             before you continue.
           </p>
@@ -129,7 +129,7 @@ export function TwoFactorScreen() {
         journeyLabel="Authenticator setup steps"
       >
         <section className="mfa-setup" aria-labelledby="setup-heading">
-          <h2 id="setup-heading">Add PointRush to your app</h2>
+          <h2 id="setup-heading">Add Acticlaim to your app</h2>
           <p>
             In your authenticator app, add a new account and choose manual
             setup. Copy this link into the app if it supports importing an

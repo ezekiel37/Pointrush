@@ -21,7 +21,7 @@ const dates = () => ({
     .defaultNow(),
 });
 
-// Authentication identities are not PointRush accounts or verification badges.
+// Authentication identities are not Acticlaim accounts or verification badges.
 export const authUsers = pgTable('auth_users', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),

@@ -1,6 +1,8 @@
-# PointRush
+# Acticlaim
 
-Production-oriented rewards platform for Nigeria. The product is under construction, not ready for public use or real funds.
+The product name is **Acticlaim**. Internal identifiers (the `@pointrush/*` workspace packages, the `PointRushAuth` type, the `X-PointRush-Worker-Key` worker header, database and repository names) keep the earlier working name; they are not user-facing.
+
+Businesses lock money to pay for verified outcomes: purchase cash back, prize claim codes and paid jobs. People earn and build a credibility record nobody can fake. Starting in Nigeria; under construction, not ready for public use or real funds.
 
 ## Current Slice
 
@@ -60,9 +62,9 @@ These are implementation slices of the full product, not a reduced launch scope.
 ## Product Contracts
 
 - [Current product direction](PRODUCT.md)
-- [PRD](PointRush_PRD.md)
-- [Validation and approvals](PointRush_Validation_Approval_Rules.md)
-- [Testing and engineering rules](PointRush_Testing_Risk_Engineering_Rules.md)
+- [PRD](Acticlaim_PRD.md)
+- [Validation and approvals](Acticlaim_Validation_Approval_Rules.md)
+- [Testing and engineering rules](Acticlaim_Testing_Risk_Engineering_Rules.md)
 - [Design](DESIGN.md)
 - [UX](UX-CONTRACT.md)
 

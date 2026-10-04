@@ -4,8 +4,8 @@ import '@fontsource/manrope/latin-600.css';
 import '@fontsource/manrope/latin-700.css';
 import './globals.css';
 export const metadata: Metadata = {
-  title: { default: 'PointRush', template: '%s | PointRush' },
-  description: 'Your PointRush account.',
+  title: { default: 'Acticlaim', template: '%s | Acticlaim' },
+  description: 'Your Acticlaim account.',
   robots: { index: false, follow: false },
 };
 export default function RootLayout({ children }: { children: ReactNode }) {
