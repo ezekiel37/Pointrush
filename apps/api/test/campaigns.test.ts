@@ -227,6 +227,15 @@ test('capacity is enforced, voids reopen a place and voided purchases never pay'
   );
   const listed = await new TaskQueriesService(db).discover(c.user, {});
   assert.equal(listed.items.find((item) => item.id === id)?.claimed, 2);
+  const queries = new TaskQueriesService(db);
+  const offers = await queries.discover(c.user, { kind: 'offers' });
+  assert.ok(offers.items.every((item) => item.model === 'purchase_cashback'));
+  assert.ok(offers.items.some((item) => item.id === id));
+  const jobs = await queries.discover(c.user, { kind: 'jobs' });
+  assert.ok(!jobs.items.some((item) => item.id === id));
+  await assert.rejects(queries.discover(c.user, { kind: 'bets' }), {
+    status: 400,
+  });
 });
 
 test('expired codes, daily shopper limits and code minting are bounded', async () => {

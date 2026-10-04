@@ -21,6 +21,8 @@ const pageInput = z
   .strict();
 const discoveryInput = pageInput.extend({
   q: z.string().trim().max(100).optional(),
+  // Offers (purchase campaigns) and jobs are browsed separately.
+  kind: z.enum(['offers', 'jobs']).optional(),
 });
 function parse<T>(schema: z.ZodType<T>, value: unknown): T {
   const parsed = schema.safeParse(value);
@@ -137,6 +139,11 @@ export class TaskQueriesService {
           query.q
             ? sql`strpos(lower(${s.sponsorTasks.title}),lower(${query.q}))>0`
             : undefined,
+          query.kind === 'offers'
+            ? eq(s.sponsorTasks.model, 'purchase_cashback')
+            : query.kind === 'jobs'
+              ? ne(s.sponsorTasks.model, 'purchase_cashback')
+              : undefined,
         ),
       )
       .orderBy(s.sponsorTasks.id)
@@ -171,6 +178,7 @@ export class TaskQueriesService {
         title: s.sponsorTasks.title,
         reviewState: s.sponsorTasks.reviewState,
         lifecycle: s.sponsorTasks.lifecycle,
+        model: s.sponsorTasks.model,
         endsAt: s.sponsorTasks.endsAt,
         budgetKobo: sql<string>`${s.sponsorTasks.budgetKobo}::text`,
       })
