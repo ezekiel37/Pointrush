@@ -619,6 +619,25 @@ test('review HTTP boundary rejects missing MFA, expired assurance and missing gr
     .get('/api/v1/purchases?accountId=forged')
     .set('Cookie', cookie)
     .expect(400);
+  // Profiles are shareable without a session; owner controls are not.
+  await request(server).get('/api/v1/profiles/someone_new').expect(404);
+  await request(server).get('/api/v1/profiles/me').expect(401);
+  await request(server).get('/api/v1/points').expect(401);
+  await request(server)
+    .post('/api/v1/profiles/me/visibility')
+    .set('Cookie', cookie)
+    .send({ public: true })
+    .expect(403);
+  const mine = await request(server)
+    .get('/api/v1/profiles/me')
+    .set('Cookie', cookie)
+    .expect(200);
+  assert.equal(mine.body.public, false);
+  const balance = await request(server)
+    .get('/api/v1/points')
+    .set('Cookie', cookie)
+    .expect(200);
+  assert.equal(balance.body.points.available, '0');
 
   await request(server)
     .post(`/api/v1/work/tasks/${created.body.id}/publish`)

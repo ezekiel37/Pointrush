@@ -330,6 +330,9 @@ before(async () => {
   url.pathname = `/${databaseName}`;
   config = { ...adminConfig, connectionString: url.toString() };
   pool = new Pool(config);
+  // pool.end() resolves before every socket has closed; the teardown's forced
+  // DROP DATABASE may then terminate a closing connection. Expected, not a failure.
+  pool.on('error', () => undefined);
   database = new DatabaseService(config);
   assert.equal(await database.isReady(), false);
   await runMigrations(config, folder);
@@ -577,7 +580,7 @@ test('native concurrent tills cannot exceed campaign capacity and concurrent rel
       ...config,
       options:
         '-c search_path=test_clock,pg_catalog,public -c test.offset=PT25H',
-    });
+    }).on('error', () => undefined);
   const later = [shifted(), shifted()];
   try {
     await pool.query(`

@@ -115,4 +115,6 @@ Verification: full `npm run check` passed (185 API tests, 10 web tests, lint, ty
 
 Migration 0015 adds points, referrals and tiers; see POINTS.md. Full check passed with 191 API tests; native suite 15/15.
 
-Next: credibility profile, then the shopper/merchant frontend and PWA.
+Migration 0016 adds the opt-in credibility profile (POINTS.md). Native test teardown now tolerates connections closed by the forced test-database drop; pg's Pool.end() resolves before sockets close, which caused an intermittent uncaught error.
+
+Next: shopper/merchant frontend and PWA.

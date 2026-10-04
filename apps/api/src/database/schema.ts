@@ -143,4 +143,5 @@ export {
   pointsPools,
   pointsEntries,
   referrals,
+  publicProfiles,
 } from '../points/points.schema.js';

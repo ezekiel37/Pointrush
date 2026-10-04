@@ -77,3 +77,11 @@ export const referrals = pgTable(
     index('referral_referrer').on(t.referrerId, t.createdAt),
   ],
 );
+
+// Opt-in: the public credibility profile is private until the owner publishes it.
+export const publicProfiles = pgTable('public_profiles', {
+  accountId: uuid('account_id')
+    .primaryKey()
+    .references(() => accounts.id),
+  createdAt: at('created_at').notNull().defaultNow(),
+});

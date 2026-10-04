@@ -28,3 +28,9 @@ GET `/api/v1/points` returns available and pending points, tier with the next th
 ## Verification and gaps
 
 PGlite tests cover pool caps, no-pool and no-phone settlement, the purchase ratio and per-business limit, forged inserts, immutable history, referral eligibility, circular and late referrals, referrer-owned businesses, delayed phone qualification and the monthly reward cap. Pool serialization uses a transaction advisory lock; it has not yet been exercised by a native concurrent test. Device and IP signals, reversals and redemption are not implemented.
+
+## Credibility profile
+
+Migration 0016. GET `/api/v1/profiles/:username` is public (no session) and returns only opted-in, active accounts; missing, private and suspended profiles all return 404. GET `/api/v1/profiles/me` previews it; POST `/api/v1/profiles/me/visibility` `{public}` publishes or hides it. Profiles are private by default.
+
+The profile is derived from settled records only: tier, distinct businesses, paid jobs, repeat clients, released purchase count and the latest 20 paid jobs (title, business, date). Where someone shops is private, so purchases are a count and never name a business. Public routes have no rate limit yet; add one before launch.

@@ -5,11 +5,24 @@ import { eq, sql } from 'drizzle-orm';
 import * as s from '../src/database/schema.js';
 import { CampaignsService } from '../src/campaigns/campaigns.service.js';
 import { PointsService, tierFor } from '../src/points/points.service.js';
+import { ProfilesService } from '../src/points/profiles.service.js';
+import { TaskReviewService } from '../src/reviews/task-review.service.js';
+import { taskReviewChecklist } from '../src/reviews/task-review.schema.js';
 import { campaignFixture } from './helpers/campaign-fixture.js';
 import type { Identity } from './helpers/campaign-fixture.js';
 
-const { pg, db, identity, travel, business, campaign } =
-  await campaignFixture();
+const {
+  pg,
+  db,
+  identity,
+  travel,
+  business,
+  campaign,
+  fund,
+  sponsors,
+  work,
+  reviewer,
+} = await campaignFixture();
 const campaigns = new CampaignsService(db);
 const points = new PointsService(db);
 after(() => pg.close());
@@ -292,4 +305,100 @@ test('a referrer earns at most five referral rewards in thirty days', async () =
     rewarded.filter((e) => e.kind === 'referral_referrer').length,
     5,
   );
+});
+
+test('credibility profile is opt-in, derived from settled records and private about shopping', async () => {
+  const profiles = new ProfilesService(db);
+  const person = await identity();
+  await username(person, 'tolu_proven');
+  await db
+    .insert(s.accountProfiles)
+    .values({ accountId: person.account, displayName: 'Tolu A.' });
+  await buy(person, await campaign(1));
+
+  // A paid job from a business, through the existing reviewed work flow.
+  const client = await business('Lagos Design Studio');
+  await fund(client.account, 400000n);
+  for (let i = 0; i < 2; i++) {
+    const start = new Date(Date.now() + 400);
+    const job = await sponsors.createTask(client.user, {
+      requestId: randomUUID(),
+      title: `Product photos, batch ${i + 1}`,
+      instructions: 'Shoot 10 product photos on a white background.',
+      proofRequirements: 'Link to the delivered photo set.',
+      rejectionCriteria: 'Blurred or reused images.',
+      model: 'capped_fixed',
+      capacity: 1,
+      rewardKobo: '200000',
+      startsAt: start.toISOString(),
+      endsAt: new Date(start.getTime() + 86400000).toISOString(),
+      workTerms: {
+        reviewHours: 24,
+        correctionHours: 24,
+        appealHours: 48,
+        settlement: 'approved_reward_backing',
+      },
+    });
+    const [row] = await db
+      .select()
+      .from(s.sponsorTasks)
+      .where(eq(s.sponsorTasks.id, job.id));
+    await new TaskReviewService(db).decide(reviewer, {
+      taskId: row!.id,
+      requestId: randomUUID(),
+      termsVersion: row!.termsVersion,
+      termsHash: row!.requestHash,
+      decision: 'approved',
+      reason: 'Clear paid brief',
+      checklist: { ...taskReviewChecklist },
+    });
+    await work.publish(client.user, job.id);
+    await new Promise((r) =>
+      setTimeout(r, Math.max(0, start.getTime() - Date.now() + 20)),
+    );
+    const claim = await work.join(person.user, job.id);
+    const proof = await work.submit(person.user, claim.id, {
+      id: randomUUID(),
+      revision: 1,
+      evidence: 'https://example.test/photos',
+    });
+    await work.decide(client.user, proof.id, {
+      id: randomUUID(),
+      decision: 'approved',
+      reason: 'Delivered as briefed',
+    });
+  }
+
+  await assert.rejects(profiles.publicProfile('tolu_proven'), { status: 404 });
+  const own = await profiles.own(person.user);
+  assert.equal(own.public, false);
+  await profiles.setVisibility(person.user, { public: true });
+  const shown = await profiles.publicProfile('TOLU_PROVEN');
+  assert.equal(shown.displayName, 'Tolu A.');
+  assert.deepEqual(shown.stats, {
+    businesses: 2,
+    jobsCompleted: 2,
+    repeatClients: 1,
+    purchases: 1,
+  });
+  assert.equal(shown.work.length, 2);
+  assert.ok(shown.work.every((w) => w.businessName === 'Lagos Design Studio'));
+  // Shopping history is a count only: no purchase business appears anywhere.
+  assert.ok(!JSON.stringify(shown).includes('Mama Put Kitchen'));
+  assert.equal('public' in shown, false);
+
+  await assert.rejects(profiles.publicProfile('no_such_person'), {
+    status: 404,
+  });
+  await assert.rejects(profiles.publicProfile('../etc'), { status: 404 });
+  await profiles.setVisibility(person.user, { public: false });
+  await assert.rejects(profiles.publicProfile('tolu_proven'), { status: 404 });
+  await profiles.setVisibility(person.user, { public: true });
+  await db.execute(
+    sql`update accounts set access_state = 'suspended' where id = ${person.account}`,
+  );
+  await assert.rejects(profiles.publicProfile('tolu_proven'), { status: 404 });
+  await assert.rejects(profiles.setVisibility(person.user, { public: true }), {
+    status: 403,
+  });
 });
