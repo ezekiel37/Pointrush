@@ -145,3 +145,11 @@ export {
   referrals,
   publicProfiles,
 } from '../points/points.schema.js';
+export {
+  claimCodeBatches,
+  claimCodes,
+  claimBatchActivations,
+  claimBatchRevocations,
+  claimRedemptions,
+  claimAttempts,
+} from '../promotions/promotion.schema.js';

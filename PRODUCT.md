@@ -37,6 +37,10 @@ Only the business's own locked money pays cash back. The platform never subsidis
 
 The business sees confirmations, voids, releases and the share of shoppers who came back. Campaign designs that reward return visits are a planned extension.
 
+## Claim-code prize promotions
+
+A business runs its own promotion (scratch papers, codes under caps, one code per pack) and locks the prize money with Acticlaim. Acticlaim generates the codes, verifies each claim once and pays the prize. Chance-based promotions need the business's state permit, checked in review. Prize claims never earn points or tier credit. See PROMOTIONS.md.
+
 ## Points, referrals and tiers
 
 These are platform-funded, so they carry the fraud risk. Controls are enforced in the database, not only in the service layer.

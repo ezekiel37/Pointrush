@@ -11,7 +11,11 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
-import type { CampaignTerms, WorkTerms } from '../tasks/task-terms.js';
+import type {
+  CampaignTerms,
+  PromotionTerms,
+  WorkTerms,
+} from '../tasks/task-terms.js';
 import { accounts } from '../database/schema.js';
 import { fundingAccounts } from '../funding/funding.schema.js';
 
@@ -51,6 +55,7 @@ export const sponsorTasks = pgTable(
       .references(() => fundingAccounts.id),
     workTerms: jsonb('work_terms').$type<WorkTerms>(),
     campaignTerms: jsonb('campaign_terms').$type<CampaignTerms>(),
+    promotionTerms: jsonb('promotion_terms').$type<PromotionTerms>(),
     title: varchar('title', { length: 160 }).notNull(),
     instructions: text('instructions').notNull(),
     proofRequirements: text('proof_requirements').notNull(),
@@ -72,12 +77,16 @@ export const sponsorTasks = pgTable(
     uniqueIndex('sponsor_task_allocation_unique').on(t.allocationAccountId),
     check(
       'sponsor_task_model',
-      sql`${t.model} in ('capped_fixed', 'selected_assignment', 'purchase_cashback')`,
+      sql`${t.model} in ('capped_fixed', 'selected_assignment', 'purchase_cashback', 'claim_code')`,
     ),
     // Purchase campaigns carry campaign terms instead of work terms.
     check(
       'sponsor_task_campaign_terms',
       sql`(${t.model} = 'purchase_cashback') = (${t.campaignTerms} is not null) and (${t.model} <> 'purchase_cashback' or ${t.workTerms} is null)`,
+    ),
+    check(
+      'sponsor_task_promotion_terms',
+      sql`(${t.model} = 'claim_code') = (${t.promotionTerms} is not null) and (${t.model} <> 'claim_code' or ${t.workTerms} is null)`,
     ),
     check(
       'sponsor_task_budget',

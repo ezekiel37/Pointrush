@@ -145,7 +145,63 @@ export async function campaignFixture() {
     };
   }
 
+  // Funds, reviews and publishes a live claim-code prize promotion.
+  async function promotion(
+    prizes = 3,
+    prizeKobo = '100000',
+    terms: Record<string, unknown> = {},
+  ) {
+    const owner = await business('Fizz Drinks');
+    await fund(owner.account, BigInt(prizeKobo) * BigInt(prizes));
+    const start = new Date(Date.now() + 400);
+    const created = await sponsors.createTask(owner.user, {
+      requestId: randomUUID(),
+      title: 'Scratch and win',
+      instructions: 'Scratch your paper. Winning papers show a code to claim.',
+      proofRequirements: 'A valid, unclaimed winning code.',
+      rejectionCriteria: 'Invalid, used or withdrawn codes.',
+      model: 'claim_code',
+      capacity: prizes,
+      rewardKobo: prizeKobo,
+      startsAt: start.toISOString(),
+      endsAt: new Date(start.getTime() + 2 * 86400000).toISOString(),
+      promotionTerms: {
+        mode: 'chance',
+        permit: {
+          authority: 'Lagos State Lotteries and Gaming Authority',
+          number: 'LSLGA/PC/0001',
+        },
+        claimLimitPerPerson: 1,
+        howToGetCodes: 'Buy any 50cl Fizz at participating stores.',
+        ...terms,
+      },
+    });
+    const [row] = await db
+      .select()
+      .from(s.sponsorTasks)
+      .where(eq(s.sponsorTasks.id, created.id));
+    await new TaskReviewService(db).decide(reviewer, {
+      taskId: row!.id,
+      requestId: randomUUID(),
+      termsVersion: row!.termsVersion,
+      termsHash: row!.requestHash,
+      decision: 'approved',
+      reason: 'Permit and prize terms checked',
+      checklist: { ...taskReviewChecklist },
+    });
+    await work.publish(owner.user, created.id);
+    await new Promise((r) =>
+      setTimeout(r, Math.max(0, start.getTime() - Date.now() + 20)),
+    );
+    return {
+      merchant: owner,
+      id: created.id,
+      allocation: created.allocationAccountId,
+    };
+  }
+
   return {
+    promotion,
     pg,
     db,
     sponsors,

@@ -8,6 +8,7 @@ import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from '../../src/database/schema.js';
 import { CampaignsService } from '../../src/campaigns/campaigns.service.js';
+import { PromotionsService } from '../../src/promotions/promotions.service.js';
 import { TaskWorkService } from '../../src/tasks/task-work.service.js';
 import { readMigrationFiles } from 'drizzle-orm/migrator';
 import { AccountsService } from '../../src/accounts/accounts.service.js';
@@ -718,6 +719,146 @@ test('native concurrent tills cannot exceed campaign capacity and concurrent rel
     );
   } finally {
     await Promise.all(later.map((p) => p.end()));
+    await other.onApplicationShutdown();
+  }
+});
+
+test('native simultaneous claims of one winning code pay exactly one person', async () => {
+  const other = new DatabaseService(config);
+  try {
+    let phone = 0;
+    const identity = async (verified = false) => {
+      const user = randomUUID();
+      await database.db.insert(authUsers).values({
+        id: user,
+        name: 'Native',
+        email: `${user}@example.test`,
+        emailVerified: true,
+      });
+      const [account] = await database.db
+        .insert(accounts)
+        .values({})
+        .returning();
+      await database.db
+        .insert(authAccountLinks)
+        .values({ accountId: account!.id, authUserId: user });
+      if (verified)
+        await database.db.insert(schema.verifiedPhones).values({
+          accountId: account!.id,
+          phoneNumber:
+            `+23470${String(++phone).padStart(8, '0')}${Math.floor(Math.random() * 10)}`.slice(
+              0,
+              16,
+            ),
+        });
+      return { user, account: account!.id };
+    };
+    const merchant = await identity();
+    const sponsors = new SponsorsService(database, 'test-v1');
+    await sponsors.createProfile(merchant.user, {
+      name: 'Native drinks',
+      acceptTerms: true,
+      termsVersion: 'test-v1',
+    });
+    await database.db
+      .insert(fundingAccounts)
+      .values({ bucket: 'clearing' })
+      .onConflictDoNothing();
+    const [clearing] = await database.db
+      .select()
+      .from(fundingAccounts)
+      .where(eq(fundingAccounts.bucket, 'clearing'));
+    const [available] = await database.db
+      .select()
+      .from(fundingAccounts)
+      .where(eq(fundingAccounts.ownerId, merchant.account));
+    await postFundingTransfer(database.db, {
+      id: randomUUID(),
+      sourceId: clearing!.id,
+      destinationId: available!.id,
+      amountKobo: 7000n,
+      actorId: merchant.account,
+      kind: 'funding_confirmed',
+      reference: `test:${randomUUID()}`,
+      reason: 'Native test',
+    });
+    const start = new Date(Date.now() + 1000);
+    const created = await sponsors.createTask(merchant.user, {
+      requestId: randomUUID(),
+      title: 'Native scratch and win',
+      instructions: 'Scratch to reveal',
+      proofRequirements: 'Winning code',
+      rejectionCriteria: 'Invalid codes',
+      model: 'claim_code',
+      capacity: 1,
+      rewardKobo: '7000',
+      startsAt: start.toISOString(),
+      endsAt: new Date(start.getTime() + 86400000).toISOString(),
+      promotionTerms: {
+        mode: 'every_code_wins',
+        permit: null,
+        claimLimitPerPerson: 1,
+        howToGetCodes: 'One code in every crate',
+      },
+    });
+    const [reviewer] = await database.db
+      .insert(accounts)
+      .values({})
+      .returning();
+    await database.db.insert(taskReviewerGrants).values({
+      reviewerId: reviewer!.id,
+      grantedBy: reviewer!.id,
+      reason: 'Native test',
+      expiresAt: new Date(Date.now() + 3600000),
+    });
+    const [row] = await database.db
+      .select()
+      .from(sponsorTasks)
+      .where(eq(sponsorTasks.id, created.id));
+    await new TaskReviewService(database.db).decide(reviewer!.id, {
+      taskId: row!.id,
+      requestId: randomUUID(),
+      termsVersion: row!.termsVersion,
+      termsHash: row!.requestHash,
+      decision: 'approved',
+      reason: 'Native approval',
+      checklist: { ...taskReviewChecklist },
+    });
+    await new TaskWorkService(database.db).publish(merchant.user, created.id);
+    await new Promise((r) => setTimeout(r, start.getTime() - Date.now() + 50));
+    const promotions = new PromotionsService(database.db);
+    const batch = await promotions.createBatch(merchant.user, created.id, {
+      id: randomUUID(),
+      label: 'Native crate',
+      size: 1,
+    });
+    await promotions.activateBatch(merchant.user, batch.batchId);
+    const people = [await identity(true), await identity(true)];
+    const outcomes = await Promise.allSettled(
+      people.map((person, i) =>
+        new PromotionsService(i === 0 ? database.db : other.db).claim(
+          person.user,
+          { id: randomUUID(), code: batch.codes[0]! },
+        ),
+      ),
+    );
+    assert.equal(outcomes.filter((r) => r.status === 'fulfilled').length, 1);
+    assert.equal(outcomes.filter((r) => r.status === 'rejected').length, 1);
+    assert.equal(
+      await fundingBalance(database.db, created.allocationAccountId),
+      0n,
+    );
+    const wallets = await database.db
+      .select()
+      .from(fundingAccounts)
+      .where(eq(fundingAccounts.bucket, 'reward_wallet'));
+    let paid = 0n;
+    for (const person of people) {
+      const wallet = wallets.find((w) => w.ownerId === person.account);
+      if (wallet) paid += await fundingBalance(database.db, wallet.id);
+    }
+    assert.equal(paid, 7000n);
+  } finally {
     await other.onApplicationShutdown();
   }
 });

@@ -14,6 +14,11 @@ const reasons: Record<string, string> = {
   'Purchase cannot be voided': 'void_rejected',
   'Cash back is not releasable': 'not_releasable',
   'Referral unavailable': 'referral_unavailable',
+  'Code cannot be claimed': 'claim_rejected',
+  'Claim limit reached for this promotion': 'claim_limit',
+  'More codes than funded prizes': 'codes_exceed_prizes',
+  'Codes cannot be issued for this promotion': 'batch_unavailable',
+  'Batch action unavailable': 'batch_unavailable',
 };
 
 function databaseError(error: unknown) {

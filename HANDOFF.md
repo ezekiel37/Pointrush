@@ -117,4 +117,6 @@ Migration 0015 adds points, referrals and tiers; see POINTS.md. Full check passe
 
 Migration 0016 adds the opt-in credibility profile (POINTS.md). Native test teardown now tolerates connections closed by the forced test-database drop; pg's Pool.end() resolves before sockets close, which caused an intermittent uncaught error.
 
+Migration 0017 adds claim-code prize promotions (PROMOTIONS.md). Full check: 197 API tests; native 16/16. The product is now named Acticlaim (user-facing).
+
 Next: shopper/merchant frontend and PWA.

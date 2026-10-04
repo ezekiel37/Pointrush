@@ -226,6 +226,7 @@ export class SponsorsService {
       title: task.title,
       workTerms: task.workTerms,
       campaignTerms: task.campaignTerms,
+      promotionTerms: task.promotionTerms,
       instructions: task.instructions,
       proofRequirements: task.proofRequirements,
       rejectionCriteria: task.rejectionCriteria,

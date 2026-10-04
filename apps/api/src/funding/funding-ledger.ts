@@ -16,6 +16,7 @@ const command = z
       'task_lock',
       'task_reward',
       'purchase_cashback',
+      'prize_claim',
     ]),
     reference: z.string().trim().min(1).max(200),
     reason: z.string().trim().min(1).max(500),

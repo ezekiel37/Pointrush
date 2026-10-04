@@ -25,3 +25,21 @@ export const campaignTermsSchema = z
   })
   .strict();
 export type CampaignTerms = z.infer<typeof campaignTermsSchema>;
+
+// Prize promotions: the business distributes printed codes; Acticlaim verifies
+// claims and pays the locked prize. Chance-based promotions need the business's
+// own state permit, recorded here and checked in platform review.
+const permitText = z.string().trim().min(1).max(160);
+export const promotionTermsSchema = z
+  .object({
+    mode: z.enum(['every_code_wins', 'chance']),
+    permit: z
+      .object({ authority: permitText, number: permitText })
+      .strict()
+      .nullable(),
+    claimLimitPerPerson: z.number().int().min(1).max(20),
+    howToGetCodes: z.string().trim().min(1).max(300),
+  })
+  .strict()
+  .refine((v) => (v.mode === 'chance') === (v.permit !== null));
+export type PromotionTerms = z.infer<typeof promotionTermsSchema>;

@@ -638,6 +638,26 @@ test('review HTTP boundary rejects missing MFA, expired assurance and missing gr
     .set('Cookie', cookie)
     .expect(200);
   assert.equal(balance.body.points.available, '0');
+  // Prize claims need a session, a trusted Origin and a verified phone.
+  await request(server).get('/api/v1/claims').expect(401);
+  await request(server)
+    .post('/api/v1/claims')
+    .set('Cookie', cookie)
+    .send({ id: randomUUID(), code: 'AC-AAAA-BBBB-CCCC-DDDD' })
+    .expect(403);
+  const noPhone = await request(server)
+    .post('/api/v1/claims')
+    .set('Cookie', cookie)
+    .set('Origin', origin)
+    .send({ id: randomUUID(), code: 'AC-AAAA-BBBB-CCCC-DDDD' })
+    .expect(409);
+  assert.equal(noPhone.body.reason, 'phone_required');
+  await request(server)
+    .post(`/api/v1/promotions/${created.body.id}/batches`)
+    .set('Cookie', cookie)
+    .set('Origin', origin)
+    .send({ id: randomUUID(), label: 'Not a promotion', size: 1 })
+    .expect(404);
 
   await request(server)
     .post(`/api/v1/work/tasks/${created.body.id}/publish`)
