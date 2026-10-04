@@ -91,11 +91,14 @@ export class PointsService {
           >`(select u.username from ${s.referrals} r join ${s.usernames} u on u.account_id = r.referrer_id and u.is_current where r.referee_id = ${actor})`,
           referred: sql<number>`(select count(*)::integer from ${s.referrals} where ${s.referrals.referrerId} = ${actor})`,
           rewarded: sql<number>`(select count(*)::integer from ${s.pointsEntries} where ${s.pointsEntries.accountId} = ${actor} and ${s.pointsEntries.kind} = 'referral_referrer')`,
+          // Sum of the reward wallet's immutable postings; no balance column.
+          walletKobo: sql<string>`coalesce((select sum(case when f.destination_id = w.id then f.amount_kobo else -f.amount_kobo end) from ${s.fundingAccounts} w join ${s.fundingTransfers} f on f.source_id = w.id or f.destination_id = w.id where w.owner_id = ${actor} and w.bucket = 'reward_wallet'), 0)::text`,
         })
         .from(s.accounts)
         .where(eq(s.accounts.id, actor));
       return {
         points: { available: row!.available, pending: row!.pending },
+        walletKobo: facts!.walletKobo,
         tier: tierFor(facts!.businesses),
         phoneVerified: facts!.phoneVerified,
         referral: {

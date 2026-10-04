@@ -111,6 +111,8 @@ test('purchase points are a capped fraction of cash back, once per business', as
   assert.equal(await balance(shopper), 70n);
   const summary = await points.summary(shopper.user);
   assert.equal(summary.points.available, '0');
+  // Three released purchases: 50,000 + 50,000 + 1,000 kobo of cash back.
+  assert.equal(summary.walletKobo, '101000');
   assert.equal(summary.tier.businesses, 2);
   // Points were issued at release (25 hours ahead), and unlock 72 hours later.
   await travel('98 hours');
