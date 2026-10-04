@@ -2,6 +2,7 @@
 
 ## Document Map
 
+- [Current product direction](PRODUCT.md): purchase campaigns, jobs, credibility, and points/referral/tier fraud controls. It overrides this document where they conflict.
 - [Validation and approval rules](PointRush_Validation_Approval_Rules.md): field constraints, task models, funding commitments, review permissions and later verification badges.
 - [Testing and engineering rules](PointRush_Testing_Risk_Engineering_Rules.md): abuse cases and traceable acceptance scenarios.
 - [Design direction](DESIGN.md): components, colours, typography and branding.
@@ -218,16 +219,16 @@ Users and sponsors both earn public reputation levels from their conduct over ti
 
 ### 11.1 Launch Mission Types
 
-- Follow or engage with a verified page.
-- Join a community.
-- Share approved campaign content.
+Paid follows, likes, shares, social community joins and engagement missions are removed. They cannot be verified once undone and break social platform rules.
+
+
+- Verified purchases at participating businesses (see [PRODUCT.md](PRODUCT.md)).
 - Submit user-generated content.
 - Refer qualified users.
 - Attend online or offline events.
 - Complete educational modules.
 - Apply for selected opportunities.
 - Complete creator or job-seeker profile.
-- Participate in brand awareness campaigns.
 
 ### 11.2 Later Mission Types
 

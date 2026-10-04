@@ -62,7 +62,8 @@ The system must survive these situations without losing money, breaking trust, o
 | Screenshot recycling | Same screenshot is submitted by multiple users | Image hash, perceptual hash, duplicate proof detection |
 | Edited proof | User edits screenshot, timestamp, username, or action | Metadata checks, manual review, AI-assisted image checks |
 | Old proof | User submits proof from before joining mission | Proof must show current timestamp or server-verifiable event where possible |
-| Follow-unfollow abuse | User follows sponsor, earns, then unfollows | Delayed approval or later recheck for social missions |
+| Purchase code replay | Shopper or business reuses a photographed purchase code | Per-shopper, single-use code expiring in 15 minutes; one confirmed purchase per shopper per campaign |
+| Buy-then-refund | Shopper earns cash back, then refunds the purchase | Cash back stays pending through the hold; business may void with a reason |
 | Bot submissions | Automated scripts complete easy missions | Rate limits, suspicious velocity checks, CAPTCHA where needed |
 | Redemption rush | User farms quickly and redeems before fraud review | First redemption manual review, minimum account age, tier gates |
 | Support manipulation | User opens repeated complaints to force approval | Ticket limits, evidence-based decisions, admin review trail |

@@ -59,6 +59,7 @@ These are implementation slices of the full product, not a reduced launch scope.
 
 ## Product Contracts
 
+- [Current product direction](PRODUCT.md)
 - [PRD](PointRush_PRD.md)
 - [Validation and approvals](PointRush_Validation_Approval_Rules.md)
 - [Testing and engineering rules](PointRush_Testing_Risk_Engineering_Rules.md)
