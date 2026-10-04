@@ -390,7 +390,12 @@ export class TaskWorkService {
         )
         .where(eq(s.taskProofs.claimId, row.claim.id))
         .orderBy(s.taskProofs.revision);
+      const [resolution] = await tx
+        .select()
+        .from(s.appealResolutions)
+        .where(eq(s.appealResolutions.appealId, appealId));
       return {
+        resolution: resolution ?? null,
         appeal: row.appeal,
         claim: row.claim,
         history,

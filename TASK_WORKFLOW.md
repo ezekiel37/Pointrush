@@ -74,3 +74,11 @@ UUID cursor ordering is stable for existing rows but is not chronological or a s
 ## Participant frontend
 
 `/my-tasks/[id]` provides text evidence, submission/decision history, explicit acknowledgement, receipt-based correction and appeal. My tasks links to the claim rather than only the public brief. The protected claim read now also returns `participant`, `observedAt` and the immutable task brief/terms; sponsor reads remain authorized but do not receive participant UI actions. Evidence/appeal retries retain their command UUID and original payload after uncertain responses. No migrations or changes to reward settlement accompany this UI.
+
+## Sponsor and appeal review screens
+
+Sponsor routes `/sponsor/tasks`, `/sponsor/tasks/[id]` and `/sponsor/claims/[id]` connect owned task lists to participant evidence and decisions. The first proof permits approval, rejection or one correction request; revision 2 permits approval or rejection. Decisions require a reason and an explicit confirmation explaining their effect. The API remains authoritative for ownership and allowable transitions.
+
+`GET /api/v1/work/appeals` provides a pending queue with the same bounded UUID cursor/limit contract as other work lists. It requires an active appeal-review grant and recent MFA over HTTP, excludes the reviewer’s own participation and sponsored tasks, and excludes resolved appeals. It returns only appeal ID, task ID/title and creation time. The protected appeal detail now includes the existing resolution or null. `/review/appeals` and `/review/appeals/[id]` provide the independent review flow. Authenticator recovery opens in another tab and revalidation runs on return.
+
+No default reviewers are granted. Controlled appeal-reviewer provisioning remains an operational release gate. These screens do not implement sponsor registration, funded-task creation, platform pre-publication review or publication forms.

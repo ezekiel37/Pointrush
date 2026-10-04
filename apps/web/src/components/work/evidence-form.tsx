@@ -7,6 +7,8 @@ export function EvidenceForm({
   onChange,
   onSubmit,
   label,
+  fieldLabel,
+  help,
   limit,
   busy,
   locked,
@@ -15,6 +17,8 @@ export function EvidenceForm({
   onChange: (value: string) => void;
   onSubmit: () => void;
   label: string;
+  fieldLabel?: string;
+  help?: string;
   limit: number;
   busy: boolean;
   locked: boolean;
@@ -40,7 +44,7 @@ export function EvidenceForm({
       }}
     >
       <div className="field">
-        <label htmlFor="work-evidence">{label}</label>
+        <label htmlFor="work-evidence">{fieldLabel ?? label}</label>
         <textarea
           ref={field}
           id="work-evidence"
@@ -58,7 +62,7 @@ export function EvidenceForm({
           className={error ? 'field-help field-error' : 'field-help'}
         >
           {error ||
-            `${value.length.toLocaleString('en-NG')} / ${limit.toLocaleString('en-NG')} characters. Text only; file uploads are not available yet.`}
+            `${value.length.toLocaleString('en-NG')} / ${limit.toLocaleString('en-NG')} characters. ${help ?? 'Text only; file uploads are not available yet.'}`}
         </p>
         <Button
           type="button"

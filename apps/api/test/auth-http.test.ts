@@ -555,6 +555,11 @@ test('review HTTP boundary rejects missing MFA, expired assurance and missing gr
   assert.equal(detail.body.rewardKobo, '9007199254740993');
   assert.equal(detail.body.budgetKobo, '9007199254740993');
   await request(server).get('/api/v1/work/tasks').expect(401);
+  await request(server).get('/api/v1/work/appeals').expect(401);
+  await request(server)
+    .get('/api/v1/work/appeals')
+    .set('Cookie', cookie)
+    .expect(403);
   const discovery = await request(server)
     .get('/api/v1/work/tasks?limit=1')
     .set('Cookie', cookie)
@@ -648,12 +653,31 @@ test('review HTTP boundary rejects missing MFA, expired assurance and missing gr
     .set('Origin', origin)
     .send({ taskId: randomUUID() })
     .expect(400);
+  await db.insert(schema.appealReviewerGrants).values({
+    accountId: link.accountId,
+    grantedBy: link.accountId,
+    reason: 'Synthetic appeal queue appointment',
+    expiresAt: new Date(Date.now() + 3600000),
+  });
+  const appeals = await request(server)
+    .get('/api/v1/work/appeals?limit=1')
+    .set('Cookie', cookie)
+    .expect(200);
+  assert.ok(Array.isArray(appeals.body.items));
+  await request(server)
+    .get('/api/v1/work/appeals?limit=51')
+    .set('Cookie', cookie)
+    .expect(400);
   await db
     .update(schema.authMfaSessions)
     .set({ verifiedAt: new Date(Date.now() - 16 * 60000) })
     .where(eq(schema.authMfaSessions.sessionId, session.session.id));
   await request(server)
     .get('/api/v1/admin/reviews/tasks')
+    .set('Cookie', cookie)
+    .expect(403);
+  await request(server)
+    .get('/api/v1/work/appeals')
     .set('Cookie', cookie)
     .expect(403);
   await db

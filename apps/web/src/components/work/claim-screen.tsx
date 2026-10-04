@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { DraftGuard } from './draft-guard';
 import { useWorkRead } from '@/lib/use-work-read';
 import { useSubmit } from '@/lib/use-submit';
 import { RequestError } from '@/lib/auth-client';
@@ -30,9 +30,6 @@ export function ClaimScreen({ id }: { id: string }) {
   const [draft, setDraft] = useState('');
   const [pending, setPending] = useState<Command | null>(null);
   const [message, setMessage] = useState('');
-  const [leave, setLeave] = useState<string | null>(null);
-  const leavePanel = useRef<HTMLDivElement>(null);
-  const router = useRouter();
   const submit = useSubmit((error) => {
     if (error instanceof RequestError) {
       if (error.status === 401)
@@ -46,39 +43,6 @@ export function ClaimScreen({ id }: { id: string }) {
     }
     return 'We could not confirm the outcome. Your submission is held unchanged. Check the latest status or retry the same submission.';
   });
-  const dirty = Boolean(draft || pending);
-  useEffect(() => {
-    if (!dirty) return;
-    const unload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = '';
-    };
-    const navigate = (e: MouseEvent) => {
-      const a = (e.target as Element).closest?.('a');
-      if (
-        !a ||
-        a.target === '_blank' ||
-        e.ctrlKey ||
-        e.metaKey ||
-        e.shiftKey ||
-        e.altKey ||
-        e.button !== 0
-      )
-        return;
-      e.preventDefault();
-      e.stopPropagation();
-      setLeave(a.href);
-    };
-    window.addEventListener('beforeunload', unload);
-    document.addEventListener('click', navigate, true);
-    return () => {
-      window.removeEventListener('beforeunload', unload);
-      document.removeEventListener('click', navigate, true);
-    };
-  }, [dirty]);
-  useEffect(() => {
-    if (leave) leavePanel.current?.focus();
-  }, [leave]);
   const action = read.data
     ? claimAction(read.data, Date.parse(read.data.observedAt))
     : null;
@@ -151,33 +115,14 @@ export function ClaimScreen({ id }: { id: string }) {
       <Link className="text-link" href="/my-tasks">
         Back to My tasks
       </Link>
-      {leave && (
-        <div
-          ref={leavePanel}
-          tabIndex={-1}
-          className="account-panel"
-          role="alert"
-        >
-          <h2>Leave this draft?</h2>
-          <p>
-            Your unsent text will be lost. A submission already sent may still
-            have been recorded.
-          </p>
-          <Button variant="outline" onClick={() => setLeave(null)}>
-            Keep writing
-          </Button>
-          <Button
-            disabled={submit.busy}
-            onClick={() => {
-              setDraft('');
-              setPending(null);
-              router.push(leave);
-            }}
-          >
-            Discard draft and leave
-          </Button>
-        </div>
-      )}
+      <DraftGuard
+        dirty={Boolean(draft || pending)}
+        busy={submit.busy}
+        onDiscard={() => {
+          setDraft('');
+          setPending(null);
+        }}
+      />
       {message && <Feedback>{message}</Feedback>}
       {submit.error && (
         <Feedback error>

@@ -19,6 +19,7 @@ export function WorkFrame({
         <nav aria-label="Task navigation">
           <Link href="/tasks">Tasks</Link>
           <Link href="/my-tasks">My tasks</Link>
+          <Link href="/sponsor/tasks">Sponsor tasks</Link>
           <Link href="/account">Account</Link>
         </nav>
       </header>

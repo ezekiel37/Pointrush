@@ -3,7 +3,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { and, eq, gt, sql } from 'drizzle-orm';
+import { and, eq, gt, isNull, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { FundingDatabase } from '../funding/funding-ledger.js';
 import * as s from '../database/schema.js';
@@ -55,6 +55,53 @@ export class TaskQueriesService {
       );
     if (!row) throw new ForbiddenException('Active linked account required');
     return row.id;
+  }
+  async appeals(user: string, input: unknown = {}) {
+    const query = parse(pageInput, input);
+    const actor = await this.actor(user);
+    const [grant] = await this.db
+      .select({ id: s.appealReviewerGrants.id })
+      .from(s.appealReviewerGrants)
+      .where(
+        and(
+          eq(s.appealReviewerGrants.accountId, actor),
+          isNull(s.appealReviewerGrants.revokedAt),
+          sql`${s.appealReviewerGrants.expiresAt}>clock_timestamp()`,
+        ),
+      );
+    if (!grant)
+      throw new ForbiddenException('Appeal review permission required');
+    const limit = query.limit ?? 25;
+    const rows = await this.db
+      .select({
+        id: s.taskAppeals.id,
+        title: s.sponsorTasks.title,
+        createdAt: s.taskAppeals.createdAt,
+        taskId: s.sponsorTasks.id,
+      })
+      .from(s.taskAppeals)
+      .innerJoin(s.taskProofs, eq(s.taskProofs.id, s.taskAppeals.proofId))
+      .innerJoin(s.taskClaims, eq(s.taskClaims.id, s.taskProofs.claimId))
+      .innerJoin(s.sponsorTasks, eq(s.sponsorTasks.id, s.taskClaims.taskId))
+      .innerJoin(
+        s.sponsorProfiles,
+        eq(s.sponsorProfiles.id, s.sponsorTasks.sponsorId),
+      )
+      .leftJoin(
+        s.appealResolutions,
+        eq(s.appealResolutions.appealId, s.taskAppeals.id),
+      )
+      .where(
+        and(
+          isNull(s.appealResolutions.id),
+          ne(s.taskClaims.accountId, actor),
+          ne(s.sponsorProfiles.ownerId, actor),
+          query.after ? gt(s.taskAppeals.id, query.after) : undefined,
+        ),
+      )
+      .orderBy(s.taskAppeals.id)
+      .limit(limit + 1);
+    return page(rows, limit);
   }
   async discover(user: string, input: unknown = {}) {
     const query = parse(discoveryInput, input);

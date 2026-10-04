@@ -255,3 +255,96 @@ test('viewing a rejection never acknowledges it automatically', async ({
   ).toBeVisible();
   expect(acknowledgements).toBe(1);
 });
+
+test('sponsor review requires confirmation and replays an uncertain decision unchanged', async ({
+  page,
+}) => {
+  let saved: Record<string, unknown> | null = null;
+  const bodies: Record<string, unknown>[] = [];
+  await page.route(`**/api/v1/work/claims/${id}`, (route) =>
+    route.fulfill({
+      json: {
+        participant: false,
+        observedAt: '2026-10-03T12:00:00Z',
+        claim: { id, taskId: id, accountId: id, createdAt: task.startsAt },
+        task: {
+          ...task,
+          instructions: 'Brief',
+          proofRequirements: 'Reference',
+          rejectionCriteria: 'Missing reference',
+          workTerms: { reviewHours: 48, correctionHours: 24, appealHours: 48 },
+        },
+        proofs: [
+          {
+            proof: {
+              id,
+              claimId: id,
+              revision: 2,
+              evidence: 'Corrected evidence',
+              createdAt: task.startsAt,
+            },
+            decision: saved,
+            receipt: null,
+            appeal: null,
+            resolution: null,
+          },
+        ],
+      },
+    }),
+  );
+  await page.route(`**/api/v1/work/proofs/${id}/decisions`, (route) => {
+    bodies.push(route.request().postDataJSON());
+    if (bodies.length === 1) return route.abort();
+    saved = { ...bodies[1], createdAt: task.startsAt };
+    return route.fulfill({ json: saved });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`/sponsor/claims/${id}`);
+  await expect(page.getByText('Corrected evidence')).toBeVisible();
+  await expect(
+    page.getByRole('radio', { name: 'Request one correction' }),
+  ).toHaveCount(0);
+  await page.getByRole('radio', { name: 'Approve work' }).check();
+  await page
+    .getByLabel('Reason for your decision')
+    .fill('The corrected reference meets the requirements.');
+  await page
+    .getByRole('button', { name: 'Review decision before confirming' })
+    .click();
+  expect(bodies).toHaveLength(0);
+  await expect(
+    page.getByRole('heading', { name: 'Confirm: Approve work' }),
+  ).toBeVisible();
+  await page
+    .getByRole('button', { name: 'Confirm decision', exact: true })
+    .click();
+  await expect(page.getByRole('alert')).toContainText('could not confirm');
+  await expect(
+    page.getByRole('button', { name: 'Back to editing' }),
+  ).toHaveCount(0);
+  await page.getByRole('button', { name: 'Retry same decision' }).click();
+  await expect(
+    page.getByText('No submission is awaiting your decision.'),
+  ).toBeVisible();
+  expect(bodies[0]).toEqual(bodies[1]);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
+
+test('appeal access failures expose a recovery path without displaying private evidence', async ({
+  page,
+}) => {
+  await page.route('**/api/v1/work/appeals?*', (route) =>
+    route.fulfill({ status: 403, json: {} }),
+  );
+  await page.goto('/review/appeals');
+  await expect(page.getByRole('alert')).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'Verify authenticator in another tab' }),
+  ).toHaveAttribute('target', '_blank');
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+});

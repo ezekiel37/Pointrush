@@ -231,6 +231,8 @@ test('correction protects funding; independent authorized appeal can credit once
     decision: 'approved',
     reason: 'Evidence satisfies accepted requirements',
   };
+  const queries = new TaskQueriesService(db);
+  await assert.rejects(queries.appeals(arbiter.user));
   await assert.rejects(work.resolve(arbiter.user, appeal.id, input));
   for (const who of [arbiter, sponsor, user])
     await db.insert(s.appealReviewerGrants).values({
@@ -242,12 +244,50 @@ test('correction protects funding; independent authorized appeal can credit once
   await assert.rejects(work.resolve(sponsor.user, appeal.id, input));
   await assert.rejects(work.resolve(user.user, appeal.id, input));
   await assertReviewerEnrollment(db, arbiter.user);
+  const queued = await queries.appeals(arbiter.user, { limit: '1' });
+  assert.equal(queued.items[0]?.id, appeal.id);
+  assert.equal(
+    (await queries.appeals(arbiter.user, { after: appeal.id })).items.length,
+    0,
+  );
+  assert.equal(
+    (await queries.appeals(sponsor.user)).items.some(
+      (row) => row.id === appeal.id,
+    ),
+    false,
+  );
+  assert.equal(
+    (await queries.appeals(user.user)).items.some(
+      (row) => row.id === appeal.id,
+    ),
+    false,
+  );
+  await assert.rejects(queries.appeals(arbiter.user, { limit: '51' }));
+  await assert.rejects(
+    queries.appeals(arbiter.user, { accountId: user.account }),
+  );
   const arbitration = await work.readAppeal(arbiter.user, appeal.id);
+  assert.equal(arbitration.resolution, null);
   assert.equal(arbitration.history.length, 2);
   assert.doesNotThrow(() => JSON.stringify(arbitration));
   await assert.rejects(work.readAppeal(sponsor.user, appeal.id));
   await work.resolve(arbiter.user, appeal.id, input);
   await work.resolve(arbiter.user, appeal.id, input);
+  assert.equal(
+    (await queries.appeals(arbiter.user)).items.some(
+      (row) => row.id === appeal.id,
+    ),
+    false,
+  );
+  assert.equal(
+    (await work.readAppeal(arbiter.user, appeal.id)).resolution?.decision,
+    'approved',
+  );
+  await db
+    .update(s.appealReviewerGrants)
+    .set({ revokedAt: new Date() })
+    .where(eq(s.appealReviewerGrants.accountId, arbiter.account));
+  await assert.rejects(queries.appeals(arbiter.user));
   assert.equal(await fundingBalance(db, created.allocationAccountId), 0n);
   await assert.rejects(
     work.resolve(arbiter.user, appeal.id, { ...input, id: randomUUID() }),

@@ -1,5 +1,5 @@
 import { Controller, Get, Inject, Param, Query, Req } from '@nestjs/common';
-import { AUTH_USER_ID } from '../auth/session.guard.js';
+import { AdminMfaRequired, AUTH_USER_ID } from '../auth/session.guard.js';
 import type { AuthenticatedRequest } from '../auth/session.guard.js';
 import { TaskQueriesService } from './task-queries.service.js';
 @Controller('work')
@@ -7,6 +7,11 @@ export class TaskQueriesController {
   constructor(
     @Inject(TaskQueriesService) private readonly queries: TaskQueriesService,
   ) {}
+  @Get('appeals')
+  @AdminMfaRequired()
+  appeals(@Req() r: AuthenticatedRequest, @Query() query: unknown) {
+    return this.queries.appeals(r[AUTH_USER_ID], query);
+  }
   @Get('tasks')
   discover(@Req() r: AuthenticatedRequest, @Query() query: unknown) {
     return this.queries.discover(r[AUTH_USER_ID], query);
