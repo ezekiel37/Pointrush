@@ -113,4 +113,6 @@ PRODUCT.md now sets direction: purchase campaigns, jobs and a derived credibilit
 
 Verification: full `npm run check` passed (185 API tests, 10 web tests, lint, typecheck, builds). Native PostgreSQL 16 was available in this environment: `npm run test:db` passed 15/15, the first native run of the existing concurrency suite plus a new campaign capacity and release race test.
 
-Next: points, referrals and tiers (migration 0015), credibility profile, then the shopper/merchant frontend and PWA.
+Migration 0015 adds points, referrals and tiers; see POINTS.md. Full check passed with 191 API tests; native suite 15/15.
+
+Next: credibility profile, then the shopper/merchant frontend and PWA.

@@ -13,6 +13,7 @@ const reasons: Record<string, string> = {
   'Purchase cannot be confirmed': 'confirmation_rejected',
   'Purchase cannot be voided': 'void_rejected',
   'Cash back is not releasable': 'not_releasable',
+  'Referral unavailable': 'referral_unavailable',
 };
 
 function databaseError(error: unknown) {

@@ -139,3 +139,8 @@ export {
   purchaseVoids,
   purchaseReleases,
 } from '../campaigns/campaign.schema.js';
+export {
+  pointsPools,
+  pointsEntries,
+  referrals,
+} from '../points/points.schema.js';
