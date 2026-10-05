@@ -125,4 +125,17 @@ Redesign v2 (5 October 2026) follows the founder's references: light card UI, Ge
 
 Payments foundation (5 October 2026), migration 0018; see PAYMENTS.md. Business funding is credited only by a signed provider webhook matching a recorded intent; withdrawals hold wallet money at once and settle once on the provider's result. A test provider stands in for Bachs (docs.bachs.io was blocked by the environment's network policy, so the adapter is not written). Screens: `/business/funds` (Add funds) and withdrawals on `/wallet`; the overview now shows the spendable balance. Withdrawals are refused while no provider is configured, so money is never held with nowhere to go. Verification: full check (206 API tests, 10 web unit tests), native 17/17 including concurrent duplicate deliveries and racing withdrawals, 23/23 browser scenarios with axe and 390px checks; screens reviewed from screenshots.
 
-Next: the Bachs adapter (allow docs.bachs.io and its API hosts in the environment network settings first), payout destinations with account-name checks, a scheduled payout runner and reconciliation, physical-prize vouchers, business campaign creation forms, SMS phone verification (blocks prize claims, referral rewards and withdrawals), and rate limiting on public routes.
+Pilot features (5 October 2026), migrations 0019 to 0024:
+
+- Business sign-up against the current terms (`/business/setup`, `/terms/business`); campaign creation for cash back and prize promotions with live money-locked totals; publish ("Go live") after approval; campaign approval screens for reviewers with reviewer notes shown to businesses.
+- SMS phone verification (PHONE.md) with hashed codes, guess limits, per-account, per-number and platform caps, and country restriction against SMS pumping. Test provider only.
+- Rate limits: per account for signed-in traffic, per route for public routes (INGRESS.md). Per-visitor limits remain an edge task.
+- Returning unused campaign money: cancel before going live, or take back the unowed remainder after the end (CAMPAIGNS.md).
+- In-app notifications derived from money and review records, with a bell and `/notifications`.
+- Till staff with confirm-only powers (CAMPAIGNS.md).
+- Physical prizes with private vouchers, handover by owner or staff, and a 14-day cash fallback (PROMOTIONS.md).
+- Reviewer tools: account freeze with audit, flagged payment notes (ADMIN_ACCESS_PLAN.md).
+
+Verification: full check (228 API tests, 10 web unit tests), native PostgreSQL 18/18, 37/37 browser scenarios with axe and 390px checks.
+
+Not done and needing outside action: the Bachs adapter (allow docs.bachs.io and its API hosts in the environment network settings), a real SMS provider (Termii or Africa's Talking, with a registered sender ID), payout destinations with account-name checks, a scheduled payout runner and reconciliation, published business terms (SPONSOR_TERMS_VERSION stays unset until then), a gaming lawyer's view on chance promotions, NDPA registration, hosting and the INGRESS.md staging checks, and push notifications (FCM).
