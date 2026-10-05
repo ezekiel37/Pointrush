@@ -37,6 +37,8 @@ const reasons: Record<string, string> = {
   'Prize already settled': 'prize_settled',
   'Prize cash value not available yet': 'cash_not_yet',
   'Voucher unavailable': 'voucher_unavailable',
+  'Access change unavailable': 'access_change_unavailable',
+  'Payment review unavailable': 'payment_review_unavailable',
 };
 
 function databaseError(error: unknown) {

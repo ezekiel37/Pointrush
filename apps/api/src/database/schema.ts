@@ -173,3 +173,7 @@ export {
   businessStaff,
   businessStaffRemovals,
 } from '../sponsors/staff.schema.js';
+export {
+  accountAccessChanges,
+  paymentEventReviews,
+} from '../admin/admin.schema.js';

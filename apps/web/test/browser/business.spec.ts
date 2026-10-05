@@ -425,3 +425,100 @@ test('a business confirms a prize handover only with the winner voucher', async 
   await expect(page.getByText('Hand over A crate of Fizz now.')).toBeVisible();
   expect(codes).toEqual(['0000 0000 0000', 'abcd ef12 3456']);
 });
+
+test('a reviewer freezes an account with a reason and can restore it', async ({
+  page,
+}) => {
+  const accountId = '3e1e2d3f-4a5b-4c6d-8e9f-0a1b2c3d4e5f';
+  let state = 'active';
+  const history: Record<string, unknown>[] = [];
+  const view = () => ({
+    id: accountId,
+    username: 'suspect',
+    displayName: 'Suspect User',
+    accessState: state,
+    phoneVerified: true,
+    business: false,
+    createdAt: '2026-10-01T12:00:00Z',
+    history,
+  });
+  await page.route('**/api/v1/admin/accounts?*', (route) =>
+    route.fulfill({ json: view() }),
+  );
+  const bodies: Record<string, unknown>[] = [];
+  await page.route(`**/api/v1/admin/accounts/${accountId}/access`, (route) => {
+    const body = route.request().postDataJSON();
+    bodies.push(body);
+    history.unshift({
+      fromState: state,
+      toState: body.toState,
+      reason: body.reason,
+      by: 'reviewer',
+      at: '2026-10-05T12:00:00Z',
+    });
+    state = body.toState;
+    return route.fulfill({ json: view() });
+  });
+  await page.goto('/review/accounts');
+  await page.getByLabel('Username').fill('@suspect');
+  await page.getByRole('button', { name: 'Find account' }).click();
+  await expect(page.getByText('Suspect User')).toBeVisible();
+  await healthy(page);
+  await page.getByRole('button', { name: 'Freeze account' }).click();
+  await expect(page.getByText(/Write the reason/)).toBeVisible();
+  expect(bodies).toHaveLength(0);
+  await page.getByLabel('Reason').fill('Twelve accounts on one device');
+  await page.getByRole('button', { name: 'Freeze account' }).click();
+  await expect(page.getByText('Frozen', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText('Frozen: Twelve accounts on one device'),
+  ).toBeVisible();
+  expect(bodies[0]).toMatchObject({
+    toState: 'suspended',
+    reason: 'Twelve accounts on one device',
+  });
+});
+
+test('flagged payments take a note and then show it', async ({ page }) => {
+  const eventId = '4f1e2d3f-4a5b-4c6d-8e9f-0a1b2c3d4e5f';
+  let review: Record<string, unknown> | null = null;
+  await page.route('**/api/v1/admin/payments/flagged', (route) =>
+    route.fulfill({
+      json: {
+        items: [
+          {
+            id: eventId,
+            provider: 'bachs',
+            eventId: 'evt_991',
+            type: 'collection.succeeded',
+            reference: null,
+            amountKobo: '400000',
+            currency: 'NGN',
+            outcome: 'unknown_reference',
+            receivedAt: '2026-10-05T12:00:00Z',
+            review,
+          },
+        ],
+      },
+    }),
+  );
+  await page.route(
+    `**/api/v1/admin/payments/events/${eventId}/reviews`,
+    (route) => {
+      review = {
+        note: route.request().postDataJSON().note,
+        at: '2026-10-05T13:00:00Z',
+      };
+      return route.fulfill({ json: { eventId, reviewed: true } });
+    },
+  );
+  await page.goto('/review/payments');
+  await expect(page.getByText('No matching request')).toBeVisible();
+  await healthy(page);
+  await page
+    .getByLabel('What you found and did')
+    .fill('Refunded by the provider.');
+  await page.getByRole('button', { name: 'Save note' }).click();
+  await expect(page.getByText(/Refunded by the provider\./)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save note' })).toHaveCount(0);
+});

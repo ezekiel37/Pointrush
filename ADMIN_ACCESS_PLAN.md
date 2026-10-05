@@ -57,3 +57,10 @@ After provisioning code: enrollment/challenge UI, backup-code explanation and au
 Do not onboard real reviewers before these flows work. Finish the funded individual-task journey before team participation and milestones. Deployment roles, real appointments, hosted migrations and actual provider delivery remain separate operations.
 
 References checked with the installed package: [Better Auth Admin](https://www.better-auth.com/docs/plugins/admin), [Organization](https://www.better-auth.com/docs/plugins/organization), [2FA](https://www.better-auth.com/docs/plugins/2fa). Package upgrades require separate compatibility checks.
+
+## Reviewer tools (migration 0024, October 2026)
+
+All routes below require an active reviewer appointment and a recent authenticator check, like campaign review. Screens live under `/review` (Campaigns, Appeals, Accounts, Payments).
+
+- **Account freeze.** `GET /api/v1/admin/accounts?username=` shows an account, its verification and its access history. `POST /api/v1/admin/accounts/:id/access` with `{id, toState: 'suspended' | 'active', reason}` (idempotent) records the change in `account_access_changes`, whose trigger applies it. Reviewers cannot change their own or closed accounts. A suspended account fails every account-bound action (earning, claiming, buying, withdrawing, running a business). The history is append-only. Direct `accounts.access_state` updates by migrations and onboarding remain possible at the database level; operational changes must go through this table.
+- **Flagged payments.** `GET /api/v1/admin/payments/flagged` lists verified provider events that credited nothing (`mismatch`, `unknown_reference`), unreviewed first. `POST /api/v1/admin/payments/events/:id/reviews` with `{note}` records, once, what was found and done. Notes never move money: refunds or corrections happen with the payment provider.

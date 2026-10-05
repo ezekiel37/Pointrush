@@ -12,6 +12,7 @@ import { ReviewAccess } from '@/components/work/review-access';
 import { apiRequest, money, naira, newId, shortDate } from '@/lib/api';
 import { RequestError } from '@/lib/auth-client';
 import { useApiRead } from '@/lib/use-api-read';
+import { ReviewTabs } from './review-tabs';
 
 const date = z.iso.datetime({ offset: true });
 const pending = z.object({
@@ -83,7 +84,8 @@ export function CampaignQueue() {
       title="Campaigns to review"
       intro="Nothing goes live until it passes here. Money is already locked for every item."
     >
-      <div className="grid gap-4">
+      <ReviewTabs />
+      <div className="grid gap-4" style={{ marginTop: '1rem' }}>
         {params.get('decided') && <Feedback>Decision recorded.</Feedback>}
         {read.loading && !read.data ? (
           <Loading>Loading campaigns…</Loading>

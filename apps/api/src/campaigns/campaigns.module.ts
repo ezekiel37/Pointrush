@@ -13,6 +13,8 @@ import { NotificationsController } from '../notifications/notifications.controll
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { StaffController } from '../sponsors/staff.controller.js';
 import { StaffService } from '../sponsors/staff.service.js';
+import { AdminController } from '../admin/admin.controller.js';
+import { AdminService } from '../admin/admin.service.js';
 
 @Module({
   controllers: [
@@ -22,8 +24,14 @@ import { StaffService } from '../sponsors/staff.service.js';
     PromotionsController,
     NotificationsController,
     StaffController,
+    AdminController,
   ],
   providers: [
+    {
+      provide: AdminService,
+      inject: [DatabaseService],
+      useFactory: (db: DatabaseService) => new AdminService(db.db),
+    },
     {
       provide: StaffService,
       inject: [DatabaseService],
