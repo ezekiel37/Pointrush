@@ -21,6 +21,8 @@ const command = z
       'payout_paid',
       'payout_returned',
       'campaign_return',
+      'prize_handover',
+      'prize_cash_value',
     ]),
     reference: z.string().trim().min(1).max(200),
     reason: z.string().trim().min(1).max(500),

@@ -126,9 +126,26 @@ export class StaffService {
             and not exists (select 1 from business_staff_removals r where r.staff_id = s.id)
           order by sp.name, t.ends_at`),
       );
+      const prizes = rows(
+        await tx.execute(sql`
+          select t.sponsor_id, t.id, t.title, t.promotion_terms->'prize'->>'item' as item
+          from business_staff s
+          join sponsor_tasks t on t.sponsor_id = s.sponsor_id
+          where s.account_id = ${actor}
+            and not exists (select 1 from business_staff_removals r where r.staff_id = s.id)
+            and t.model = 'claim_code' and t.lifecycle = 'published'
+            and jsonb_typeof(t.promotion_terms->'prize') = 'object'
+            and t.ends_at > clock_timestamp() - interval '30 days'
+          order by t.ends_at`),
+      );
       const businesses = new Map<
         string,
-        { id: string; name: string; tills: { id: string; title: string }[] }
+        {
+          id: string;
+          name: string;
+          tills: { id: string; title: string }[];
+          prizes: { id: string; title: string; item: string }[];
+        }
       >();
       for (const r of found) {
         const id = String(r.business_id);
@@ -136,11 +153,18 @@ export class StaffService {
           id,
           name: String(r.name),
           tills: [],
+          prizes: [],
         };
         if (r.task_id != null)
           entry.tills.push({ id: String(r.task_id), title: String(r.title) });
         businesses.set(id, entry);
       }
+      for (const p of prizes)
+        businesses.get(String(p.sponsor_id))?.prizes.push({
+          id: String(p.id),
+          title: String(p.title),
+          item: String(p.item),
+        });
       return { items: [...businesses.values()] };
     });
   }

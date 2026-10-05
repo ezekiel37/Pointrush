@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { ScanLine } from 'lucide-react';
+import { Gift, ScanLine } from 'lucide-react';
 import { Page } from '@/components/shell/app-shell';
 import { Loading } from '@/components/ui/feedback';
 import { WorkFailure } from '@/components/work/work-frame';
@@ -26,12 +26,22 @@ export function StaffTills() {
               <div className="card-head">
                 <h2>{business.name}</h2>
                 <p>
-                  {business.tills.length
-                    ? 'Live cash back offers'
-                    : 'No live cash back offers right now.'}
+                  {business.tills.length || business.prizes.length
+                    ? 'Tills and prize handovers you can run'
+                    : 'Nothing live right now.'}
                 </p>
               </div>
               <ul className="stack">
+                {business.prizes.map((prize) => (
+                  <li key={prize.id}>
+                    <Link
+                      className="button button-outline"
+                      href={`/staff/prizes/${prize.id}`}
+                    >
+                      <Gift size={17} aria-hidden /> Hand over: {prize.item}
+                    </Link>
+                  </li>
+                ))}
                 {business.tills.map((till) => (
                   <li key={till.id}>
                     <Link

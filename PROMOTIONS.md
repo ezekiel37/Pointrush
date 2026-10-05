@@ -39,3 +39,13 @@ PGlite tests cover permit rules, one-time code display, capacity, idempotent ret
 - Unclaimed prize funds stay locked after the end date; settlement is not implemented.
 - Claiming needs phone verification, which needs an SMS provider that is not configured yet.
 - Wallet payout (Bachs) is not implemented.
+
+## Physical prizes (migration 0023)
+
+A promotion can award an item (`promotionTerms.prize = {item}`, up to 160 characters). Its declared cash value is still the locked reward, so the "money is locked" promise holds for items too.
+
+- Claiming an item prize creates a voucher (12 random hex characters) instead of a wallet credit. Only the winner's app shows the code.
+- The owner or till staff confirm the handover with that code (`POST /api/v1/promotions/:id/handovers` with `{code}`). The item's deposit then returns to the business's available balance. Without the winner's code a business cannot mark a prize handed over.
+- If the item is not handed over within 14 days, the winner can take its cash value instead (`POST /api/v1/claims/:id/cash-outs`).
+- Each voucher has exactly one outcome, enforced in the database. After the promotion ends, deposits for unsettled vouchers stay locked; the rest can be returned.
+- Reasons: `voucher_unknown`, `prize_settled`, `cash_not_yet`.

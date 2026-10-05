@@ -613,3 +613,62 @@ test('the bell counts unread updates and opening them marks them read', async ({
     page.getByRole('link', { name: 'Notifications, none unread' }),
   ).toBeVisible();
 });
+
+test('an item prize shows a private voucher and offers its cash value after 14 days', async ({
+  page,
+}) => {
+  await phone(page);
+  const claimId = '8b1e2d3f-4a5b-4c6d-8e9f-0a1b2c3d4e5f';
+  const oldId = '9c1e2d3f-4a5b-4c6d-8e9f-0a1b2c3d4e5f';
+  let cashed = false;
+  const old = () => ({
+    id: oldId,
+    taskId: offerId,
+    title: 'Scratch and win',
+    businessName: 'Fizz Drinks',
+    prizeKobo: '200000',
+    claimedAt: '2026-09-01T12:00:00Z',
+    prizeItem: 'Branded umbrella',
+    voucherCode: 'ABCDEF123456',
+    voucherState: cashed ? 'cashed_out' : 'awaiting',
+    cashAvailableAt: '2026-09-15T12:00:00Z',
+  });
+  await page.route('**/api/v1/claims?*', (route) =>
+    route.fulfill({ json: { items: [old()], nextCursor: null } }),
+  );
+  await page.route('**/api/v1/claims', (route) =>
+    route.fulfill({
+      json: {
+        id: claimId,
+        taskId: offerId,
+        title: 'Scratch and win',
+        businessName: 'Fizz Drinks',
+        prizeKobo: '500000',
+        claimedAt: new Date().toISOString(),
+        prizeItem: 'A crate of Fizz',
+        voucherCode: '0F1E2D3C4B5A',
+        voucherState: 'awaiting',
+        cashAvailableAt: new Date(Date.now() + 14 * 86400000).toISOString(),
+      },
+    }),
+  );
+  let cashOuts = 0;
+  await page.route(`**/api/v1/claims/${oldId}/cash-outs`, (route) => {
+    cashOuts++;
+    cashed = true;
+    return route.fulfill({ json: { redemptionId: oldId, cashedOut: true } });
+  });
+  await page.goto('/claim');
+  // An older uncollected voucher stays reachable, with its cash option.
+  await expect(page.getByText('Vouchers to collect')).toBeVisible();
+  await expect(page.getByText('ABCD EF12 3456')).toBeVisible();
+  await healthy(page);
+  await page.getByLabel('Prize code').fill('AC-7K4M-9X2Q-PRDH-3VBN');
+  await page.getByRole('button', { name: 'Claim prize' }).click();
+  await expect(page.getByText('You won A crate of Fizz.')).toBeVisible();
+  await expect(page.getByText('0F1E 2D3C 4B5A')).toBeVisible();
+  await expect(page.getByText(/is locked for you/)).toBeVisible();
+  await page.getByRole('button', { name: 'Take ₦2,000 instead' }).click();
+  await expect(page.getByText('Paid as cash')).toBeVisible();
+  expect(cashOuts).toBe(1);
+});

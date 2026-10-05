@@ -34,6 +34,9 @@ const reasons: Record<string, string> = {
   'Campaign was cancelled': 'campaign_cancelled',
   'Staff member cannot be added': 'staff_unavailable',
   'Staff member cannot be removed': 'staff_unavailable',
+  'Prize already settled': 'prize_settled',
+  'Prize cash value not available yet': 'cash_not_yet',
+  'Voucher unavailable': 'voucher_unavailable',
 };
 
 function databaseError(error: unknown) {

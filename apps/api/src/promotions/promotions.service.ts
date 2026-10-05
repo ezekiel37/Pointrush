@@ -314,7 +314,83 @@ export class PromotionsService {
       businessName: s.sponsorProfiles.name,
       prizeKobo: sql<string>`${s.sponsorTasks.rewardKobo}::text`,
       claimedAt: s.claimRedemptions.createdAt,
+      // Item prizes: what was won, the voucher to show in store, and its state.
+      prizeItem: sql<
+        string | null
+      >`${s.sponsorTasks.promotionTerms}->'prize'->>'item'`,
+      voucherCode: sql<
+        string | null
+      >`(select v.code from prize_vouchers v where v.redemption_id = ${s.claimRedemptions.id})`,
+      voucherState: sql<
+        'awaiting' | 'handed_over' | 'cashed_out' | null
+      >`(select case
+          when exists (select 1 from prize_handovers h where h.redemption_id = v.redemption_id) then 'handed_over'
+          when exists (select 1 from prize_cash_outs c where c.redemption_id = v.redemption_id) then 'cashed_out'
+          else 'awaiting' end
+        from prize_vouchers v where v.redemption_id = ${s.claimRedemptions.id})`,
+      cashAvailableAt: sql<
+        string | null
+      >`(select to_char((v.created_at + interval '14 days') at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') from prize_vouchers v where v.redemption_id = ${s.claimRedemptions.id})`,
     };
+  }
+
+  // At the till: the owner or staff enters the code from the winner's voucher.
+  async handOver(user: string, taskId: string, input: unknown) {
+    parse(id, taskId);
+    const value = parse(
+      z
+        .object({
+          code: z
+            .string()
+            .transform((v) => v.replace(/[\s-]/g, '').toUpperCase())
+            .pipe(z.string().regex(/^[0-9A-F]{12}$/)),
+        })
+        .strict(),
+      input,
+    );
+    return actorTransaction(this.db, user, async (tx, actor) => {
+      const [voucher] = await tx
+        .execute(
+          sql`
+        select v.redemption_id, t.promotion_terms->'prize'->>'item' as item
+        from prize_vouchers v
+        join sponsor_tasks t on t.id = v.task_id
+        join sponsor_profiles sp on sp.id = t.sponsor_id
+        where v.task_id = ${taskId} and v.code = ${value.code}
+          and (sp.owner_id = ${actor} or business_staff_active(sp.id, ${actor}))`,
+        )
+        .then(
+          (r) =>
+            (r as { rows?: Record<string, unknown>[] }).rows ??
+            (r as Record<string, unknown>[]),
+        );
+      if (!voucher)
+        throw rejected('voucher_unknown', 'This voucher is not valid here.');
+      const redemptionId = String(voucher.redemption_id);
+      await tx
+        .insert(s.prizeHandovers)
+        .values({ redemptionId, actorId: actor });
+      return { redemptionId, item: String(voucher.item), handedOver: true };
+    });
+  }
+
+  // The winner takes the locked cash value when an item was not handed over.
+  async cashOut(user: string, redemptionId: string) {
+    parse(id, redemptionId);
+    return actorTransaction(this.db, user, async (tx, actor) => {
+      const [own] = await tx
+        .select({ id: s.claimRedemptions.id })
+        .from(s.claimRedemptions)
+        .where(
+          and(
+            eq(s.claimRedemptions.id, redemptionId),
+            eq(s.claimRedemptions.accountId, actor),
+          ),
+        );
+      if (!own) throw new NotFoundException();
+      await tx.insert(s.prizeCashOuts).values({ redemptionId });
+      return { redemptionId, cashedOut: true };
+    });
   }
 
   async claims(user: string, input: unknown = {}) {

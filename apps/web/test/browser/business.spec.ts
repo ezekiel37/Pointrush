@@ -378,3 +378,50 @@ test('an owner adds and removes till staff, and staff see their tills', async ({
   ).toHaveAttribute('href', `/business/campaigns/${businessId}`);
   await healthy(page);
 });
+
+test('a business confirms a prize handover only with the winner voucher', async ({
+  page,
+}) => {
+  await page.route(`**/api/v1/promotions/${businessId}/summary`, (route) =>
+    route.fulfill({
+      json: {
+        taskId: businessId,
+        title: 'Win with every crate',
+        prizeKobo: '200000',
+        prizes: 10,
+        claimed: 2,
+        issued: 10,
+        availableToIssue: 0,
+        promotionTerms: { prize: { item: 'A crate of Fizz' } },
+        batches: [],
+      },
+    }),
+  );
+  const codes: string[] = [];
+  await page.route(`**/api/v1/promotions/${businessId}/handovers`, (route) => {
+    const { code } = route.request().postDataJSON();
+    codes.push(code);
+    return code.replace(/\s/g, '').toUpperCase() === 'ABCDEF123456'
+      ? route.fulfill({
+          json: {
+            redemptionId: businessId,
+            item: 'A crate of Fizz',
+            handedOver: true,
+          },
+        })
+      : route.fulfill({
+          status: 409,
+          json: { statusCode: 409, reason: 'voucher_unknown' },
+        });
+  });
+  await page.goto(`/business/promotions/${businessId}`);
+  await expect(page.getByText('Hand over a prize')).toBeVisible();
+  await healthy(page);
+  await page.getByLabel('Voucher code').fill('0000 0000 0000');
+  await page.getByRole('button', { name: 'Confirm handover' }).click();
+  await expect(page.getByText(/not valid for this promotion/)).toBeVisible();
+  await page.getByLabel('Voucher code').fill('abcd ef12 3456');
+  await page.getByRole('button', { name: 'Confirm handover' }).click();
+  await expect(page.getByText('Hand over A crate of Fizz now.')).toBeVisible();
+  expect(codes).toEqual(['0000 0000 0000', 'abcd ef12 3456']);
+});

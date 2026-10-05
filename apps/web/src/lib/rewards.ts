@@ -12,8 +12,20 @@ export const claimResult = z.object({
   businessName: z.string(),
   prizeKobo: money,
   claimedAt: date,
+  prizeItem: z.string().nullable().optional(),
+  voucherCode: z.string().nullable().optional(),
+  voucherState: z
+    .enum(['awaiting', 'handed_over', 'cashed_out'])
+    .nullable()
+    .optional(),
+  cashAvailableAt: date.nullable().optional(),
 });
 export const claimList = page(claimResult);
+export const handover = z.object({
+  redemptionId: z.uuid(),
+  item: z.string(),
+  handedOver: z.literal(true),
+});
 
 export const campaignTerms = z.object({
   minSpendKobo: money,
@@ -151,6 +163,12 @@ export const promotionSummary = z.object({
   claimed: z.number().int(),
   issued: z.number().int(),
   availableToIssue: z.number().int(),
+  promotionTerms: z
+    .object({
+      prize: z.object({ item: z.string() }).nullable().optional(),
+    })
+    .nullable()
+    .optional(),
   batches: z.array(
     z.object({
       id: z.uuid(),
@@ -265,6 +283,9 @@ export const workplaces = z.object({
       id: z.uuid(),
       name: z.string(),
       tills: z.array(z.object({ id: z.uuid(), title: z.string() })),
+      prizes: z
+        .array(z.object({ id: z.uuid(), title: z.string(), item: z.string() }))
+        .default([]),
     }),
   ),
 });

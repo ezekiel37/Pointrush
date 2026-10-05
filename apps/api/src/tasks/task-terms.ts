@@ -39,6 +39,14 @@ export const promotionTermsSchema = z
       .nullable(),
     claimLimitPerPerson: z.number().int().min(1).max(20),
     howToGetCodes: z.string().trim().min(1).max(300),
+    // A physical prize. Its cash value is still locked as the reward: it
+    // returns to the business on handover, or pays the winner if the business
+    // does not hand it over within 14 days.
+    prize: z
+      .object({ item: z.string().trim().min(1).max(160) })
+      .strict()
+      .nullable()
+      .optional(),
   })
   .strict()
   .refine((v) => (v.mode === 'chance') === (v.permit !== null));

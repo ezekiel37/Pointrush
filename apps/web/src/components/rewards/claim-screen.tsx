@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { Voucher, voucherLabel } from './voucher';
 import { useSearchParams } from 'next/navigation';
 import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
@@ -85,7 +86,15 @@ export function PrizeClaimScreen() {
       intro="Scratched a winning code? Enter it here. Every prize is paid from money the business locked before the promotion started."
     >
       <div className="grid gap-6" style={{ maxWidth: 560 }}>
-        {won ? (
+        {won?.prizeItem ? (
+          <div className="grid gap-4" aria-live="polite">
+            <Feedback>You won {won.prizeItem}. This code is now used.</Feedback>
+            <Voucher claim={won} onChange={history.refresh} />
+            <Button variant="outline" onClick={() => setWon(null)}>
+              Claim another code
+            </Button>
+          </div>
+        ) : won ? (
           <section className="prize" aria-live="polite">
             <PartyPopper aria-hidden size={28} />
             <p className="eyebrow" style={{ marginTop: '0.75rem' }}>
@@ -138,6 +147,24 @@ export function PrizeClaimScreen() {
             </Button>
           </form>
         )}
+        {(history.data?.items ?? []).some(
+          (i) => i.voucherState === 'awaiting' && i.id !== won?.id,
+        ) && (
+          <section aria-labelledby="vouchers-heading" className="grid gap-4">
+            <h2 id="vouchers-heading">Vouchers to collect</h2>
+            {history
+              .data!.items.filter(
+                (i) => i.voucherState === 'awaiting' && i.id !== won?.id,
+              )
+              .map((item) => (
+                <Voucher
+                  key={item.id}
+                  claim={item}
+                  onChange={history.refresh}
+                />
+              ))}
+          </section>
+        )}
         <section aria-labelledby="claimed-heading">
           <h2 id="claimed-heading">Your prizes</h2>
           {history.loading && !history.data ? (
@@ -154,10 +181,21 @@ export function PrizeClaimScreen() {
                       {item.businessName}
                     </p>
                     <p className="small-note truncate">
-                      {item.title} · {shortDate(item.claimedAt)}
+                      {item.prizeItem ?? item.title} ·{' '}
+                      {shortDate(item.claimedAt)}
                     </p>
                   </div>
-                  <span className="amount">{naira(item.prizeKobo)}</span>
+                  {item.prizeItem ? (
+                    <span
+                      className={
+                        voucherLabel[item.voucherState ?? 'awaiting'][1]
+                      }
+                    >
+                      {voucherLabel[item.voucherState ?? 'awaiting'][0]}
+                    </span>
+                  ) : (
+                    <span className="amount">{naira(item.prizeKobo)}</span>
+                  )}
                 </li>
               ))}
             </ul>

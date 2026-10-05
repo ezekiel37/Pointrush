@@ -111,3 +111,39 @@ export const claimAttempts = pgTable(
   },
   (t) => [index('claim_attempt_recent').on(t.accountId, t.createdAt)],
 );
+
+// Physical prizes: the winner shows this voucher in store. Only the winner's
+// app shows the code, so a business cannot mark a prize handed over alone.
+export const prizeVouchers = pgTable(
+  'prize_vouchers',
+  {
+    redemptionId: uuid('redemption_id')
+      .primaryKey()
+      .references(() => claimRedemptions.id),
+    taskId: uuid('task_id')
+      .notNull()
+      .references(() => sponsorTasks.id),
+    code: varchar('code', { length: 12 }).notNull(),
+    createdAt: at('created_at').notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('prize_voucher_code').on(t.taskId, t.code)],
+);
+
+// The business handed the item over: its locked cash value returns to them.
+export const prizeHandovers = pgTable('prize_handovers', {
+  redemptionId: uuid('redemption_id')
+    .primaryKey()
+    .references(() => prizeVouchers.redemptionId),
+  actorId: uuid('actor_id')
+    .notNull()
+    .references(() => accounts.id),
+  createdAt: at('created_at').notNull().defaultNow(),
+});
+
+// Not handed over within 14 days: the winner took the cash value instead.
+export const prizeCashOuts = pgTable('prize_cash_outs', {
+  redemptionId: uuid('redemption_id')
+    .primaryKey()
+    .references(() => prizeVouchers.redemptionId),
+  createdAt: at('created_at').notNull().defaultNow(),
+});

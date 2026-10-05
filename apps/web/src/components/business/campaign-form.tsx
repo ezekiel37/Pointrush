@@ -112,6 +112,8 @@ export function CampaignForm({ model }: { model: Model }) {
     permitNumber: '',
     claimLimit: '1',
     howToGetCodes: '',
+    prizeType: 'cash' as 'cash' | 'item',
+    prizeItem: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState('');
@@ -162,6 +164,9 @@ export function CampaignForm({ model }: { model: Model }) {
         next.claimLimit = 'Between 1 and 20.';
       if (!form.howToGetCodes.trim())
         next.howToGetCodes = 'Say where customers find codes.';
+      if (form.prizeType === 'item' && !form.prizeItem.trim())
+        next.prizeItem =
+          'Describe the prize, for example a crate of 12 drinks.';
       if (form.mode === 'chance') {
         if (!form.permitAuthority.trim())
           next.permitAuthority = 'Name the authority that issued your permit.';
@@ -210,6 +215,9 @@ export function CampaignForm({ model }: { model: Model }) {
                 : null,
             claimLimitPerPerson: Number(form.claimLimit),
             howToGetCodes: form.howToGetCodes.trim(),
+            ...(form.prizeType === 'item'
+              ? { prize: { item: form.prizeItem.trim() } }
+              : {}),
           },
         };
   }
@@ -305,12 +313,59 @@ export function CampaignForm({ model }: { model: Model }) {
               </div>
             </Section>
 
+            {model === 'claim_code' && (
+              <Section title="The prize">
+                <div className="field">
+                  <span className="field-label" id="prize-label">
+                    Prize type
+                  </span>
+                  <div
+                    className="segmented preset-row two"
+                    role="group"
+                    aria-labelledby="prize-label"
+                  >
+                    {(
+                      [
+                        ['cash', 'Cash'],
+                        ['item', 'An item'],
+                      ] as const
+                    ).map(([type, label]) => (
+                      <button
+                        key={type}
+                        type="button"
+                        aria-pressed={form.prizeType === type}
+                        onClick={() => set('prizeType')(type)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="field-help">
+                    {form.prizeType === 'item'
+                      ? 'Winners collect it in store with a voucher. Its cash value is locked as a deposit: it comes back to you on handover, or pays the winner if you do not hand it over within 14 days.'
+                      : 'Winners are paid straight into their Acticlaim wallet.'}
+                  </p>
+                </div>
+                {form.prizeType === 'item' &&
+                  field('prizeItem', 'What winners get', {
+                    maxLength: 160,
+                    placeholder: 'A crate of 12 Fizz drinks',
+                  })}
+              </Section>
+            )}
+
             <Section title="Money">
               <div className="pair">
-                {field('reward', `${text.reward} (₦)`, {
-                  inputMode: 'decimal',
-                  placeholder: model === 'claim_code' ? '5,000' : '500',
-                })}
+                {field(
+                  'reward',
+                  model === 'claim_code' && form.prizeType === 'item'
+                    ? 'Cash value of each prize (₦)'
+                    : `${text.reward} (₦)`,
+                  {
+                    inputMode: 'decimal',
+                    placeholder: model === 'claim_code' ? '5,000' : '500',
+                  },
+                )}
                 {field('capacity', text.capacity, {
                   inputMode: 'numeric',
                   placeholder: '100',

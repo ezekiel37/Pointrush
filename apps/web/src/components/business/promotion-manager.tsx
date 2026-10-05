@@ -1,4 +1,5 @@
 'use client';
+import { PrizeHandover } from './prize-handover';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
@@ -150,6 +151,13 @@ export function PromotionManager({ id }: { id: string }) {
                 </dd>
               </div>
             </dl>
+
+            {data.promotionTerms?.prize && (
+              <PrizeHandover
+                taskId={data.taskId}
+                item={data.promotionTerms.prize.item}
+              />
+            )}
 
             {issued && (
               <section

@@ -153,6 +153,9 @@ export {
   claimBatchRevocations,
   claimRedemptions,
   claimAttempts,
+  prizeVouchers,
+  prizeHandovers,
+  prizeCashOuts,
 } from '../promotions/promotion.schema.js';
 export {
   fundingIntents,

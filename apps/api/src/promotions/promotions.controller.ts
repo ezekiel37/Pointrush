@@ -41,6 +41,18 @@ export class PromotionsController {
   ) {
     return this.promotions.revokeBatch(r[AUTH_USER_ID], id, body);
   }
+  @Post('promotions/:id/handovers')
+  handOver(
+    @Req() r: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    return this.promotions.handOver(r[AUTH_USER_ID], id, body);
+  }
+  @Post('claims/:id/cash-outs')
+  cashOut(@Req() r: AuthenticatedRequest, @Param('id') id: string) {
+    return this.promotions.cashOut(r[AUTH_USER_ID], id);
+  }
   @Post('claims')
   claim(@Req() r: AuthenticatedRequest, @Body() body: unknown) {
     return this.promotions.claim(r[AUTH_USER_ID], body);
