@@ -138,6 +138,8 @@ export {
   purchaseCodes,
   purchaseConfirmations,
   purchaseVoids,
+  purchaseVoidDisputes,
+  purchaseVoidRulings,
   purchaseReleases,
   campaignReturns,
 } from '../campaigns/campaign.schema.js';

@@ -6,6 +6,8 @@ import * as s from '../src/database/schema.js';
 import { CampaignsService } from '../src/campaigns/campaigns.service.js';
 import { BusinessOverviewService } from '../src/campaigns/business-overview.service.js';
 import { TaskQueriesService } from '../src/tasks/task-queries.service.js';
+import { AdminService } from '../src/admin/admin.service.js';
+import { NotificationsService } from '../src/notifications/notifications.service.js';
 import { campaignFixture, campaignTerms } from './helpers/campaign-fixture.js';
 import {
   fundingBalance,
@@ -175,7 +177,7 @@ test('code -> till confirmation -> hold -> release credits cash back exactly onc
   await assert.rejects(campaigns.summary(shopper.user, id), { status: 404 });
 });
 
-test('capacity is enforced, voids reopen a place and voided purchases never pay', async () => {
+test('capacity is enforced, a void keeps its place while it can be disputed, and voided purchases never pay', async () => {
   const { merchant, id } = await campaign(2);
   const [a, b, c] = [await identity(), await identity(), await identity()];
   const ca = await campaigns.activate(a.user, id);
@@ -210,7 +212,11 @@ test('capacity is enforced, voids reopen a place and voided purchases never pay'
     campaigns.voidPurchase(a.user, first.id, { reason: 'Mine' }),
     { status: 404 },
   );
-  await campaigns.confirm(merchant.user, id, confirmation(cc.code));
+  // For 7 days the shopper may dispute, so the place and money stay held.
+  assert.equal(
+    await reason(campaigns.confirm(merchant.user, id, confirmation(cc.code))),
+    'campaign_full',
+  );
   await travel('25 hours');
   try {
     assert.equal(
@@ -224,7 +230,7 @@ test('capacity is enforced, voids reopen a place and voided purchases never pay'
   const summary = await campaigns.summary(merchant.user, id);
   assert.deepEqual(
     [summary.confirmed, summary.voided, summary.remaining],
-    [3, 1, 0],
+    [2, 1, 0],
   );
   const listed = await new TaskQueriesService(db).discover(c.user, {});
   assert.equal(listed.items.find((item) => item.id === id)?.claimed, 2);
@@ -385,7 +391,8 @@ test('business overview counts only its own activity by Lagos day and state', as
     '25000',
   );
   assert.equal(view.campaigns.length, 1);
-  assert.equal(view.campaigns[0]?.used, 2);
+  // The voided purchase keeps its place while the shopper may dispute it.
+  assert.equal(view.campaigns[0]?.used, 3);
   assert.equal(view.campaigns[0]?.reviewNote, null);
   const sent = await fixture.draft(merchant);
   await sent.decide('changes_required', 'Add the full street address.');
@@ -404,4 +411,165 @@ test('business overview counts only its own activity by Lagos day and state', as
     status: 400,
   });
   await assert.rejects(overviews.overview(a.user), { status: 404 });
+});
+
+test('voids are capped at 20%, shoppers can dispute for 7 days, and voided money stays locked until decided', async () => {
+  const { merchant, id, allocation } = await campaign(20, '50000');
+  const shoppers: Awaited<ReturnType<typeof identity>>[] = [];
+  const bought: Awaited<ReturnType<typeof campaigns.confirm>>[] = [];
+  for (let i = 0; i < 5; i++) {
+    const person = await identity();
+    const code = await campaigns.activate(person.user, id);
+    shoppers.push(person);
+    bought.push(
+      await campaigns.confirm(merchant.user, id, confirmation(code.code)),
+    );
+  }
+  const [a, b, c, d] = shoppers as [
+    (typeof shoppers)[0],
+    (typeof shoppers)[0],
+    (typeof shoppers)[0],
+    (typeof shoppers)[0],
+  ];
+  // 5 purchases: at most 3 voids (20%, but never fewer than 3).
+  for (const purchase of bought.slice(0, 3))
+    await campaigns.voidPurchase(merchant.user, purchase.id, {
+      reason: 'Refunded',
+    });
+  assert.equal(
+    await reason(
+      campaigns.voidPurchase(merchant.user, bought[3]!.id, {
+        reason: 'Refunded',
+      }),
+    ),
+    'void_limit',
+  );
+  assert.equal((await campaigns.summary(merchant.user, id)).voidsLeft, 0);
+
+  // Only the shopper can dispute, with a note.
+  assert.equal(
+    await reason(
+      campaigns.dispute(b.user, bought[0]!.id, { note: 'I paid for it' }),
+    ),
+    'NotFoundException',
+  );
+  await assert.rejects(
+    campaigns.dispute(a.user, bought[0]!.id, { note: ' ' }),
+    {
+      status: 400,
+    },
+  );
+  assert.equal(
+    await reason(
+      campaigns.dispute(d.user, bought[3]!.id, { note: 'Not voided' }),
+    ),
+    'dispute_unavailable',
+  );
+  await campaigns.dispute(a.user, bought[0]!.id, {
+    note: 'I paid N4,500 for rice, receipt 0412.',
+  });
+  await campaigns.dispute(a.user, bought[0]!.id, { note: 'Again' });
+  await campaigns.dispute(c.user, bought[2]!.id, { note: 'It was real' });
+  assert.equal(
+    (await campaigns.purchases(a.user)).items[0]?.disputeUntil,
+    null,
+  );
+  assert.ok((await campaigns.purchases(b.user)).items[0]?.disputeUntil);
+
+  // A reviewer decides; nobody else can.
+  const admin = new AdminService(db);
+  const reviewer = await identity();
+  await db.insert(s.taskReviewerGrants).values({
+    reviewerId: reviewer.account,
+    grantedBy: reviewer.account,
+    reason: 'Dispute test',
+    expiresAt: new Date(Date.now() + 3600000),
+  });
+  assert.equal(
+    await reason(
+      admin.ruleOnVoid(merchant.user, bought[0]!.id, {
+        decision: 'upheld',
+        reason: 'Mine',
+      }),
+    ),
+    'ForbiddenException',
+  );
+  const open = await admin.voidDisputes(reviewer.user);
+  assert.deepEqual(
+    open.items
+      .filter((i) => [bought[0]!.id, bought[2]!.id].includes(i.id))
+      .map((i) => [i.note, i.campaignVoided, i.campaignConfirmed]),
+    [
+      ['I paid N4,500 for rice, receipt 0412.', 3, 5],
+      ['It was real', 3, 5],
+    ],
+  );
+  assert.equal(
+    await reason(
+      admin.ruleOnVoid(reviewer.user, bought[1]!.id, {
+        decision: 'reversed',
+        reason: 'No dispute',
+      }),
+    ),
+    'ruling_unavailable',
+  );
+  await admin.ruleOnVoid(reviewer.user, bought[0]!.id, {
+    decision: 'reversed',
+    reason: 'Receipt matches the till record.',
+  });
+  await admin.ruleOnVoid(reviewer.user, bought[2]!.id, {
+    decision: 'upheld',
+    reason: 'The business showed the refund slip.',
+  });
+  // Reversed: paid once, straight to the wallet; release cannot pay again.
+  assert.equal(await wallet(a.account), 50000n);
+  assert.equal((await campaigns.purchases(a.user)).items[0]?.state, 'released');
+  await travel('25 hours');
+  try {
+    assert.equal(
+      await reason(campaigns.release(a.user, bought[0]!.id)),
+      'not_releasable',
+    );
+  } finally {
+    await travel('0');
+  }
+  assert.equal(await wallet(a.account), 50000n);
+  assert.equal(await wallet(c.account), 0n);
+  const inbox = await new NotificationsService(db).list(a.user);
+  assert.ok(
+    inbox.items.some(
+      (n) => n.title === '₦500 cash back paid after your dispute',
+    ),
+  );
+
+  // After the campaign ends, money for undisputed voids stays locked for 7 days.
+  const returns = async () => {
+    const before = await fundingBalance(db, allocation);
+    await campaigns
+      .returnFunds(merchant.user, id, { id: randomUUID() })
+      .catch(() => undefined);
+    return before - (await fundingBalance(db, allocation));
+  };
+  await travel('3 days');
+  try {
+    // Budget N10,000 - N500 reversed = N9,500 left. Kept: 2 unreleased
+    // purchases and 1 undisputed void inside its 7 days.
+    assert.equal(await returns(), 800000n);
+  } finally {
+    await travel('0');
+  }
+  await travel('8 days');
+  try {
+    assert.equal(
+      await reason(
+        campaigns.dispute(b.user, bought[1]!.id, { note: 'Too late' }),
+      ),
+      'dispute_unavailable',
+    );
+    assert.equal(await returns(), 50000n);
+  } finally {
+    await travel('0');
+  }
+  await assert.rejects(db.execute(sql`delete from purchase_void_disputes`));
+  await assert.rejects(db.execute(sql`delete from purchase_void_rulings`));
 });

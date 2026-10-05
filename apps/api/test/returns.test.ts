@@ -112,12 +112,18 @@ test('after a cash back offer ends, only money no shopper is owed comes back', a
   );
   await travel('3 days');
   await campaigns.release(released.shopper.user, released.confirmed.id);
-  // Budget 200,000: 50,000 paid, 50,000 still owed to a shopper.
+  // Budget 200,000: 50,000 paid, 50,000 still owed to a shopper, and 50,000
+  // voided but still open to a dispute for 7 days.
   const back = await campaigns.returnFunds(owner, run.id, { id: randomUUID() });
-  assert.equal(back.amountKobo, '100000');
-  assert.equal(await fundingBalance(db, run.allocation), 50000n);
+  assert.equal(back.amountKobo, '50000');
+  assert.equal(await fundingBalance(db, run.allocation), 100000n);
   // The shopper who had not released yet is still paid in full.
   await campaigns.release(owed.shopper.user, owed.confirmed.id);
+  assert.equal(await fundingBalance(db, run.allocation), 50000n);
+  // Once the void can no longer be disputed, its money comes back too.
+  await travel('8 days');
+  const late = await campaigns.returnFunds(owner, run.id, { id: randomUUID() });
+  assert.equal(late.amountKobo, '50000');
   assert.equal(await fundingBalance(db, run.allocation), 0n);
   assert.equal(
     await reason(campaigns.returnFunds(owner, run.id, { id: randomUUID() })),

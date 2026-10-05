@@ -44,4 +44,16 @@ export class AdminController {
   ) {
     return this.admin.reviewPayment(r[AUTH_USER_ID], id, body);
   }
+  @Get('disputes')
+  disputes(@Req() r: AuthenticatedRequest) {
+    return this.admin.voidDisputes(r[AUTH_USER_ID]);
+  }
+  @Post('disputes/:id/rulings')
+  rule(
+    @Req() r: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    return this.admin.ruleOnVoid(r[AUTH_USER_ID], id, body);
+  }
 }

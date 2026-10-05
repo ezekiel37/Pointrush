@@ -63,7 +63,7 @@ async function batch(
   return issued;
 }
 
-test('promotion terms require a permit exactly when winning is by chance', async () => {
+test('only every-code-wins promotions are accepted: Acticlaim runs no games of chance', async () => {
   const owner = await business('Terms Check');
   const base = {
     requestId: randomUUID(),
@@ -85,10 +85,14 @@ test('promotion terms require a permit exactly when winning is by chance', async
     { ...terms, mode: 'chance', permit: null },
     {
       ...terms,
+      mode: 'chance',
+      permit: { authority: 'LSLGA', number: '1' },
+    },
+    {
+      ...terms,
       mode: 'every_code_wins',
       permit: { authority: 'LSLGA', number: '1' },
     },
-    { ...terms, mode: 'chance', permit: { authority: ' ', number: '1' } },
     { ...terms, mode: 'every_code_wins', permit: null, claimLimitPerPerson: 0 },
   ])
     await assert.rejects(

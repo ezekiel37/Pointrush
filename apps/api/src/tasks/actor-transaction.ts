@@ -46,6 +46,9 @@ const reasons: Record<string, string> = {
   'Staff daily confirmation limit reached': 'staff_daily_limit',
   'A second reviewer must approve': 'second_reviewer_required',
   'Unlock unavailable': 'unlock_unavailable',
+  'Void limit reached': 'void_limit',
+  'Dispute unavailable': 'dispute_unavailable',
+  'Ruling unavailable': 'ruling_unavailable',
 };
 
 function databaseError(error: unknown) {

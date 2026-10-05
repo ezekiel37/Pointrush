@@ -200,7 +200,7 @@ export async function campaignFixture() {
     const created = await sponsors.createTask(owner.user, {
       requestId: randomUUID(),
       title: 'Scratch and win',
-      instructions: 'Scratch your paper. Winning papers show a code to claim.',
+      instructions: 'Every code under the cap wins. Enter it to claim.',
       proofRequirements: 'A valid, unclaimed winning code.',
       rejectionCriteria: 'Invalid, used or withdrawn codes.',
       model: 'claim_code',
@@ -209,11 +209,8 @@ export async function campaignFixture() {
       startsAt: start.toISOString(),
       endsAt: new Date(start.getTime() + 2 * 86400000).toISOString(),
       promotionTerms: {
-        mode: 'chance',
-        permit: {
-          authority: 'Lagos State Lotteries and Gaming Authority',
-          number: 'LSLGA/PC/0001',
-        },
+        mode: 'every_code_wins',
+        permit: null,
         claimLimitPerPerson: 1,
         howToGetCodes: 'Buy any 50cl Fizz at participating stores.',
         ...terms,

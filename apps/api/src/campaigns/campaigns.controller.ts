@@ -64,6 +64,14 @@ export class CampaignsController {
   ) {
     return this.campaigns.voidPurchase(r[AUTH_USER_ID], id, body);
   }
+  @Post('purchases/:id/disputes')
+  dispute(
+    @Req() r: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    return this.campaigns.dispute(r[AUTH_USER_ID], id, body);
+  }
   @Post('purchases/:id/releases')
   release(@Req() r: AuthenticatedRequest, @Param('id') id: string) {
     return this.campaigns.release(r[AUTH_USER_ID], id);

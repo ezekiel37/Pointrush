@@ -28,6 +28,18 @@ function describe(r: Row) {
     case 'cashback_voided':
       return {
         title: `${business} voided your cash back`,
+        body: `${reason.replace(/[.!\s]+$/, '')}. Was it a real purchase? Dispute it from your wallet within 7 days.`,
+        href: '/wallet',
+      };
+    case 'void_reversed':
+      return {
+        title: `${amount} cash back paid after your dispute`,
+        body: `A reviewer found the void by ${business} was wrong. ${reason}`,
+        href: '/wallet',
+      };
+    case 'void_upheld':
+      return {
+        title: `Your dispute with ${business} was not accepted`,
         body: reason,
         href: '/wallet',
       };
@@ -109,6 +121,14 @@ export class NotificationsService {
               t.title, sp.name, t.reward_kobo::text, v.reason
             from purchase_voids v
             join purchase_confirmations p on p.id = v.confirmation_id
+            join sponsor_tasks t on t.id = p.task_id
+            join sponsor_profiles sp on sp.id = t.sponsor_id
+            where p.account_id = ${actor}
+            union all
+            select 'void_ruling:' || p.id, 'void_' || r.decision, r.created_at,
+              t.title, sp.name, t.reward_kobo::text, r.reason
+            from purchase_void_rulings r
+            join purchase_confirmations p on p.id = r.confirmation_id
             join sponsor_tasks t on t.id = p.task_id
             join sponsor_profiles sp on sp.id = t.sponsor_id
             where p.account_id = ${actor}

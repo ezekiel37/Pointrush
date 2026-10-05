@@ -33,7 +33,12 @@ test('shoppers hear when cash back is ready or voided, and read state moves forw
   let feed = await notifications.list(shopper.user);
   assert.deepEqual(
     feed.items.map((i) => [i.kind, i.body]),
-    [['cashback_voided', 'Order refunded at the counter']],
+    [
+      [
+        'cashback_voided',
+        'Order refunded at the counter. Was it a real purchase? Dispute it from your wallet within 7 days.',
+      ],
+    ],
   );
   assert.equal(feed.unread, 1);
   assert.equal((await notifications.list(stranger.user)).items.length, 0);

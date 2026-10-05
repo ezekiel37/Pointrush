@@ -31,6 +31,9 @@ const confirmInput = z
 const voidInput = z
   .object({ reason: z.string().trim().min(1).max(500) })
   .strict();
+const disputeInput = z
+  .object({ note: z.string().trim().min(1).max(500) })
+  .strict();
 const pageInput = z
   .object({
     after: z.uuid().optional(),
@@ -61,9 +64,11 @@ function purchaseState(row: {
   releaseAt: Date;
   voided: boolean;
   released: boolean;
+  dispute: string | null;
   observedAt: Date;
 }): PurchaseState {
-  if (row.released) return 'released';
+  // A void reversed after a dispute was paid straight to the wallet.
+  if (row.released || row.dispute === 'reversed') return 'released';
   if (row.voided) return 'voided';
   return row.observedAt >= row.releaseAt ? 'releasable' : 'pending';
 }
@@ -254,6 +259,36 @@ export class CampaignsService {
     });
   }
 
+  // "This was a real purchase": the shopper disputes a void within 7 days. The
+  // cash back stays locked until a reviewer decides.
+  async dispute(user: string, confirmationId: string, input: unknown) {
+    parse(id, confirmationId);
+    const value = parse(disputeInput, input);
+    return actorTransaction(this.db, user, async (tx, actor) => {
+      const [row] = await tx
+        .select({ id: s.purchaseConfirmations.id })
+        .from(s.purchaseConfirmations)
+        .where(
+          and(
+            eq(s.purchaseConfirmations.id, confirmationId),
+            eq(s.purchaseConfirmations.accountId, actor),
+          ),
+        );
+      if (!row) throw new NotFoundException();
+      const [existing] = await tx
+        .select()
+        .from(s.purchaseVoidDisputes)
+        .where(eq(s.purchaseVoidDisputes.confirmationId, confirmationId));
+      if (existing) return existing;
+      return (
+        await tx
+          .insert(s.purchaseVoidDisputes)
+          .values({ confirmationId, accountId: actor, note: value.note })
+          .returning()
+      )[0]!;
+    });
+  }
+
   async release(user: string, confirmationId: string) {
     parse(id, confirmationId);
     return actorTransaction(this.db, user, async (tx, actor) => {
@@ -407,7 +442,18 @@ export class CampaignsService {
         )
         .orderBy(desc(s.purchaseConfirmations.id))
         .limit(limit + 1);
-      const active = counts!.confirmed - counts!.voided;
+      const [places] = await tx
+        .select({
+          used: sql<number>`count(*) filter (where purchase_holds_place(${s.purchaseConfirmations.id}))::integer`,
+        })
+        .from(s.purchaseConfirmations)
+        .where(eq(s.purchaseConfirmations.taskId, taskId));
+      const active = places!.used;
+      // At most 20% of purchases (always at least 3) can be voided.
+      const voidsLeft = Math.max(
+        0,
+        Math.max(3, Math.floor(counts!.confirmed * 0.2)) - counts!.voided,
+      );
       return {
         taskId,
         title: task.title,
@@ -419,6 +465,7 @@ export class CampaignsService {
         voided: counts!.voided,
         released: counts!.released,
         remaining: Math.max(0, task.capacity - active),
+        voidsLeft,
         returningShoppers: counts!.returning,
         recent: this.purchasePage(rows, limit),
       };
@@ -436,6 +483,18 @@ export class CampaignsService {
       releaseAt: s.purchaseConfirmations.releaseAt,
       createdAt: s.purchaseConfirmations.createdAt,
       voided: sql<boolean>`exists (select 1 from ${s.purchaseVoids} where ${s.purchaseVoids.confirmationId} = ${s.purchaseConfirmations.id})`,
+      voidReason: sql<
+        string | null
+      >`(select v.reason from purchase_voids v where v.confirmation_id = ${s.purchaseConfirmations.id})`,
+      voidedAt: sql<
+        string | null
+      >`(select v.created_at from purchase_voids v where v.confirmation_id = ${s.purchaseConfirmations.id})`.mapWith(
+        (v: string | null) => (v == null ? null : new Date(v)),
+      ),
+      // null, 'open' (waiting for a reviewer), 'upheld' or 'reversed'.
+      dispute: sql<
+        string | null
+      >`(select coalesce(r.decision, 'open') from purchase_void_disputes d left join purchase_void_rulings r on r.confirmation_id = d.confirmation_id where d.confirmation_id = ${s.purchaseConfirmations.id})`,
       released: sql<boolean>`exists (select 1 from ${s.purchaseReleases} where ${s.purchaseReleases.confirmationId} = ${s.purchaseConfirmations.id})`,
       observedAt: sql<Date>`clock_timestamp()`.mapWith(
         (v: string) => new Date(v),
@@ -449,6 +508,8 @@ export class CampaignsService {
       releaseAt: Date;
       voided: boolean;
       released: boolean;
+      dispute: string | null;
+      voidedAt: Date | null;
       observedAt: Date;
     },
   >(rows: T[], limit: number) {
@@ -456,6 +517,11 @@ export class CampaignsService {
       items: rows.slice(0, limit).map(({ observedAt, ...row }) => ({
         ...row,
         state: purchaseState({ ...row, observedAt }),
+        // A voided purchase can be disputed for 7 days.
+        disputeUntil:
+          row.voidedAt && !row.dispute
+            ? new Date(row.voidedAt.getTime() + 7 * 86400000)
+            : null,
       })),
       nextCursor: rows.length > limit ? rows[limit - 1]!.id : null,
       observedAt: rows[0]?.observedAt ?? new Date(),

@@ -77,7 +77,7 @@ export class BusinessOverviewService {
             coalesce((select sum(case when f.destination_id = o.allocation_account_id then f.amount_kobo else -f.amount_kobo end)
               from owned o join funding_transfers f on f.source_id = o.allocation_account_id or f.destination_id = o.allocation_account_id), 0)::text as locked,
             coalesce((select sum(f.amount_kobo) from owned o join funding_transfers f on f.source_id = o.allocation_account_id
-              where f.kind in ('purchase_cashback', 'prize_claim', 'task_reward')), 0)::text as paid_out`),
+              where f.kind in ('purchase_cashback', 'prize_claim', 'task_reward', 'void_reversal')), 0)::text as paid_out`),
       );
 
       const campaigns = rows(
@@ -95,7 +95,7 @@ export class BusinessOverviewService {
               from funding_transfers f where f.source_id = o.allocation_account_id or f.destination_id = o.allocation_account_id)::text as balance_kobo,
             case
               when o.model = 'purchase_cashback' then (select count(*) from purchase_confirmations p
-                where p.task_id = o.id and not exists (select 1 from purchase_voids v where v.confirmation_id = p.id))
+                where p.task_id = o.id and purchase_holds_place(p.id))
               when o.model = 'claim_code' then (select count(*) from claim_redemptions r where r.task_id = o.id)
               else (select count(*) from task_claims c where c.task_id = o.id)
             end::int as used

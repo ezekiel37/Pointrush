@@ -120,8 +120,16 @@ export class TaskQueriesService {
         rewardBackingKobo: sql<string>`${s.sponsorTasks.rewardKobo}::text`,
         model: s.sponsorTasks.model,
         campaignTerms: s.sponsorTasks.campaignTerms,
+        // How often this business voids cash back (last 180 days), shown to
+        // shoppers once it has at least 10 purchases.
+        voidRatePercent: sql<
+          number | null
+        >`(select case when count(*) >= 10 then round(100.0 * count(v.confirmation_id) / count(*))::integer end
+          from ${s.purchaseConfirmations} p join ${s.sponsorTasks} st on st.id = p.task_id
+          left join ${s.purchaseVoids} v on v.confirmation_id = p.id
+          where st.sponsor_id = ${s.sponsorTasks.sponsorId} and p.created_at > clock_timestamp() - interval '180 days')`,
         // Campaign places are consumed by confirmed, unvoided purchases.
-        claimed: sql<number>`case when ${s.sponsorTasks.model}='purchase_cashback' then (select count(*)::integer from ${s.purchaseConfirmations} p where p.task_id=${s.sponsorTasks.id} and not exists (select 1 from ${s.purchaseVoids} v where v.confirmation_id=p.id)) else (select count(*)::integer from ${s.taskClaims} where ${s.taskClaims.taskId}=${s.sponsorTasks.id}) end`,
+        claimed: sql<number>`case when ${s.sponsorTasks.model}='purchase_cashback' then (select count(*)::integer from ${s.purchaseConfirmations} p where p.task_id=${s.sponsorTasks.id} and purchase_holds_place(p.id)) else (select count(*)::integer from ${s.taskClaims} where ${s.taskClaims.taskId}=${s.sponsorTasks.id}) end`,
       })
       .from(s.sponsorTasks)
       .innerJoin(

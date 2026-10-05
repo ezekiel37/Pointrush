@@ -81,7 +81,7 @@ export const fundingTransfers = pgTable(
     ),
     check(
       'funding_transfer_kind',
-      sql`${t.kind} in ('funding_confirmed', 'task_lock', 'task_reward', 'purchase_cashback', 'prize_claim', 'payout_hold', 'payout_paid', 'payout_returned', 'campaign_return', 'prize_handover', 'prize_cash_value')`,
+      sql`${t.kind} in ('funding_confirmed', 'task_lock', 'task_reward', 'purchase_cashback', 'prize_claim', 'payout_hold', 'payout_paid', 'payout_returned', 'campaign_return', 'prize_handover', 'prize_cash_value', 'void_reversal')`,
     ),
     check('funding_reference_present', sql`length(btrim(${t.reference})) > 0`),
     check('funding_reason_present', sql`length(btrim(${t.reason})) > 0`),

@@ -64,14 +64,10 @@ export class TaskWorkService {
           ? await tx
               .select({ used: sql<number>`count(*)::integer` })
               .from(s.purchaseConfirmations)
-              .leftJoin(
-                s.purchaseVoids,
-                eq(s.purchaseVoids.confirmationId, s.purchaseConfirmations.id),
-              )
               .where(
                 and(
                   eq(s.purchaseConfirmations.taskId, taskId),
-                  isNull(s.purchaseVoids.confirmationId),
+                  sql`purchase_holds_place(${s.purchaseConfirmations.id})`,
                 ),
               )
           : await tx

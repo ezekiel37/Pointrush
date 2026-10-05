@@ -25,8 +25,16 @@ const noteInput = z
   .object({ note: z.string().trim().min(3).max(1000) })
   .strict();
 
+const rulingInput = z
+  .object({
+    decision: z.enum(['upheld', 'reversed']),
+    reason: z.string().trim().min(3).max(500),
+  })
+  .strict();
+
 // Support and safety tools for appointed reviewers with a recent
-// authenticator check. Nothing here moves money.
+// authenticator check. Only a reversed void ruling moves money: the shopper
+// is paid from the campaign's locked funds, never from Acticlaim's.
 export class AdminService {
   constructor(private readonly db: FundingDatabase) {}
 
@@ -183,6 +191,71 @@ export class AdminService {
         .insert(s.paymentEventReviews)
         .values({ eventId, reviewerId: actor, note: parsed.data.note });
       return { eventId, reviewed: true };
+    });
+  }
+
+  // Shoppers' disputes of voided cash back, oldest first, with the business's
+  // void record on that campaign for context.
+  async voidDisputes(user: string) {
+    return this.reviewer(user, async (tx) => ({
+      items: rows(
+        await tx.execute(sql`
+          select p.id, t.title, sp.name as business, u.username as shopper,
+            p.amount_kobo::text as amount_kobo, t.reward_kobo::text as cashback_kobo,
+            p.created_at as purchased_at, v.reason as void_reason, v.created_at as voided_at,
+            d.note, d.created_at as disputed_at,
+            (select count(*)::int from purchase_confirmations c where c.task_id = t.id) as confirmed,
+            (select count(*)::int from purchase_voids x join purchase_confirmations c on c.id = x.confirmation_id
+              where c.task_id = t.id) as voided
+          from purchase_void_disputes d
+          join purchase_confirmations p on p.id = d.confirmation_id
+          join purchase_voids v on v.confirmation_id = p.id
+          join sponsor_tasks t on t.id = p.task_id
+          join sponsor_profiles sp on sp.id = t.sponsor_id
+          left join usernames u on u.account_id = p.account_id and u.is_current
+          where not exists (select 1 from purchase_void_rulings r where r.confirmation_id = d.confirmation_id)
+          order by d.created_at
+          limit 100`),
+      ).map((r) => ({
+        id: String(r.id),
+        title: String(r.title),
+        business: String(r.business),
+        shopper: r.shopper == null ? null : String(r.shopper),
+        amountKobo: String(r.amount_kobo),
+        cashbackKobo: String(r.cashback_kobo),
+        purchasedAt: iso(r.purchased_at),
+        voidReason: String(r.void_reason),
+        voidedAt: iso(r.voided_at),
+        note: String(r.note),
+        disputedAt: iso(r.disputed_at),
+        campaignConfirmed: Number(r.confirmed),
+        campaignVoided: Number(r.voided),
+      })),
+    }));
+  }
+
+  async ruleOnVoid(user: string, confirmationId: string, input: unknown) {
+    if (!z.uuid().safeParse(confirmationId).success)
+      throw new NotFoundException();
+    const parsed = rulingInput.safeParse(input);
+    if (!parsed.success) throw new BadRequestException('Invalid ruling');
+    return this.reviewer(user, async (tx, actor) => {
+      const [existing] = await tx
+        .select()
+        .from(s.purchaseVoidRulings)
+        .where(eq(s.purchaseVoidRulings.confirmationId, confirmationId));
+      if (existing) {
+        if (existing.decision !== parsed.data.decision)
+          throw new BadRequestException('Dispute already decided');
+        return { id: confirmationId, decision: existing.decision };
+      }
+      await tx.insert(s.purchaseVoidRulings).values({
+        confirmationId,
+        reviewerId: actor,
+        decision: parsed.data.decision,
+        reason: parsed.data.reason,
+      });
+      return { id: confirmationId, decision: parsed.data.decision };
     });
   }
 }

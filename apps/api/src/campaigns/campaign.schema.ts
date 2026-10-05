@@ -77,6 +77,42 @@ export const purchaseVoids = pgTable('purchase_voids', {
   createdAt: at('created_at').notNull().defaultNow(),
 });
 
+// A shopper who says a void was wrong can dispute it within 7 days. The voided
+// cash back stays locked in the campaign until a reviewer rules.
+export const purchaseVoidDisputes = pgTable('purchase_void_disputes', {
+  confirmationId: uuid('confirmation_id')
+    .primaryKey()
+    .references(() => purchaseConfirmations.id),
+  accountId: uuid('account_id')
+    .notNull()
+    .references(() => accounts.id),
+  note: varchar('note', { length: 500 }).notNull(),
+  createdAt: at('created_at').notNull().defaultNow(),
+});
+
+// A reviewer's decision on a dispute: the void stands ('upheld'), or the
+// shopper is paid from the campaign ('reversed').
+export const purchaseVoidRulings = pgTable(
+  'purchase_void_rulings',
+  {
+    confirmationId: uuid('confirmation_id')
+      .primaryKey()
+      .references(() => purchaseConfirmations.id),
+    reviewerId: uuid('reviewer_id')
+      .notNull()
+      .references(() => accounts.id),
+    decision: varchar('decision', { length: 20 }).notNull(),
+    reason: varchar('reason', { length: 500 }).notNull(),
+    createdAt: at('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      'purchase_void_ruling_decision',
+      sql`${t.decision} in ('upheld', 'reversed')`,
+    ),
+  ],
+);
+
 // After the hold, the shopper moves cash back into their reward wallet once.
 export const purchaseReleases = pgTable('purchase_releases', {
   confirmationId: uuid('confirmation_id')
