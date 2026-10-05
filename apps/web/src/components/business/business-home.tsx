@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Plus } from 'lucide-react';
 import { AreaChart } from '@/components/charts/area-chart';
 import { StatusBreakdown } from '@/components/charts/status-breakdown';
 import { Loading } from '@/components/ui/feedback';
@@ -69,17 +69,22 @@ export function BusinessHome() {
         intro="Confirmed purchases, prizes and the money behind them."
         actions={
           data && (
-            <div className="segmented" role="group" aria-label="Date range">
-              {([7, 30] as const).map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  aria-pressed={days === d}
-                  onClick={() => setDays(d)}
-                >
-                  Last {d} days
-                </button>
-              ))}
+            <div className="row" style={{ flexWrap: 'wrap' }}>
+              <div className="segmented" role="group" aria-label="Date range">
+                {([7, 30] as const).map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    aria-pressed={days === d}
+                    onClick={() => setDays(d)}
+                  >
+                    Last {d} days
+                  </button>
+                ))}
+              </div>
+              <Link className="button button-accent" href="/business/funds">
+                <Plus size={17} aria-hidden /> Add funds
+              </Link>
             </div>
           )
         }
@@ -101,6 +106,10 @@ export function BusinessHome() {
             }}
           >
             <dl className="stat-row" style={{ margin: 0 }}>
+              <div className="stat">
+                <dt>Available to spend</dt>
+                <dd>{naira(data.availableKobo)}</dd>
+              </div>
               <div className="stat">
                 <dt>Money locked</dt>
                 <dd>{naira(data.lockedKobo)}</dd>

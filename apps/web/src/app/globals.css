@@ -221,6 +221,14 @@
   .button-accent:hover:not(:disabled) {
     background: var(--color-brand-hover);
   }
+  /* The one action on the dark wallet card. */
+  .button-lime {
+    background: var(--color-lime);
+    color: var(--color-ink);
+  }
+  .button-lime:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-lime) 85%, #ffffff);
+  }
   .button-outline {
     background: var(--color-surface);
     color: var(--color-ink);
@@ -1263,6 +1271,69 @@
     background: var(--color-surface);
     font-size: 0.85rem;
     font-weight: 600;
+  }
+  /* Money screens: balances, suggested amounts and a vertical how-it-works. */
+  .balance-pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin: 0;
+  }
+  .balance-pair > div {
+    display: grid;
+    align-content: space-between;
+    padding: 0.9rem 1rem;
+    border-radius: 14px;
+    background: var(--color-canvas);
+  }
+  .balance-pair dt {
+    font-size: 0.82rem;
+    color: var(--color-muted);
+  }
+  .balance-pair dd {
+    margin: 0.2rem 0 0;
+    font-size: clamp(1.3rem, 4vw, 1.65rem);
+  }
+  .preset-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+    max-width: 30rem;
+  }
+  .preset-row button {
+    padding: 0 0.35rem;
+  }
+  .timeline {
+    counter-reset: step;
+    display: grid;
+    gap: 1.25rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .timeline li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    column-gap: 0.85rem;
+    row-gap: 0.2rem;
+  }
+  .timeline li::before {
+    content: counter(step);
+    grid-row: span 2;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    background: var(--color-brand-soft);
+    color: var(--color-brand-deep);
+    font-size: 0.85rem;
+    font-weight: 650;
+  }
+  .timeline span {
+    font-size: 0.9rem;
+    color: var(--color-muted);
   }
   .bento {
     display: grid;

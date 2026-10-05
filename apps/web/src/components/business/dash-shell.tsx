@@ -8,6 +8,7 @@ import {
   BriefcaseBusiness,
   CircleHelp,
   LayoutGrid,
+  Landmark,
   ScanLine,
   TicketCheck,
 } from 'lucide-react';
@@ -24,6 +25,7 @@ const groups = [
         label: 'Prize promotions',
         icon: TicketCheck,
       },
+      { href: '/business/funds', label: 'Funds', icon: Landmark },
     ],
   },
   {

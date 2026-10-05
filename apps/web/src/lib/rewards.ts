@@ -205,8 +205,22 @@ export const businessOverview = z.object({
     voided: z.number().int(),
     returningShoppers: z.number().int(),
   }),
+  availableKobo: money,
   lockedKobo: money,
   paidOutKobo: money,
   live: z.number().int(),
   campaigns: z.array(businessCampaign),
 });
+
+export const fundingIntent = z.object({
+  intentId: z.uuid(),
+  amountKobo: money,
+  checkoutUrl: z.url({ protocol: /^https$/ }),
+});
+export const withdrawal = z.object({
+  id: z.uuid(),
+  amountKobo: money,
+  createdAt: date,
+  state: z.enum(['held', 'sent', 'paid', 'failed']),
+});
+export const withdrawalPage = page(withdrawal);

@@ -7,8 +7,14 @@ import { Feedback, Loading } from '@/components/ui/feedback';
 import { WorkFailure } from '@/components/work/work-frame';
 import { apiRequest, naira, shortDate } from '@/lib/api';
 import { RequestError } from '@/lib/auth-client';
-import { pointsSummary, purchasePage, releaseResult } from '@/lib/rewards';
+import {
+  pointsSummary,
+  purchasePage,
+  releaseResult,
+  withdrawalPage,
+} from '@/lib/rewards';
 import { useApiRead } from '@/lib/use-api-read';
+import { WithdrawalList, WithdrawPanel } from './withdraw';
 
 const stateLabel = {
   pending: ['Held', 'chip chip-pending'],
@@ -20,8 +26,11 @@ const stateLabel = {
 export function Wallet() {
   const summary = useApiRead('points', pointsSummary);
   const purchases = useApiRead('purchases?limit=30', purchasePage);
+  const withdrawals = useApiRead('wallet/withdrawals?limit=10', withdrawalPage);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [withdrawing, setWithdrawing] = useState(false);
+  const [notice, setNotice] = useState('');
 
   async function release(id: string) {
     if (busy) return;
@@ -94,16 +103,32 @@ export function Wallet() {
                 >
                   {naira(data.walletKobo)}
                 </p>
-                <p
-                  className="small-note"
-                  style={{
-                    color:
-                      'color-mix(in srgb, var(--color-surface) 70%, transparent)',
-                  }}
-                >
-                  Withdrawals to your bank arrive with payments. Your balance is
-                  safe and recorded.
-                </p>
+                {data.phoneVerified && BigInt(data.walletKobo) >= 50000n ? (
+                  <Button
+                    type="button"
+                    className="button-lime"
+                    aria-expanded={withdrawing}
+                    aria-controls="withdraw-panel"
+                    onClick={() => {
+                      setWithdrawing(true);
+                      setNotice('');
+                    }}
+                  >
+                    Withdraw
+                  </Button>
+                ) : (
+                  <p
+                    className="small-note"
+                    style={{
+                      color:
+                        'color-mix(in srgb, var(--color-surface) 70%, transparent)',
+                    }}
+                  >
+                    {data.phoneVerified
+                      ? 'You can withdraw once you have ₦500 or more.'
+                      : 'Withdrawing needs a verified phone number. Phone verification opens soon; your balance is safe and recorded.'}
+                  </p>
+                )}
               </div>
               <div className="card">
                 <p className="eyebrow">Held cash back</p>
@@ -120,6 +145,23 @@ export function Wallet() {
               </div>
             </section>
 
+            {withdrawing && (
+              <div id="withdraw-panel">
+                <WithdrawPanel
+                  walletKobo={data.walletKobo}
+                  onCancel={() => setWithdrawing(false)}
+                  onDone={(result) => {
+                    setWithdrawing(false);
+                    setNotice(
+                      `${naira(result.amountKobo)} is on its way. It shows as processing until the payment provider confirms it.`,
+                    );
+                    summary.refresh();
+                    withdrawals.refresh();
+                  }}
+                />
+              </div>
+            )}
+            {notice && <Feedback>{notice}</Feedback>}
             {error && <Feedback error>{error}</Feedback>}
 
             <section aria-labelledby="purchases-heading">
@@ -189,6 +231,10 @@ export function Wallet() {
                 </p>
               )}
             </section>
+
+            {withdrawals.data?.items.length ? (
+              <WithdrawalList items={withdrawals.data.items} />
+            ) : null}
 
             <section
               className="grid gap-3"

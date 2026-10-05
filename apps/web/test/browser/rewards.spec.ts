@@ -22,6 +22,44 @@ const offer = {
   },
 };
 
+function overview(days: number) {
+  return {
+    business: { id: offerId, name: 'Mama Put Kitchen' },
+    days,
+    series: Array.from({ length: days }, (_, i) => ({
+      day: new Date(Date.UTC(2026, 9, 5 - (days - 1 - i)))
+        .toISOString()
+        .slice(0, 10),
+      purchases: i === days - 1 ? 12 : i % 5,
+      claims: 0,
+    })),
+    purchases: {
+      held: 12,
+      ready: 4,
+      paid: 20,
+      voided: 1,
+      returningShoppers: 9,
+    },
+    availableKobo: '2500000',
+    lockedKobo: '6450000',
+    paidOutKobo: '1500000',
+    live: 1,
+    campaigns: [
+      {
+        id: offerId,
+        title: 'Lunch cash back',
+        model: 'purchase_cashback',
+        capacity: 100,
+        used: 37,
+        reviewState: 'approved',
+        lifecycle: 'published',
+        endsAt: '2026-12-10T18:00:00Z',
+        rewardKobo: '50000',
+      },
+    ],
+  };
+}
+
 async function phone(page: Page) {
   await page.setViewportSize({ width: 390, height: 844 });
 }
@@ -224,6 +262,9 @@ test('wallet separates paid money from held cash back and releases once', async 
       },
     });
   });
+  await page.route('**/api/v1/wallet/withdrawals?*', (route) =>
+    route.fulfill({ json: { items: [], nextCursor: null } }),
+  );
   await page.goto('/wallet');
   await expect(page.getByText('₦1,000', { exact: true })).toBeVisible();
   // Held money shows its own total and a label, never as wallet money.
@@ -324,42 +365,7 @@ test('business overview chart reads by keyboard, switches range and fits a phone
       new URL(route.request().url()).searchParams.get('days'),
     );
     ranges.push(String(days));
-    return route.fulfill({
-      json: {
-        business: { id: offerId, name: 'Mama Put Kitchen' },
-        days,
-        series: Array.from({ length: days }, (_, i) => ({
-          day: new Date(Date.UTC(2026, 9, 5 - (days - 1 - i)))
-            .toISOString()
-            .slice(0, 10),
-          purchases: i === days - 1 ? 12 : i % 5,
-          claims: 0,
-        })),
-        purchases: {
-          held: 12,
-          ready: 4,
-          paid: 20,
-          voided: 1,
-          returningShoppers: 9,
-        },
-        lockedKobo: '6450000',
-        paidOutKobo: '1500000',
-        live: 1,
-        campaigns: [
-          {
-            id: offerId,
-            title: 'Lunch cash back',
-            model: 'purchase_cashback',
-            capacity: 100,
-            used: 37,
-            reviewState: 'approved',
-            lifecycle: 'published',
-            endsAt: '2026-12-10T18:00:00Z',
-            rewardKobo: '50000',
-          },
-        ],
-      },
-    });
+    return route.fulfill({ json: overview(days) });
   });
   await phone(page);
   await page.goto('/business');
@@ -383,4 +389,133 @@ test('business overview chart reads by keyboard, switches range and fits a phone
   // two ranges are ever fetched, ending with the selected one.
   expect(new Set(ranges)).toEqual(new Set(['7', '30']));
   expect(ranges.at(-1)).toBe('30');
+});
+
+test('business funding goes to the provider checkout and reuses its ID after a dropped response', async ({
+  page,
+}) => {
+  await phone(page);
+  await page.route('**/api/v1/business/overview?*', (route) =>
+    route.fulfill({ json: overview(7) }),
+  );
+  const bodies: { id: string; amountKobo: string }[] = [];
+  await page.route('**/api/v1/payments/funding-intents', (route) => {
+    const body = route.request().postDataJSON();
+    bodies.push(body);
+    if (bodies.length === 1) return route.abort();
+    return route.fulfill({
+      json: {
+        intentId: body.id,
+        amountKobo: body.amountKobo,
+        checkoutUrl: `https://payments.example.test/checkout/${body.id}`,
+      },
+    });
+  });
+  await page.route('https://payments.example.test/**', (route) =>
+    route.fulfill({
+      contentType: 'text/html',
+      body: '<title>Checkout</title>',
+    }),
+  );
+  await page.goto('/business/funds');
+  await expect(page.getByText('₦25,000', { exact: true })).toBeVisible();
+  await healthy(page);
+  await page
+    .getByRole('button', { name: 'Continue to secure checkout' })
+    .click();
+  await expect(page.getByText('Enter an amount between')).toBeVisible();
+  await page.getByRole('button', { name: '₦100,000' }).click();
+  await page.getByRole('button', { name: 'Continue to pay ₦100,000' }).click();
+  await expect(page.locator('main').getByRole('alert')).toContainText(
+    'you will not be charged twice',
+  );
+  await page.getByRole('button', { name: 'Continue to pay ₦100,000' }).click();
+  await page.waitForURL('https://payments.example.test/checkout/**');
+  expect(bodies).toHaveLength(2);
+  expect(bodies[0]).toEqual(bodies[1]);
+  expect(bodies[0]?.amountKobo).toBe('10000000');
+});
+
+test('a withdrawal holds money once across a dropped response and shows its state', async ({
+  page,
+}) => {
+  await phone(page);
+  let held = false;
+  const summary = (phoneVerified: boolean) => ({
+    points: { available: '0', pending: '0' },
+    walletKobo: held ? '80000' : '200000',
+    tier: {
+      name: 'New',
+      businesses: 1,
+      next: { name: 'Bronze', businesses: 3 },
+    },
+    phoneVerified,
+    referral: { code: null, referredBy: null, referred: 0, rewarded: 0 },
+  });
+  let verified = false;
+  await page.route('**/api/v1/points', (route) =>
+    route.fulfill({ json: summary(verified) }),
+  );
+  await page.route('**/api/v1/purchases?*', (route) =>
+    route.fulfill({
+      json: { items: [], nextCursor: null, observedAt: '2026-10-05T12:00:00Z' },
+    }),
+  );
+  const bodies: { id: string; amountKobo: string }[] = [];
+  await page.route('**/api/v1/wallet/withdrawals*', (route) => {
+    if (route.request().method() === 'GET')
+      return route.fulfill({
+        json: {
+          items: held
+            ? [
+                {
+                  id: bodies[0]!.id,
+                  amountKobo: '120000',
+                  createdAt: '2026-10-05T12:00:00Z',
+                  state: 'held',
+                },
+              ]
+            : [],
+          nextCursor: null,
+        },
+      });
+    const body = route.request().postDataJSON();
+    bodies.push(body);
+    if (bodies.length === 1) return route.abort();
+    held = true;
+    return route.fulfill({
+      json: {
+        id: body.id,
+        amountKobo: body.amountKobo,
+        createdAt: '2026-10-05T12:00:00Z',
+        state: 'held',
+      },
+    });
+  });
+
+  // Without a verified phone there is no withdraw action, only the reason.
+  await page.goto('/wallet');
+  await expect(page.getByText(/needs a verified phone number/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Withdraw' })).toHaveCount(0);
+
+  verified = true;
+  await page.reload();
+  await page.getByRole('button', { name: 'Withdraw', exact: true }).click();
+  await page.getByLabel('Amount in naira').fill('3000');
+  await page.getByRole('button', { name: 'Withdraw ₦3,000' }).click();
+  await expect(page.getByText('You have ₦2,000 in your wallet.')).toBeVisible();
+  await page.getByLabel('Amount in naira').fill('1,200');
+  await healthy(page);
+  await page.getByRole('button', { name: 'Withdraw ₦1,200' }).click();
+  await expect(page.locator('main').getByRole('alert')).toContainText(
+    'never be taken twice',
+  );
+  await page.getByRole('button', { name: 'Withdraw ₦1,200' }).click();
+  await expect(page.getByText(/is on its way/)).toBeVisible();
+  await expect(page.getByText('Processing', { exact: true })).toBeVisible();
+  await expect(page.getByText('₦800', { exact: true })).toBeVisible();
+  expect(bodies).toHaveLength(2);
+  expect(bodies[0]).toEqual(bodies[1]);
+  expect(bodies[0]?.amountKobo).toBe('120000');
+  await healthy(page);
 });
