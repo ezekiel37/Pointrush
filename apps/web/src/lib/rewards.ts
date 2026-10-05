@@ -248,6 +248,7 @@ export const withdrawal = z.object({
   id: z.uuid(),
   amountKobo: money,
   createdAt: date,
+  bank: z.string().nullable().optional(),
   state: z.enum(['held', 'sent', 'paid', 'failed']),
 });
 export const withdrawalPage = page(withdrawal);
@@ -288,4 +289,19 @@ export const workplaces = z.object({
         .default([]),
     }),
   ),
+});
+
+export const bankList = z.object({
+  items: z.array(z.object({ code: z.string(), name: z.string() })),
+});
+export const bankAccount = z.object({
+  destination: z
+    .object({
+      id: z.uuid(),
+      bankName: z.string(),
+      accountName: z.string(),
+      last4: z.string(),
+      usableFrom: date,
+    })
+    .nullable(),
 });

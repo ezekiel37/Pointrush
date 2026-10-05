@@ -12,7 +12,9 @@ import {
   purchasePage,
   releaseResult,
   withdrawalPage,
+  bankAccount,
 } from '@/lib/rewards';
+import { BankAccount, usable } from './bank-account';
 import { useApiRead } from '@/lib/use-api-read';
 import { WithdrawalList, WithdrawPanel } from './withdraw';
 
@@ -27,6 +29,10 @@ export function Wallet() {
   const summary = useApiRead('points', pointsSummary);
   const purchases = useApiRead('purchases?limit=30', purchasePage);
   const withdrawals = useApiRead('wallet/withdrawals?limit=10', withdrawalPage);
+  const bank = useApiRead(
+    summary.data?.phoneVerified ? 'wallet/bank-account' : null,
+    bankAccount,
+  );
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [withdrawing, setWithdrawing] = useState(false);
@@ -103,7 +109,9 @@ export function Wallet() {
                 >
                   {naira(data.walletKobo)}
                 </p>
-                {data.phoneVerified && BigInt(data.walletKobo) >= 50000n ? (
+                {data.phoneVerified &&
+                BigInt(data.walletKobo) >= 50000n &&
+                usable(bank.data?.destination) ? (
                   <Button
                     type="button"
                     className="button-lime"
@@ -125,7 +133,13 @@ export function Wallet() {
                     }}
                   >
                     {data.phoneVerified ? (
-                      'You can withdraw once you have ₦500 or more.'
+                      BigInt(data.walletKobo) < 50000n ? (
+                        'You can withdraw once you have ₦500 or more.'
+                      ) : bank.data?.destination ? (
+                        'Your new bank account can receive money 24 hours after you added it.'
+                      ) : (
+                        'Add a bank account below to withdraw.'
+                      )
                     ) : (
                       <>
                         Withdrawing needs a verified phone number.{' '}
@@ -155,10 +169,21 @@ export function Wallet() {
               </div>
             </section>
 
+            {data.phoneVerified && bank.data && (
+              <BankAccount
+                account={bank.data.destination}
+                onSaved={bank.refresh}
+              />
+            )}
             {withdrawing && (
               <div id="withdraw-panel">
                 <WithdrawPanel
                   walletKobo={data.walletKobo}
+                  to={
+                    bank.data?.destination
+                      ? `${bank.data.destination.accountName}, ${bank.data.destination.bankName} ••••${bank.data.destination.last4}`
+                      : ''
+                  }
                   onCancel={() => setWithdrawing(false)}
                   onDone={(result) => {
                     setWithdrawing(false);

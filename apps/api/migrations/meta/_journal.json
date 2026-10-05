@@ -176,6 +176,13 @@
       "when": 1791188647086,
       "tag": "0024_admin_tools",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1791196268610,
+      "tag": "0025_payout_destinations",
+      "breakpoints": true
     }
   ]
 }

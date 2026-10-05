@@ -160,6 +160,7 @@ export {
 export {
   fundingIntents,
   paymentEvents,
+  payoutDestinations,
   withdrawals,
   withdrawalSubmissions,
   withdrawalOutcomes,

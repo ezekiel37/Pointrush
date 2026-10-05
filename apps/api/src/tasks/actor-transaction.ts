@@ -39,6 +39,9 @@ const reasons: Record<string, string> = {
   'Voucher unavailable': 'voucher_unavailable',
   'Access change unavailable': 'access_change_unavailable',
   'Payment review unavailable': 'payment_review_unavailable',
+  'New bank account is not usable yet': 'destination_cooling',
+  'Bank account unavailable': 'destination_unavailable',
+  'Too many bank account changes': 'destination_limit',
 };
 
 function databaseError(error: unknown) {

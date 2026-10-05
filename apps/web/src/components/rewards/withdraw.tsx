@@ -29,6 +29,10 @@ function withdrawError(error: unknown) {
         return 'That is more than your wallet balance.';
       case 'withdrawal_daily_limit':
         return 'You can make three withdrawals a day. Try again tomorrow.';
+      case 'destination_required':
+        return 'Add a bank account first.';
+      case 'destination_cooling':
+        return 'Your new bank account can receive money 24 hours after you added it.';
       case 'withdrawal_unavailable':
         return 'Withdrawals need an active account with a verified phone number. Verify it from your wallet.';
     }
@@ -40,10 +44,12 @@ function withdrawError(error: unknown) {
 
 export function WithdrawPanel({
   walletKobo,
+  to,
   onDone,
   onCancel,
 }: {
   walletKobo: string;
+  to: string;
   onDone: (result: Withdrawal) => void;
   onCancel: () => void;
 }) {
@@ -92,6 +98,7 @@ export function WithdrawPanel({
     <section className="card grid gap-4" aria-labelledby="withdraw-heading">
       <div className="card-head">
         <h2 id="withdraw-heading">Withdraw</h2>
+        {to && <p style={{ color: 'var(--color-ink)' }}>To {to}</p>}
         <p>
           The amount leaves your wallet at once and is held until the payment
           provider confirms it. If a payout fails, it comes straight back.
@@ -156,7 +163,10 @@ export function WithdrawalList({ items }: { items: Withdrawal[] }) {
                 <p className="amount" style={{ margin: 0 }}>
                   {naira(item.amountKobo)}
                 </p>
-                <p className="small-note">{shortDate(item.createdAt)}</p>
+                <p className="small-note">
+                  {shortDate(item.createdAt)}
+                  {item.bank ? ` · ${item.bank}` : ''}
+                </p>
               </div>
               <span className={chip}>{text}</span>
             </li>

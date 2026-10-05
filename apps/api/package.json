@@ -15,7 +15,8 @@
     "reviewers:provision": "node --env-file-if-exists=.env dist/reviews/reviewer-provisioning-cli.js",
     "auth:mfa-recover": "node --env-file-if-exists=.env dist/auth/mfa-recovery-cli.js",
     "email:work": "node --env-file-if-exists=.env dist/auth/email-worker-cli.js",
-    "email:serve": "node --env-file-if-exists=.env dist/auth/email-http-main.js"
+    "email:serve": "node --env-file-if-exists=.env dist/auth/email-http-main.js",
+    "payments:payouts": "node --env-file-if-exists=.env dist/payments/payout-worker-cli.js"
   },
   "dependencies": {
     "@better-auth/core": "1.7.6",

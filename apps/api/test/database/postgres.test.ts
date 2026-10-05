@@ -866,6 +866,13 @@ test('native simultaneous claims of one winning code pay exactly one person, who
     const winner = people.find((person) =>
       wallets.some((w) => w.ownerId === person.account),
     )!;
+    await new PaymentsService(
+      database.db,
+      new TestPaymentProvider('native-webhook-secret-long-enough-0000'),
+    ).addDestination(winner.user, {
+      bankCode: '058',
+      accountNumber: '0123456789',
+    });
     const withdrawals = await Promise.allSettled(
       [database.db, other.db].map((db) =>
         new PaymentsService(

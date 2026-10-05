@@ -4,6 +4,7 @@ import type { PaymentsEnvironment } from '../config/environment.js';
 import { DatabaseService } from '../database/database.service.js';
 import { PaymentsController } from './payments.controller.js';
 import { PaymentsService } from './payments.service.js';
+import { BachsProvider } from './bachs.js';
 import { TestPaymentProvider } from './provider.js';
 import type { PaymentProvider } from './provider.js';
 
@@ -12,7 +13,12 @@ export const PAYMENT_PROVIDER = Symbol('PAYMENT_PROVIDER');
 export function paymentProvider(
   config?: PaymentsEnvironment,
 ): PaymentProvider | undefined {
-  // The Bachs adapter is added once its documentation is reviewed.
+  if (config?.provider === 'bachs')
+    return new BachsProvider({
+      apiKey: config.apiKey,
+      webhookSecret: config.webhookSecret,
+      returnOrigin: config.returnOrigin,
+    });
   if (config?.provider === 'test')
     return new TestPaymentProvider(config.webhookSecret);
   return undefined;

@@ -19,11 +19,18 @@ export interface AuthEnvironment {
 const schema = z.object({
   SPONSOR_TERMS_VERSION: z.string().trim().min(1).max(80).optional(),
   // Only the signing test provider exists until the Bachs adapter is built.
-  PAYMENTS_PROVIDER: z.enum(['test']).optional(),
+  PAYMENTS_PROVIDER: z.enum(['test', 'bachs']).optional(),
   PAYMENTS_WEBHOOK_SECRET: z
     .string()
-    .refine((value) => value.trim().length >= 32)
+    .refine((value) => value.trim().length >= 16)
     .optional(),
+  // Bachs secret key: sk_sandbox_ for testing, sk_live_ for real money.
+  BACHS_API_KEY: z
+    .string()
+    .regex(/^sk_(sandbox|live)_[A-Za-z0-9_-]{8,}$/)
+    .optional(),
+  // Web app origin customers return to after paying, e.g. https://acticlaim.com
+  PAYMENTS_RETURN_ORIGIN: z.string().optional(),
   // Only the in-memory test provider exists until an SMS adapter is chosen.
   SMS_PROVIDER: z.enum(['test']).optional(),
   // Country calling codes SMS may go to, e.g. "+234,+233". Limits SMS fraud.
@@ -69,10 +76,14 @@ const schema = z.object({
     .pipe(z.number().int().min(1).max(10000)),
 });
 
-export interface PaymentsEnvironment {
-  provider: 'test';
-  webhookSecret: string;
-}
+export type PaymentsEnvironment =
+  | { provider: 'test'; webhookSecret: string }
+  | {
+      provider: 'bachs';
+      webhookSecret: string;
+      apiKey: string;
+      returnOrigin: string;
+    };
 
 export interface SmsEnvironment {
   provider: 'test';
@@ -96,6 +107,8 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
     SPONSOR_TERMS_VERSION,
     PAYMENTS_PROVIDER,
     PAYMENTS_WEBHOOK_SECRET,
+    BACHS_API_KEY,
+    PAYMENTS_RETURN_ORIGIN,
     SMS_PROVIDER,
     SMS_ALLOWED_PREFIXES,
     SMS_DAILY_LIMIT,
@@ -123,6 +136,22 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
   }
   if (PAYMENTS_PROVIDER === 'test' && NODE_ENV === 'production') {
     throw new Error('The test payment provider cannot run in production');
+  }
+  if (PAYMENTS_PROVIDER === 'bachs') {
+    if (!BACHS_API_KEY || !PAYMENTS_RETURN_ORIGIN)
+      throw new Error('Payments configuration must be complete');
+    assertTrustedOrigin(
+      PAYMENTS_RETURN_ORIGIN,
+      'PAYMENTS_RETURN_ORIGIN',
+      NODE_ENV === 'production',
+    );
+    // Real money only with a live key, and live keys only in production.
+    if ((NODE_ENV === 'production') !== BACHS_API_KEY.startsWith('sk_live_'))
+      throw new Error(
+        'Use a sk_live_ Bachs key in production and a sk_sandbox_ key elsewhere',
+      );
+  } else if (BACHS_API_KEY) {
+    throw new Error('BACHS_API_KEY is set but PAYMENTS_PROVIDER is not bachs');
   }
   if (SMS_PROVIDER === 'test' && NODE_ENV === 'production') {
     throw new Error('The test SMS provider cannot run in production');
@@ -173,10 +202,18 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
       : {}),
     ...(PAYMENTS_PROVIDER && PAYMENTS_WEBHOOK_SECRET
       ? {
-          payments: {
-            provider: PAYMENTS_PROVIDER,
-            webhookSecret: PAYMENTS_WEBHOOK_SECRET,
-          },
+          payments:
+            PAYMENTS_PROVIDER === 'bachs'
+              ? {
+                  provider: 'bachs' as const,
+                  webhookSecret: PAYMENTS_WEBHOOK_SECRET,
+                  apiKey: BACHS_API_KEY!,
+                  returnOrigin: PAYMENTS_RETURN_ORIGIN!,
+                }
+              : {
+                  provider: 'test' as const,
+                  webhookSecret: PAYMENTS_WEBHOOK_SECRET,
+                },
         }
       : {}),
     ...(SMS_PROVIDER

@@ -46,9 +46,34 @@ A provider adapter must:
 - A withdrawal is submitted once and settled once; nothing is accepted after settlement.
 - Payment events, withdrawals, submissions and outcomes are append-only.
 
-## Configuration
+## Bachs (migration 0025)
 
-`PAYMENTS_PROVIDER` and `PAYMENTS_WEBHOOK_SECRET` (at least 32 characters) must be set together. Only `test` exists today, and it is rejected when `NODE_ENV=production`. Without a provider, payment routes return `payments_unavailable`.
+The Bachs adapter (`apps/api/src/payments/bachs.ts`) follows https://docs.bachs.io:
+
+- **Funding.** `POST /v1/checkout-sessions` with a raw NGN amount (`pricing`), our intent ID as `reference`, NGN card and bank transfer only, and `Idempotency-Key: checkout:<intent>`. The business returns to `/business/funds?paid=1`, but only the `collection.succeeded` webhook credits. It must carry our reference, the exact amount, NGN and `status: SUCCEEDED`; `ACCEPTED` or `OVERPAID` collections go to review as `mismatch`.
+- **Bank accounts.** `POST /v1/payouts/destinations` checks the account at the bank. Only an `approved` account is saved, with the bank's own account name and the last four digits; the full number is not stored. A changed account cannot receive money for 24 hours, and at most three accounts can be added in 30 days.
+- **Payouts.** `POST /v1/payouts` to the saved destination, with the withdrawal ID as `reference` and `Idempotency-Key: withdrawal:<id>`, so a retry never pays twice. The amount is what the person receives; Bachs charges its fee on top, from Acticlaim's balance. `payout.paid` and `payout.failed` settle the withdrawal.
+- **Failures.** A rejected destination ends the withdrawal and returns the money. Anything else (Bachs unreachable, `INSUFFICIENT_BALANCE`, `ORGANIZATION_IN_DEBT`, rate limits) leaves it held and is retried with the same key.
+- **Webhooks.** `X-Bachs-Signature-V2` (`t=…,v1=…`, any `v1` may match during a secret rotation) over `<timestamp>.<raw body>`, five-minute window, falling back to the `X-Bachs-Timestamp`/`X-Bachs-Signature` pair. Unknown fields are ignored.
+- **Payout job.** `npm run payments:payouts -w @pointrush/api` sends held withdrawals in one finite batch. Run it on a schedule (for example every five minutes). Exit code 2 means some payouts were deferred and need a person to look.
+
+### Configuration
+
+| Variable                  | Value                                                                    |
+| ------------------------- | ------------------------------------------------------------------------ |
+| `PAYMENTS_PROVIDER`       | `bachs` (or `test`, refused in production)                               |
+| `BACHS_API_KEY`           | `sk_sandbox_…` outside production, `sk_live_…` in production (enforced)  |
+| `PAYMENTS_WEBHOOK_SECRET` | The signing secret of the webhook endpoint in the Bachs developer portal |
+| `PAYMENTS_RETURN_ORIGIN`  | The web app origin, e.g. `https://acticlaim.com`                         |
+
+Without a provider, payment routes return `payments_unavailable`. Keys and secrets belong in the deployment's secret store, never in Git or chat.
+
+### In the Bachs dashboard
+
+1. Create a sandbox secret key with checkout, payouts and payout-destination scopes.
+2. Add a webhook endpoint `https://<api host>/api/v1/payments/webhooks/bachs` subscribed to `collection.succeeded`, `payout.paid` and `payout.failed`, and copy its signing secret.
+3. Decide who pays the collection fee. If Acticlaim (the merchant) bears it, every ₦100,000 funded costs Acticlaim the fee; set the customer as fee bearer in the checkout settings, or price it in.
+4. Keep Acticlaim's Bachs balance above pending withdrawals plus fees; payouts are paid from it.
 
 ## Verification
 
@@ -56,9 +81,8 @@ PGlite tests cover forged, stale and tampered webhooks, duplicate and retried ev
 
 ## Release gates and known gaps
 
-- **Bachs adapter.** Needs its documentation reviewed: checkout sessions, webhook signature scheme, payout API and whether payouts are idempotent.
-- **Payout destination.** Withdrawals do not yet record where the money goes (bank account or provider account). This must be added, with account-name verification, before real payouts.
-- **Payout worker.** `submitPendingWithdrawals` has no scheduled runner yet (the email worker shows the pattern).
-- **Reconciliation.** Provider settlement reports must be matched against the ledger daily, and `mismatch` events need an admin review screen.
-- **Phone verification.** Withdrawals need a verified phone, which needs the SMS provider that is not configured yet.
+- **Sandbox run.** The adapter is tested against the documented formats, not yet against the live sandbox. Run one funding and one payout end to end in the Bachs sandbox before going live.
+- **Reconciliation.** Provider settlement reports should be matched against the ledger daily; flagged events have a review screen (`/review/payments`).
+- **Withdrawal fees.** Bachs charges per payout on top of the amount; Acticlaim currently absorbs it.
+- **Phone verification.** Withdrawals need a verified phone, which needs a real SMS provider (PHONE.md).
 - Only NGN is supported.

@@ -493,6 +493,19 @@ test('a withdrawal holds money once across a dropped response and shows its stat
     });
   });
 
+  await page.route('**/api/v1/wallet/bank-account', (route) =>
+    route.fulfill({
+      json: {
+        destination: {
+          id: '6a1e2d3f-4a5b-4c6d-8e9f-0a1b2c3d4e5f',
+          bankName: 'Guaranty Trust Bank',
+          accountName: 'ADA OKAFOR',
+          last4: '6789',
+          usableFrom: '2026-01-01T00:00:00Z',
+        },
+      },
+    }),
+  );
   // Without a verified phone there is no withdraw action, only the reason.
   await page.goto('/wallet');
   await expect(page.getByText(/needs a verified phone number/)).toBeVisible();
@@ -501,6 +514,9 @@ test('a withdrawal holds money once across a dropped response and shows its stat
   verified = true;
   await page.reload();
   await page.getByRole('button', { name: 'Withdraw', exact: true }).click();
+  await expect(
+    page.getByText('To ADA OKAFOR, Guaranty Trust Bank ••••6789'),
+  ).toBeVisible();
   await page.getByLabel('Amount in naira').fill('3000');
   await page.getByRole('button', { name: 'Withdraw ₦3,000' }).click();
   await expect(page.getByText('You have ₦2,000 in your wallet.')).toBeVisible();
@@ -671,4 +687,87 @@ test('an item prize shows a private voucher and offers its cash value after 14 d
   await page.getByRole('button', { name: 'Take ₦2,000 instead' }).click();
   await expect(page.getByText('Paid as cash')).toBeVisible();
   expect(cashOuts).toBe(1);
+});
+
+test('a bank account is checked with the bank before withdrawals go to it', async ({
+  page,
+}) => {
+  await phone(page);
+  let saved: Record<string, unknown> | null = null;
+  await page.route('**/api/v1/points', (route) =>
+    route.fulfill({
+      json: {
+        points: { available: '0', pending: '0' },
+        walletKobo: '200000',
+        tier: {
+          name: 'New',
+          businesses: 1,
+          next: { name: 'Bronze', businesses: 3 },
+        },
+        phoneVerified: true,
+        referral: { code: null, referredBy: null, referred: 0, rewarded: 0 },
+      },
+    }),
+  );
+  await page.route('**/api/v1/purchases?*', (route) =>
+    route.fulfill({
+      json: { items: [], nextCursor: null, observedAt: '2026-10-05T12:00:00Z' },
+    }),
+  );
+  await page.route('**/api/v1/wallet/withdrawals?*', (route) =>
+    route.fulfill({ json: { items: [], nextCursor: null } }),
+  );
+  await page.route('**/api/v1/wallet/banks', (route) =>
+    route.fulfill({
+      json: {
+        items: [
+          { code: '044', name: 'Access Bank' },
+          { code: '058', name: 'Guaranty Trust Bank' },
+        ],
+      },
+    }),
+  );
+  const bodies: Record<string, unknown>[] = [];
+  await page.route('**/api/v1/wallet/bank-account', (route) => {
+    if (route.request().method() === 'POST') {
+      const body = route.request().postDataJSON();
+      bodies.push(body);
+      if (body.accountNumber === '0123450000')
+        return route.fulfill({
+          status: 409,
+          json: { statusCode: 409, reason: 'account_not_found' },
+        });
+      saved = {
+        id: '6a1e2d3f-4a5b-4c6d-8e9f-0a1b2c3d4e5f',
+        bankName: 'Guaranty Trust Bank',
+        accountName: 'ADA OKAFOR',
+        last4: '6789',
+        usableFrom: '2026-01-01T00:00:00Z',
+      };
+    }
+    return route.fulfill({ json: { destination: saved } });
+  });
+  await page.goto('/wallet');
+  await expect(
+    page.getByText('Add a bank account below to withdraw.'),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Withdraw', exact: true }),
+  ).toHaveCount(0);
+  await healthy(page);
+  await page.getByLabel('Bank', { exact: true }).selectOption('058');
+  await page.getByLabel('Account number').fill('0123450000');
+  await page.getByRole('button', { name: 'Check and save' }).click();
+  await expect(page.getByText(/could not find this account/)).toBeVisible();
+  await page.getByLabel('Account number').fill('0123456789');
+  await page.getByRole('button', { name: 'Check and save' }).click();
+  await expect(page.getByText('ADA OKAFOR')).toBeVisible();
+  await expect(page.getByText('Guaranty Trust Bank ••••6789')).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Withdraw', exact: true }),
+  ).toBeVisible();
+  expect(bodies.at(-1)).toEqual({
+    bankCode: '058',
+    accountNumber: '0123456789',
+  });
 });

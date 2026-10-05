@@ -2,12 +2,36 @@ import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 
 // The only events Acticlaim acts on. Anything else is recorded and ignored.
+// Internal event types: 'collection.succeeded', 'payout.succeeded',
+// 'payout.failed'. Adapters map their provider's names onto these.
 export type VerifiedEvent = {
   eventId: string;
   type: string;
   reference: string | null;
   amountKobo: bigint | null;
   currency: string | null;
+  // Provider's own state. A collection credits only on 'SUCCEEDED'; anything
+  // else (underpaid, overpaid, accepted on other terms) goes to review.
+  status?: string | null;
+};
+
+// A provider-side failure. Permanent failures (a rejected bank account) end
+// the payout; anything else is retried later with the same idempotency key.
+export class ProviderError extends Error {
+  constructor(
+    readonly code: string,
+    readonly permanent: boolean,
+  ) {
+    super(`Payment provider error: ${code}`);
+  }
+}
+
+export type Bank = { code: string; name: string };
+export type Destination = {
+  destinationId: string;
+  bankName: string;
+  accountName: string;
+  last4: string;
 };
 
 export class InvalidWebhook extends Error {
@@ -23,7 +47,15 @@ export interface PaymentProvider {
   createCheckout(input: {
     intentId: string;
     amountKobo: bigint;
+    email?: string;
+    name?: string;
   }): Promise<{ sessionId: string; url: string }>;
+  listBanks(): Promise<Bank[]>;
+  // Checks the account at the bank and registers it as a payout destination.
+  addDestination(input: {
+    bankCode: string;
+    accountNumber: string;
+  }): Promise<Destination>;
   verifyWebhook(
     rawBody: Buffer,
     headers: Record<string, string | string[] | undefined>,
@@ -32,7 +64,7 @@ export interface PaymentProvider {
   // payout and never sends money twice.
   createPayout(input: {
     withdrawalId: string;
-    accountId: string;
+    destinationId: string;
     amountKobo: bigint;
   }): Promise<{ payoutId: string }>;
 }
@@ -66,7 +98,11 @@ const toleranceSeconds = 300;
 // Configuration refuses it in production.
 export class TestPaymentProvider implements PaymentProvider {
   readonly name = 'test';
-  readonly payouts: { withdrawalId: string; amountKobo: bigint }[] = [];
+  readonly payouts: {
+    withdrawalId: string;
+    destinationId: string;
+    amountKobo: bigint;
+  }[] = [];
   constructor(
     private readonly secret: string,
     private readonly now: () => number = Date.now,
@@ -126,8 +162,34 @@ export class TestPaymentProvider implements PaymentProvider {
     };
   }
 
+  listBanks() {
+    return Promise.resolve([
+      { code: '058', name: 'Guaranty Trust Bank' },
+      { code: '044', name: 'Access Bank' },
+    ]);
+  }
+
+  // Account numbers ending 0000 do not resolve, to exercise the failure path.
+  addDestination(input: { bankCode: string; accountNumber: string }) {
+    if (input.accountNumber.endsWith('0000'))
+      return Promise.reject(new ProviderError('ACCOUNT_NOT_FOUND', true));
+    return Promise.resolve({
+      destinationId: `test_pd_${randomUUID()}`,
+      bankName:
+        input.bankCode === '044' ? 'Access Bank' : 'Guaranty Trust Bank',
+      accountName: 'TEST ACCOUNT HOLDER',
+      last4: input.accountNumber.slice(-4),
+    });
+  }
+
+  failPayouts: ProviderError | null = null;
   private readonly payoutIds = new Map<string, string>();
-  createPayout(input: { withdrawalId: string; amountKobo: bigint }) {
+  createPayout(input: {
+    withdrawalId: string;
+    destinationId: string;
+    amountKobo: bigint;
+  }) {
+    if (this.failPayouts) return Promise.reject(this.failPayouts);
     let id = this.payoutIds.get(input.withdrawalId);
     if (!id) {
       id = `test_po_${randomUUID()}`;

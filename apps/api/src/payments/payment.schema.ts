@@ -63,6 +63,36 @@ export const paymentEvents = pgTable(
   ],
 );
 
+// Where a person's withdrawals go. Registered with the provider, which checks
+// the account at the bank and returns the name it holds. Only the last four
+// digits are kept here. Changing account adds a new row; the newest is used.
+export const payoutDestinations = pgTable(
+  'payout_destinations',
+  {
+    id: uuid('id').primaryKey(),
+    accountId: uuid('account_id')
+      .notNull()
+      .references(() => accounts.id),
+    provider: text('provider').notNull(),
+    providerDestinationId: varchar('provider_destination_id', {
+      length: 120,
+    }).notNull(),
+    bankCode: varchar('bank_code', { length: 20 }).notNull(),
+    bankName: varchar('bank_name', { length: 120 }).notNull(),
+    accountName: varchar('account_name', { length: 160 }).notNull(),
+    accountLast4: varchar('account_last4', { length: 4 }).notNull(),
+    createdAt: at('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    index('payout_destination_account').on(t.accountId, t.createdAt),
+    uniqueIndex('payout_destination_provider_id').on(
+      t.provider,
+      t.providerDestinationId,
+    ),
+    check('payout_destination_last4', sql`${t.accountLast4} ~ '^[0-9]{4}$'`),
+  ],
+);
+
 // A withdrawal moves money from the wallet into a hold immediately.
 export const withdrawals = pgTable(
   'withdrawals',
@@ -72,6 +102,10 @@ export const withdrawals = pgTable(
       .notNull()
       .references(() => accounts.id),
     amountKobo: bigint('amount_kobo', { mode: 'bigint' }).notNull(),
+    // Required for new withdrawals; earlier rows predate destinations.
+    destinationId: uuid('destination_id').references(
+      () => payoutDestinations.id,
+    ),
     createdAt: at('created_at').notNull().defaultNow(),
   },
   (t) => [

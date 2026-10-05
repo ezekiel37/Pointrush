@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import {
   BadRequestException,
   ConflictException,
@@ -10,8 +11,13 @@ import type { FundingDatabase } from '../funding/funding-ledger.js';
 import { postFundingTransfer } from '../funding/funding-ledger.js';
 import * as s from '../database/schema.js';
 import { actorTransaction } from '../tasks/actor-transaction.js';
-import { InvalidWebhook } from './provider.js';
-import type { PaymentProvider, VerifiedEvent } from './provider.js';
+import { InvalidWebhook, ProviderError } from './provider.js';
+import type {
+  Bank,
+  Destination,
+  PaymentProvider,
+  VerifiedEvent,
+} from './provider.js';
 
 const money = (min: bigint, max: bigint) =>
   z
@@ -107,10 +113,18 @@ export class PaymentsService {
         message: 'Checkout already started for this request; start a new one',
         reason: 'checkout_started',
       });
+    const [business] = await this.db
+      .select({
+        name: s.sponsorProfiles.name,
+        email: s.sponsorProfiles.contactEmail,
+      })
+      .from(s.sponsorProfiles)
+      .where(eq(s.sponsorProfiles.ownerId, intent.accountId));
     // Never call a provider inside a database transaction.
     const checkout = await provider.createCheckout({
       intentId: intent.id,
       amountKobo: intent.amountKobo,
+      ...(business ? { email: business.email, name: business.name } : {}),
     });
     await this.db
       .update(s.fundingIntents)
@@ -180,7 +194,8 @@ export class PaymentsService {
       if (!intent) return 'unknown_reference';
       if (
         event.amountKobo !== intent.amountKobo ||
-        event.currency !== intent.currency
+        event.currency !== intent.currency ||
+        (event.status != null && event.status !== 'SUCCEEDED')
       )
         return 'mismatch';
       await tx
@@ -263,10 +278,26 @@ export class PaymentsService {
           throw new ConflictException('Withdrawal ID already used');
         return this.withdrawalResult(tx, existing.id);
       }
+      const [destination] = await tx
+        .select({ id: s.payoutDestinations.id })
+        .from(s.payoutDestinations)
+        .where(eq(s.payoutDestinations.accountId, actor))
+        .orderBy(
+          desc(s.payoutDestinations.createdAt),
+          desc(s.payoutDestinations.id),
+        )
+        .limit(1);
+      if (!destination)
+        throw new ConflictException({
+          statusCode: 409,
+          message: 'Add a bank account before withdrawing',
+          reason: 'destination_required',
+        });
       await tx.insert(s.withdrawals).values({
         id: value.id,
         accountId: actor,
         amountKobo: value.amountKobo,
+        destinationId: destination.id,
       });
       return this.withdrawalResult(tx, value.id);
     });
@@ -277,6 +308,9 @@ export class PaymentsService {
       id: s.withdrawals.id,
       amountKobo: sql<string>`${s.withdrawals.amountKobo}::text`,
       createdAt: s.withdrawals.createdAt,
+      bank: sql<
+        string | null
+      >`(select d.bank_name || ' ••••' || d.account_last4 from payout_destinations d where d.id = ${s.withdrawals.destinationId})`,
       state: sql<'held' | 'sent' | 'paid' | 'failed'>`case
         when exists (select 1 from withdrawal_outcomes o where o.withdrawal_id = ${s.withdrawals.id} and o.outcome = 'paid') then 'paid'
         when exists (select 1 from withdrawal_outcomes o where o.withdrawal_id = ${s.withdrawals.id} and o.outcome = 'failed') then 'failed'
@@ -315,29 +349,155 @@ export class PaymentsService {
     });
   }
 
-  // Worker step: hand held withdrawals to the provider, once each.
+  private banksCache: { at: number; banks: Bank[] } | null = null;
+  async banks() {
+    const provider = this.requireProvider();
+    if (!this.banksCache || Date.now() - this.banksCache.at > 86400000)
+      this.banksCache = { at: Date.now(), banks: await provider.listBanks() };
+    return { items: this.banksCache.banks };
+  }
+
+  async destination(user: string) {
+    return actorTransaction(this.db, user, async (tx, actor) => {
+      const [row] = await tx
+        .select()
+        .from(s.payoutDestinations)
+        .where(eq(s.payoutDestinations.accountId, actor))
+        .orderBy(
+          desc(s.payoutDestinations.createdAt),
+          desc(s.payoutDestinations.id),
+        )
+        .limit(1);
+      if (!row) return { destination: null };
+      const [older] = await tx
+        .select({ id: s.payoutDestinations.id })
+        .from(s.payoutDestinations)
+        .where(
+          and(
+            eq(s.payoutDestinations.accountId, actor),
+            sql`${s.payoutDestinations.id} <> ${row.id}`,
+          ),
+        )
+        .limit(1);
+      return {
+        destination: {
+          id: row.id,
+          bankName: row.bankName,
+          accountName: row.accountName,
+          last4: row.accountLast4,
+          // A changed account waits 24 hours before it can receive money.
+          usableFrom: older
+            ? new Date(row.createdAt.getTime() + 86400000)
+            : row.createdAt,
+        },
+      };
+    });
+  }
+
+  // The provider checks the account at the bank first; only then is it saved.
+  async addDestination(user: string, input: unknown) {
+    const provider = this.requireProvider();
+    const value = parse(
+      z
+        .object({
+          bankCode: z.string().regex(/^[0-9A-Za-z]{2,20}$/),
+          accountNumber: z.string().regex(/^\d{10}$/),
+        })
+        .strict(),
+      input,
+    );
+    // Confirms the person may act before calling the provider at all.
+    await actorTransaction(this.db, user, async () => undefined);
+    let found: Destination;
+    try {
+      found = await provider.addDestination(value);
+    } catch (error) {
+      if (error instanceof ProviderError && error.permanent)
+        throw new ConflictException({
+          statusCode: 409,
+          message: 'The bank could not find this account',
+          reason: 'account_not_found',
+        });
+      throw new ServiceUnavailableException({
+        statusCode: 503,
+        message: 'The bank could not be reached; try again shortly',
+        reason: 'bank_unavailable',
+      });
+    }
+    await actorTransaction(this.db, user, async (tx, actor) => {
+      await tx.insert(s.payoutDestinations).values({
+        id: randomUUID(),
+        accountId: actor,
+        provider: provider.name,
+        providerDestinationId: found.destinationId,
+        bankCode: value.bankCode,
+        bankName: found.bankName.slice(0, 120),
+        accountName: found.accountName.slice(0, 160),
+        accountLast4: found.last4,
+      });
+    });
+    return this.destination(user);
+  }
+
+  // Worker step: hand held withdrawals to the provider, once each. The
+  // withdrawal ID is the provider idempotency key: if this process stops after
+  // the provider accepts but before the submission is stored, the next run
+  // gets the same payout back rather than sending a second one.
   async submitPendingWithdrawals(limit = 20) {
     const provider = this.requireProvider();
     const pending = await this.db
-      .select()
+      .select({
+        id: s.withdrawals.id,
+        amountKobo: s.withdrawals.amountKobo,
+        destination: s.payoutDestinations.providerDestinationId,
+        destinationProvider: s.payoutDestinations.provider,
+      })
       .from(s.withdrawals)
+      .leftJoin(
+        s.payoutDestinations,
+        eq(s.payoutDestinations.id, s.withdrawals.destinationId),
+      )
       .where(
         sql`not exists (select 1 from withdrawal_submissions w where w.withdrawal_id = ${s.withdrawals.id})
           and not exists (select 1 from withdrawal_outcomes o where o.withdrawal_id = ${s.withdrawals.id})`,
       )
       .orderBy(s.withdrawals.createdAt)
       .limit(limit);
-    let submitted = 0;
+    const result = { submitted: 0, failed: 0, deferred: 0 };
+    const fail = async (id: string, reason: string) => {
+      await this.db
+        .insert(s.withdrawalOutcomes)
+        .values({ withdrawalId: id, outcome: 'failed', reason })
+        .onConflictDoNothing();
+      result.failed += 1;
+    };
     for (const withdrawal of pending) {
-      // The withdrawal ID is the provider idempotency key: if this process
-      // stops after the provider accepts but before the submission is stored,
-      // the retry must return the same payout rather than send a second one.
-      // Every real adapter is required to honour this (see PAYMENTS.md).
-      const payout = await provider.createPayout({
-        withdrawalId: withdrawal.id,
-        accountId: withdrawal.accountId,
-        amountKobo: withdrawal.amountKobo,
-      });
+      if (
+        !withdrawal.destination ||
+        withdrawal.destinationProvider !== provider.name
+      ) {
+        // No bank account this provider knows: return the money.
+        await fail(withdrawal.id, 'No usable bank account');
+        continue;
+      }
+      let payout: { payoutId: string };
+      try {
+        payout = await provider.createPayout({
+          withdrawalId: withdrawal.id,
+          destinationId: withdrawal.destination,
+          amountKobo: withdrawal.amountKobo,
+        });
+      } catch (error) {
+        if (error instanceof ProviderError && error.permanent)
+          await fail(
+            withdrawal.id,
+            `Payout refused: ${error.code}`.slice(0, 300),
+          );
+        // Anything else (provider down, our balance short) stays held and is
+        // retried with the same key on the next run.
+        else result.deferred += 1;
+        continue;
+      }
       const [row] = await this.db
         .insert(s.withdrawalSubmissions)
         .values({
@@ -347,8 +507,8 @@ export class PaymentsService {
         })
         .onConflictDoNothing()
         .returning();
-      if (row) submitted += 1;
+      if (row) result.submitted += 1;
     }
-    return { submitted };
+    return result;
   }
 }

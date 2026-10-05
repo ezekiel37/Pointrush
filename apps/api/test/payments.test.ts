@@ -70,6 +70,10 @@ async function verifiedPerson() {
     accountId: person.account,
     phoneNumber: `+234810${String(phones).padStart(7, '0')}`,
   });
+  await payments.addDestination(person.user, {
+    bankCode: '058',
+    accountNumber: '0123456789',
+  });
   return person;
 }
 // Gives a person a real wallet balance through the cash back flow.
@@ -270,6 +274,20 @@ test('business funding credits only a verified, matching, first-seen confirmatio
 
 test('withdrawals hold money at once, pay out once and return on failure', async () => {
   const unverified = await identity();
+  // No bank account yet: asked to add one first.
+  assert.equal(
+    await reason(
+      payments.requestWithdrawal(unverified.user, {
+        id: randomUUID(),
+        amountKobo: '50000',
+      }),
+    ),
+    'destination_required',
+  );
+  await payments.addDestination(unverified.user, {
+    bankCode: '058',
+    accountNumber: '0123456789',
+  });
   await earn(unverified, '80000');
   assert.equal(
     await reason(

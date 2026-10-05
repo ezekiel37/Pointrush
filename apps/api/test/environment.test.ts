@@ -270,3 +270,57 @@ test('SMS is restricted to configured countries and never the test provider in p
     /cannot run in production/,
   );
 });
+
+test('Bachs needs a key, secret and return origin, with live keys only in production', () => {
+  const sandbox = {
+    ...apiConfig,
+    NODE_ENV: 'development',
+    PAYMENTS_PROVIDER: 'bachs',
+    PAYMENTS_WEBHOOK_SECRET: 'whsec_0123456789abcdef',
+    BACHS_API_KEY: 'sk_sandbox_abcdef123456',
+    PAYMENTS_RETURN_ORIGIN: 'https://app.example.test',
+  };
+  assert.deepEqual(readEnvironment(sandbox).payments, {
+    provider: 'bachs',
+    webhookSecret: 'whsec_0123456789abcdef',
+    apiKey: 'sk_sandbox_abcdef123456',
+    returnOrigin: 'https://app.example.test',
+  });
+  assert.throws(
+    () => readEnvironment({ ...sandbox, BACHS_API_KEY: undefined }),
+    /must be complete/,
+  );
+  assert.throws(
+    () => readEnvironment({ ...sandbox, PAYMENTS_RETURN_ORIGIN: undefined }),
+    /must be complete/,
+  );
+  assert.throws(
+    () =>
+      readEnvironment({ ...sandbox, BACHS_API_KEY: 'sk_live_abcdef123456' }),
+    /sk_live_/,
+  );
+  assert.throws(
+    () => readEnvironment({ ...sandbox, NODE_ENV: 'production' }),
+    /sk_live_/,
+  );
+  assert.equal(
+    readEnvironment({
+      ...sandbox,
+      NODE_ENV: 'production',
+      BACHS_API_KEY: 'sk_live_abcdef123456',
+    }).payments?.provider,
+    'bachs',
+  );
+  assert.throws(() =>
+    readEnvironment({ ...sandbox, BACHS_API_KEY: 'not-a-key' }),
+  );
+  assert.throws(
+    () =>
+      readEnvironment({
+        ...apiConfig,
+        NODE_ENV: 'development',
+        BACHS_API_KEY: 'sk_sandbox_abcdef123456',
+      }),
+    /PAYMENTS_PROVIDER is not bachs/,
+  );
+});

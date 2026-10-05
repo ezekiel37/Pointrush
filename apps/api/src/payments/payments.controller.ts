@@ -47,6 +47,18 @@ export class PaymentsController {
       throw error;
     }
   }
+  @Get('wallet/banks')
+  banks() {
+    return this.payments.banks();
+  }
+  @Get('wallet/bank-account')
+  destination(@Req() r: AuthenticatedRequest) {
+    return this.payments.destination(r[AUTH_USER_ID]);
+  }
+  @Post('wallet/bank-account')
+  addDestination(@Req() r: AuthenticatedRequest, @Body() body: unknown) {
+    return this.payments.addDestination(r[AUTH_USER_ID], body);
+  }
   @Post('wallet/withdrawals')
   withdraw(@Req() r: AuthenticatedRequest, @Body() body: unknown) {
     return this.payments.requestWithdrawal(r[AUTH_USER_ID], body);
