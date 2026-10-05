@@ -322,6 +322,7 @@ test('account status uses only the session identity and fails closed on incomple
 test('sponsor routes require session and trusted origin, derive ownership, and reject unfunded tasks', async () => {
   // The preceding account-state test deliberately leaves this account closed.
   const [ownerLink] = await db.select().from(schema.authAccountLinks);
+  await request(server).get('/api/v1/sponsor/terms').expect(401);
   await request(server)
     .get('/api/v1/sponsor/profile')
     .set('Cookie', cookie)
@@ -330,6 +331,11 @@ test('sponsor routes require session and trusted origin, derive ownership, and r
     .update(schema.accounts)
     .set({ accessState: 'active' })
     .where(eq(schema.accounts.id, ownerLink!.accountId));
+  const terms = await request(server)
+    .get('/api/v1/sponsor/terms')
+    .set('Cookie', cookie)
+    .expect(200);
+  assert.deepEqual(terms.body, { version: 'test-v1' });
   const body = {
     name: 'HTTP Sponsor',
     acceptTerms: true,

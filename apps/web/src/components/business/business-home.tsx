@@ -31,14 +31,16 @@ export function NoBusiness() {
     <section className="card grid gap-3" style={{ maxWidth: 620 }}>
       <h2 style={{ margin: 0 }}>Set up your business</h2>
       <p className="small-note">
-        Business accounts open once Acticlaim publishes its business terms and
-        payments go live. Funding a campaign moves real money, which is not
-        available in this version.
+        Create your business to run cash back offers and prize promotions. Every
+        reward is paid from money you lock in advance.
       </p>
-      <p className="small-note">
-        Want to run cash back or a prize promotion at launch? Tell us what you
-        sell and where.
-      </p>
+      <Link
+        className="button button-accent"
+        href="/business/setup"
+        style={{ justifySelf: 'start' }}
+      >
+        Set up your business
+      </Link>
     </section>
   );
 }

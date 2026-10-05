@@ -26,6 +26,9 @@ export class SponsorsService {
     private readonly database: { readonly db: FundingDatabase },
     private readonly termsVersion?: string,
   ) {}
+  currentTermsVersion() {
+    return this.termsVersion ?? null;
+  }
   private get db() {
     return this.database.db;
   }

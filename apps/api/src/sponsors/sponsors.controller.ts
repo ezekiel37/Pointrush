@@ -16,6 +16,11 @@ export class SponsorsController {
   constructor(
     @Inject(SponsorsService) private readonly sponsors: SponsorsService,
   ) {}
+  // The terms a new business must accept; null until real terms are published.
+  @Get('terms')
+  terms() {
+    return { version: this.sponsors.currentTermsVersion() };
+  }
   @Get('profile')
   getProfile(@Req() request: AuthenticatedRequest) {
     return this.sponsors.getProfile(request[AUTH_USER_ID]);
