@@ -22,6 +22,7 @@ import type { PaymentProvider } from './payments/provider.js';
 import { PhoneModule } from './phone/phone.module.js';
 import type { PhoneConfig } from './phone/phone.service.js';
 import type { SmsProvider } from './phone/sms.js';
+import { RateLimitGuard } from './http/rate-limit.js';
 
 @Module({})
 export class AppModule {
@@ -82,6 +83,12 @@ export class AppModule {
             service?: AuthService,
             database?: DatabaseService,
           ) => new SessionGuard(reflector, accounts, service, database),
+        },
+        // Runs after the session guard, so signed-in traffic is limited per account.
+        {
+          provide: APP_GUARD,
+          inject: [Reflector],
+          useFactory: (reflector: Reflector) => new RateLimitGuard(reflector),
         },
       ],
     };

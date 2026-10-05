@@ -16,6 +16,15 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
 import { configureHttp } from '../src/http/configure-http.js';
 import { PublicRoute } from '../src/auth/session.guard.js';
+import {
+  defaultPolicies,
+  RateLimit,
+  RateLimiter,
+  RateLimitGuard,
+} from '../src/http/rate-limit.js';
+import { AUTH_USER_ID } from '../src/auth/session.guard.js';
+import { Reflector } from '@nestjs/core';
+import type { ExecutionContext } from '@nestjs/common';
 
 class ProbeDto {
   @IsInt()
@@ -43,6 +52,12 @@ class ProbeController {
       message: 'Not yet',
       reason: 'feature_unavailable',
     });
+  }
+
+  @Get('limited')
+  @RateLimit({ limit: 2, windowMs: 60000 })
+  limited() {
+    return { ok: true };
   }
 
   @Get('invalid')
@@ -227,4 +242,55 @@ test('account commands are not exposed before authentication is implemented', as
     .patch('/api/v1/accounts/username')
     .send({ username: 'attacker' })
     .expect(404);
+});
+
+test('public routes share a ceiling and answer 429 with Retry-After', async () => {
+  await request(server).get('/api/v1/probe/limited').expect(200);
+  await request(server).get('/api/v1/probe/limited').expect(200);
+  const limited = await request(server)
+    .get('/api/v1/probe/limited')
+    .expect(429);
+  assert.equal(limited.body.reason, 'rate_limited');
+  assert.ok(Number(limited.headers['retry-after']) > 0);
+  // Other routes have their own budget.
+  await request(server).get('/api/v1/health/live').expect(200);
+});
+
+test('rate windows reset after their period and keys are independent', () => {
+  let now = 0;
+  const limiter = new RateLimiter(() => now);
+  const policy = { limit: 2, windowMs: 1000 };
+  assert.equal(limiter.hit('a', policy).allowed, true);
+  assert.equal(limiter.hit('a', policy).allowed, true);
+  const third = limiter.hit('a', policy);
+  assert.equal(third.allowed, false);
+  assert.equal(third.retryAfter, 1);
+  assert.equal(limiter.hit('b', policy).allowed, true);
+  now = 1000;
+  assert.equal(limiter.hit('a', policy).allowed, true);
+});
+
+test('signed-in requests are limited per account, with writes stricter than reads', () => {
+  const guard = new RateLimitGuard(new Reflector(), new RateLimiter(() => 0));
+  const headers: Record<string, string> = {};
+  const context = (user: string, method: string) =>
+    ({
+      switchToHttp: () => ({
+        getRequest: () => ({ method, [AUTH_USER_ID]: user }),
+        getResponse: () => ({
+          setHeader: (k: string, v: string) => (headers[k] = v),
+        }),
+      }),
+      getHandler: () => function handler() {},
+      getClass: () => class Probe {},
+    }) as unknown as ExecutionContext;
+  for (let i = 0; i < defaultPolicies.write.limit; i++)
+    assert.equal(guard.canActivate(context('ada', 'POST')), true);
+  assert.throws(() => guard.canActivate(context('ada', 'POST')), {
+    status: 429,
+  });
+  assert.equal(headers['Retry-After'], '60');
+  // Another person, and Ada's reads, are unaffected.
+  assert.equal(guard.canActivate(context('bola', 'POST')), true);
+  assert.equal(guard.canActivate(context('ada', 'GET')), true);
 });

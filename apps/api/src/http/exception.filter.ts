@@ -47,7 +47,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
     // A stable machine-readable reason lets clients explain conflicts and
     // unavailable features precisely.
     const reason =
-      (status === 409 || status === 503) &&
+      (status === 409 || status === 429 || status === 503) &&
       details &&
       typeof details === 'object' &&
       'reason' in details &&

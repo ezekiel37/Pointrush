@@ -35,3 +35,9 @@ Do not add a load balancer, Worker or tunnel simply to make the diagram complete
 Express warns that blanket trust and fixed hop counts can accept forged values when paths differ. Trust must match the deployed topology, including header sanitization. Keep its default disabled until the above evidence supports a narrower policy. [Express proxy guidance](https://expressjs.com/en/guide/behind-proxies/).
 
 Local regression tests cover forged session-IP headers, rotating-header rate-limit attempts and missing transport identity. They do not validate Google's or Cloudflare's deployed behavior. No new environment variables, dependencies, paid services or deployment resources are introduced by this slice.
+
+## Application rate limits (October 2026)
+
+A global guard runs after the session check. Signed-in requests are limited per account (300 reads and 60 writes a minute by default); routes can set their own policy with `@RateLimit`. Public routes (profiles, payment webhooks, health) share one ceiling per route across all visitors, because visitor IPs are not trusted at this layer. Over the limit the API answers 429 with `Retry-After` and reason `rate_limited`.
+
+Counters live in each API process, so with several instances the effective limit is per instance. This is a first layer. Per-visitor limits for public routes must be configured at the edge (for example Cloudflare rate-limiting rules) once the ingress chain above is verified; that remains a release gate. Business rules that must hold exactly (code requests, claims, phone codes, withdrawals) are enforced in the database, not here.
