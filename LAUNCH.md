@@ -129,7 +129,7 @@ for JOB in acticlaim-email:"* * * * *" acticlaim-payouts:"*/5 * * * *"; do
 done
 ```
 
-Emails go out every minute and payouts every 5 minutes. A payouts run that ends with code 2 means a payout was delayed; check the Bachs dashboard.
+Emails go out every minute and payouts every 5 minutes. If verification emails never arrive, check the Resend key and domain: with a wrong key the email job logs `"dead"` and drops those emails (people can ask for a new one from the sign-in page). A payouts run that ends with code 2 means a payout was delayed; check the Bachs dashboard.
 
 ## 10. The website (Vercel)
 
