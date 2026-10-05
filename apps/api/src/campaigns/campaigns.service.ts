@@ -74,7 +74,8 @@ function purchaseState(row: {
 export class CampaignsService {
   constructor(private readonly db: FundingDatabase) {}
 
-  private async ownedCampaign(
+  // The till: the owner or an active staff member of the business.
+  private async tillCampaign(
     tx: FundingDatabase,
     taskId: string,
     actor: string,
@@ -89,8 +90,8 @@ export class CampaignsService {
       .where(
         and(
           eq(s.sponsorTasks.id, taskId),
-          eq(s.sponsorProfiles.ownerId, actor),
           eq(s.sponsorTasks.model, 'purchase_cashback'),
+          sql`(${s.sponsorProfiles.ownerId} = ${actor} or business_staff_active(${s.sponsorProfiles.id}, ${actor}))`,
         ),
       );
     if (!row) throw new NotFoundException();
@@ -145,7 +146,7 @@ export class CampaignsService {
     parse(id, taskId);
     const value = parse(confirmInput, input);
     return actorTransaction(this.db, user, async (tx, actor) => {
-      const task = await this.ownedCampaign(tx, taskId, actor);
+      const task = await this.tillCampaign(tx, taskId, actor);
       const [existing] = await tx
         .select({
           confirmation: s.purchaseConfirmations,
@@ -366,7 +367,7 @@ export class CampaignsService {
     const query = parse(pageInput, input);
     const limit = query.limit ?? 25;
     return actorTransaction(this.db, user, async (tx, actor) => {
-      const task = await this.ownedCampaign(tx, taskId, actor);
+      const task = await this.tillCampaign(tx, taskId, actor);
       const [counts] = await tx
         .select({
           confirmed: sql<number>`count(*)::integer`,

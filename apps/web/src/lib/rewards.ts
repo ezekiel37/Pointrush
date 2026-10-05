@@ -248,3 +248,23 @@ export const notificationFeed = z.object({
   ),
   unread: z.number().int(),
 });
+
+export const staffList = z.object({
+  items: z.array(
+    z.object({
+      id: z.uuid(),
+      username: z.string().nullable(),
+      displayName: z.string().nullable(),
+      addedAt: date,
+    }),
+  ),
+});
+export const workplaces = z.object({
+  items: z.array(
+    z.object({
+      id: z.uuid(),
+      name: z.string(),
+      tills: z.array(z.object({ id: z.uuid(), title: z.string() })),
+    }),
+  ),
+});

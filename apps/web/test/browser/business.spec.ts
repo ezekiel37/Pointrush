@@ -319,3 +319,62 @@ test('a business cancels a campaign that is not live and gets its money back onc
   expect(bodies).toHaveLength(2);
   expect(bodies[0]).toEqual(bodies[1]);
 });
+
+test('an owner adds and removes till staff, and staff see their tills', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const staffId = '7d1e2d3f-4a5b-4c6d-8e9f-0a1b2c3d4e5f';
+  let members: Record<string, unknown>[] = [];
+  await page.route('**/api/v1/business/staff', (route) => {
+    if (route.request().method() === 'POST') {
+      const body = route.request().postDataJSON();
+      if (body.username === '@ghost')
+        return route.fulfill({ status: 404, json: { statusCode: 404 } });
+      members = [
+        {
+          id: staffId,
+          username: 'ada',
+          displayName: 'Ada Obi',
+          addedAt: '2026-10-05T12:00:00Z',
+        },
+      ];
+    }
+    return route.fulfill({ json: { items: members } });
+  });
+  await page.route(`**/api/v1/business/staff/${staffId}/removals`, (route) => {
+    members = [];
+    return route.fulfill({ json: { items: [] } });
+  });
+  await page.goto('/business/staff');
+  await expect(page.getByText('No staff yet.')).toBeVisible();
+  await healthy(page);
+  await page.getByLabel('Their Acticlaim username').fill('@ghost');
+  await page.getByRole('button', { name: 'Add to staff' }).click();
+  await expect(page.getByText(/No active Acticlaim account/)).toBeVisible();
+  await page.getByLabel('Their Acticlaim username').fill('@ada');
+  await page.getByRole('button', { name: 'Add to staff' }).click();
+  await expect(page.getByText('Ada Obi')).toBeVisible();
+  await page.getByRole('button', { name: 'Remove' }).click();
+  await page.getByRole('button', { name: 'Yes, remove' }).click();
+  await expect(page.getByText('No staff yet.')).toBeVisible();
+
+  await page.route('**/api/v1/staff/workplaces', (route) =>
+    route.fulfill({
+      json: {
+        items: [
+          {
+            id: businessId,
+            name: 'Mama Put Kitchen',
+            tills: [{ id: businessId, title: 'Lunch cash back' }],
+          },
+        ],
+      },
+    }),
+  );
+  await page.goto('/staff');
+  await expect(
+    page.getByRole('link', { name: 'Lunch cash back' }),
+  ).toHaveAttribute('href', `/business/campaigns/${businessId}`);
+  await healthy(page);
+});

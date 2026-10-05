@@ -46,3 +46,9 @@ POST `/api/v1/campaigns/:id/returns` with `{id}` (idempotent) returns campaign m
 - Reasons: `return_unavailable`, `funds_in_use`, `nothing_to_return`, `campaign_cancelled`.
 
 Known limit: cash back a shopper never releases stays locked indefinitely. An automatic release after a long grace period is a later decision, since it moves money without the shopper's action.
+
+## Till staff (migration 0022)
+
+An owner adds up to 20 staff by Acticlaim username (`POST /api/v1/business/staff` with `{id, username}`, idempotent; `POST /api/v1/business/staff/:id/removals`). Staff can confirm purchases and read the till summary; nothing else. Voiding, money, campaigns, prize codes and staff management stay with the owner.
+
+The database enforces it: confirmations accept the owner or an active staff member with an active account; staff can neither get cash back codes nor claim prizes from the business they work for; removal takes effect at once and is append-only. Staff see their tills at `/staff` (`GET /api/v1/staff/workplaces`).

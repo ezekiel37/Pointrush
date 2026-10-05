@@ -45,6 +45,12 @@ export function NoBusiness() {
       >
         Set up your business
       </Link>
+      <p className="small-note">
+        Work at a business that uses Acticlaim?{' '}
+        <Link className="text-link" href="/staff">
+          Open your till
+        </Link>
+      </p>
     </section>
   );
 }

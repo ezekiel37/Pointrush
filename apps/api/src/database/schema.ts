@@ -166,3 +166,7 @@ export {
   phoneChallengeAttempts,
 } from '../phone/phone.schema.js';
 export { notificationReads } from '../notifications/notification.schema.js';
+export {
+  businessStaff,
+  businessStaffRemovals,
+} from '../sponsors/staff.schema.js';

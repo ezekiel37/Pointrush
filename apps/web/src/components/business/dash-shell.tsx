@@ -11,6 +11,7 @@ import {
   Landmark,
   ScanLine,
   TicketCheck,
+  UsersRound,
 } from 'lucide-react';
 import { Brand } from '@/components/auth/auth-frame';
 import { NotificationBell } from '@/components/shell/notification-bell';
@@ -27,6 +28,7 @@ const groups = [
         icon: TicketCheck,
       },
       { href: '/business/funds', label: 'Funds', icon: Landmark },
+      { href: '/business/staff', label: 'Staff', icon: UsersRound },
     ],
   },
   {

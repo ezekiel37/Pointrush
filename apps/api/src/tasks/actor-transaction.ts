@@ -32,6 +32,8 @@ const reasons: Record<string, string> = {
   'Campaign funds are still in use': 'funds_in_use',
   'Nothing to return': 'nothing_to_return',
   'Campaign was cancelled': 'campaign_cancelled',
+  'Staff member cannot be added': 'staff_unavailable',
+  'Staff member cannot be removed': 'staff_unavailable',
 };
 
 function databaseError(error: unknown) {
