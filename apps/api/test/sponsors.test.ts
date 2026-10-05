@@ -162,7 +162,9 @@ test('insufficient funds and invalid terms create neither a task nor allocation'
   const before = (await db.select().from(schema.fundingAccounts)).length;
   await assert.rejects(
     service.createTask(sponsor.id, { ...taskInput(), capacity: 6 }),
-    ConflictException,
+    (error: ConflictException) =>
+      (error.getResponse() as { reason?: string }).reason ===
+      'insufficient_balance',
   );
   assert.equal((await db.select().from(schema.fundingAccounts)).length, before);
   assert.equal(

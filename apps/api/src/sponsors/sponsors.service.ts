@@ -139,7 +139,11 @@ export class SponsorsService {
         return this.taskResult(existing);
       }
       if (!this.termsVersion || sponsor.termsVersion !== this.termsVersion)
-        throw new ConflictException('Current sponsor terms are required');
+        throw new ConflictException({
+          statusCode: 409,
+          message: 'Current sponsor terms are required',
+          reason: 'terms_required',
+        });
       const [clock] = await tx
         .select({
           future: sql<boolean>`${value.startsAt.toISOString()}::timestamptz > clock_timestamp()`,
@@ -162,7 +166,11 @@ export class SponsorsService {
         throw new ConflictException('Sponsor funding account is unavailable');
       const budgetKobo = value.rewardKobo * BigInt(value.capacity);
       if ((await fundingBalance(tx, available.id)) < budgetKobo)
-        throw new ConflictException('Insufficient available sponsor funds');
+        throw new ConflictException({
+          statusCode: 409,
+          message: 'Insufficient available sponsor funds',
+          reason: 'insufficient_balance',
+        });
       const id = randomUUID();
       const [allocation] = await tx
         .insert(fundingAccounts)

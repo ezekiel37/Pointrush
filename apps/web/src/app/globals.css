@@ -284,6 +284,16 @@
   .input[aria-invalid='true'] {
     border-color: var(--color-danger);
   }
+  .textarea {
+    min-height: 96px;
+    padding: 0.75rem 0.95rem;
+    resize: vertical;
+    line-height: 1.5;
+  }
+  .field-label {
+    font-weight: 550;
+    font-size: 0.9rem;
+  }
   .input-code {
     font-family: var(--font-mono);
     font-size: 1.05rem;
@@ -1303,6 +1313,44 @@
   .preset-row button {
     padding: 0 0.35rem;
   }
+  /* Campaign creation: grouped fields and a sticky money summary. */
+  .create-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+  }
+  .create-summary {
+    position: sticky;
+    top: 1rem;
+  }
+  .form-section {
+    display: grid;
+    gap: 0.9rem;
+    margin: 0;
+    padding: 0 0 1.25rem;
+    border: 0;
+    border-bottom: 1px solid var(--color-divider);
+    min-width: 0;
+  }
+  .form-section:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+  .form-section legend {
+    padding: 0;
+    margin-bottom: 0.9rem;
+    font-weight: 650;
+    font-size: 1.05rem;
+  }
+  .pair {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+    gap: 0.9rem;
+  }
+  .preset-row.two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .timeline {
     counter-reset: step;
     display: grid;
@@ -1789,6 +1837,12 @@
 }
 
 @media (max-width: 980px) {
+  .create-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .create-summary {
+    position: static;
+  }
   .dash {
     grid-template-columns: minmax(0, 1fr);
     background: none;

@@ -1,12 +1,15 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { z } from 'zod';
 import { ArrowRight, Plus } from 'lucide-react';
 import { AreaChart } from '@/components/charts/area-chart';
 import { StatusBreakdown } from '@/components/charts/status-breakdown';
-import { Loading } from '@/components/ui/feedback';
+import { Button } from '@/components/ui/button';
+import { Feedback, Loading } from '@/components/ui/feedback';
 import { WorkFailure } from '@/components/work/work-frame';
-import { naira } from '@/lib/api';
+import { apiRequest, naira } from '@/lib/api';
 import { RequestError } from '@/lib/auth-client';
 import { businessOverview } from '@/lib/rewards';
 import { useApiRead } from '@/lib/use-api-read';
@@ -221,6 +224,13 @@ export function BusinessHome() {
   );
 }
 
+const newHref: Record<string, string> = {
+  purchase_cashback: '/business/campaigns/new',
+  claim_code: '/business/promotions/new',
+};
+const published = z.object({ taskId: z.uuid() });
+const notEnded = (endsAt: string) => Date.parse(endsAt) > Date.now();
+
 export function CampaignListPage({
   model,
   title,
@@ -231,15 +241,57 @@ export function CampaignListPage({
   intro: string;
 }) {
   const overview = useApiRead('business/overview?days=7', businessOverview);
+  const params = useSearchParams();
+  const [publishing, setPublishing] = useState<string | null>(null);
+  const [error, setError] = useState('');
   const data = overview.data;
   const missing =
     overview.error instanceof RequestError && overview.error.status === 404;
+  const items = data?.campaigns.filter((c) => c.model === model) ?? [];
+  const ready = items.filter(
+    (c) =>
+      c.reviewState === 'approved' &&
+      c.lifecycle !== 'published' &&
+      notEnded(c.endsAt),
+  );
+
+  async function goLive(id: string) {
+    if (publishing) return;
+    setPublishing(id);
+    setError('');
+    try {
+      // Publishing is idempotent: repeating it returns the same publication.
+      await apiRequest(`work/tasks/${id}/publish`, published, {
+        method: 'POST',
+        body: {},
+      });
+      overview.refresh();
+    } catch {
+      setError(
+        'We could not publish this campaign. Check your connection and try again.',
+      );
+    } finally {
+      setPublishing(null);
+    }
+  }
+
   return (
     <DashShell
       crumbs={[{ label: 'Business', href: '/business' }, { label: title }]}
       business={data?.business.name}
     >
-      <DashHead title={title} intro={intro} />
+      <DashHead
+        title={title}
+        intro={intro}
+        actions={
+          data &&
+          newHref[model] && (
+            <Link className="button button-accent" href={newHref[model]}>
+              <Plus size={17} aria-hidden /> New
+            </Link>
+          )
+        }
+      />
       {overview.loading && !data ? (
         <Loading>Loading…</Loading>
       ) : missing ? (
@@ -248,12 +300,44 @@ export function CampaignListPage({
         <WorkFailure error={overview.error} retry={overview.refresh} />
       ) : (
         data && (
-          <section className="card">
-            <CampaignTable
-              items={data.campaigns.filter((c) => c.model === model)}
-              empty="Nothing here yet. Funded campaigns appear once created."
-            />
-          </section>
+          <div className="grid gap-4">
+            {params.get('created') && (
+              <Feedback>
+                Created and money locked. Acticlaim reviews it next; you can
+                publish it here once it is approved.
+              </Feedback>
+            )}
+            {error && <Feedback error>{error}</Feedback>}
+            {ready.length > 0 && (
+              <section className="card" aria-labelledby="ready-heading">
+                <div className="card-head">
+                  <h2 id="ready-heading">Approved, ready to go live</h2>
+                  <p>Shoppers see it as soon as you publish.</p>
+                </div>
+                <ul className="stack">
+                  {ready.map((c) => (
+                    <li key={c.id} className="row" style={{ flexWrap: 'wrap' }}>
+                      <span style={{ fontWeight: 600 }}>{c.title}</span>
+                      <Button
+                        type="button"
+                        variant="accent"
+                        disabled={publishing !== null}
+                        onClick={() => void goLive(c.id)}
+                      >
+                        {publishing === c.id ? 'Publishing…' : 'Go live'}
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+            <section className="card">
+              <CampaignTable
+                items={items}
+                empty="Nothing here yet. Create one to get started."
+              />
+            </section>
+          </div>
         )
       )}
     </DashShell>
