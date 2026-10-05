@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service.js';
 import { CampaignsController } from './campaigns.controller.js';
 import { CampaignsService } from './campaigns.service.js';
+import { BusinessOverviewService } from './business-overview.service.js';
 import { PointsController } from '../points/points.controller.js';
 import { PointsService } from '../points/points.service.js';
 import { ProfilesController } from '../points/profiles.controller.js';
@@ -21,6 +22,11 @@ import { PromotionsService } from '../promotions/promotions.service.js';
       provide: CampaignsService,
       inject: [DatabaseService],
       useFactory: (db: DatabaseService) => new CampaignsService(db.db),
+    },
+    {
+      provide: BusinessOverviewService,
+      inject: [DatabaseService],
+      useFactory: (db: DatabaseService) => new BusinessOverviewService(db.db),
     },
     {
       provide: PointsService,

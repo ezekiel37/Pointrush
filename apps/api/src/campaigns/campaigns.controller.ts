@@ -11,12 +11,19 @@ import {
 import { AUTH_USER_ID } from '../auth/session.guard.js';
 import type { AuthenticatedRequest } from '../auth/session.guard.js';
 import { CampaignsService } from './campaigns.service.js';
+import { BusinessOverviewService } from './business-overview.service.js';
 
 @Controller()
 export class CampaignsController {
   constructor(
     @Inject(CampaignsService) private readonly campaigns: CampaignsService,
+    @Inject(BusinessOverviewService)
+    private readonly overviews: BusinessOverviewService,
   ) {}
+  @Get('business/overview')
+  overview(@Req() r: AuthenticatedRequest, @Query() query: unknown) {
+    return this.overviews.overview(r[AUTH_USER_ID], query);
+  }
   @Post('campaigns/:id/codes')
   activate(@Req() r: AuthenticatedRequest, @Param('id') id: string) {
     return this.campaigns.activate(r[AUTH_USER_ID], id);

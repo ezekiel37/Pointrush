@@ -4,6 +4,7 @@ import { after, test } from 'node:test';
 import { eq, sql } from 'drizzle-orm';
 import * as s from '../src/database/schema.js';
 import { CampaignsService } from '../src/campaigns/campaigns.service.js';
+import { BusinessOverviewService } from '../src/campaigns/business-overview.service.js';
 import { TaskQueriesService } from '../src/tasks/task-queries.service.js';
 import { campaignFixture, campaignTerms } from './helpers/campaign-fixture.js';
 import {
@@ -341,4 +342,51 @@ test('direct writes cannot bypass release, rewrite history or pay a non-buyer', 
     db.insert(s.purchaseReleases).values({ confirmationId: confirmed.id }),
   );
   assert.equal(await fundingBalance(db, allocation), 50000n);
+});
+
+test('business overview counts only its own activity by Lagos day and state', async () => {
+  const overviews = new BusinessOverviewService(db);
+  const { merchant, id } = await campaign(3, '50000');
+  const other = await campaign(1, '50000');
+  const [a, b, c, d] = [
+    await identity(),
+    await identity(),
+    await identity(),
+    await identity(),
+  ];
+  const buy = async (person: { user: string }, task: string, owner: string) => {
+    const code = await campaigns.activate(person.user, task);
+    return campaigns.confirm(owner, task, confirmation(code.code));
+  };
+  const first = await buy(a, id, merchant.user);
+  const second = await buy(b, id, merchant.user);
+  await buy(c, id, merchant.user);
+  await buy(d, other.id, other.merchant.user);
+  await campaigns.voidPurchase(merchant.user, second.id, { reason: 'Refund' });
+  await travel('25 hours');
+  try {
+    await campaigns.release(a.user, first.id);
+  } finally {
+    await travel('0');
+  }
+  const view = await overviews.overview(merchant.user, { days: '7' });
+  assert.equal(view.series.length, 7);
+  assert.equal(view.series.at(-1)?.purchases, 3);
+  assert.deepEqual(
+    [view.purchases.held, view.purchases.paid, view.purchases.voided],
+    [1, 1, 1],
+  );
+  assert.equal(view.lockedKobo, '100000');
+  assert.equal(view.paidOutKobo, '50000');
+  assert.equal(view.campaigns.length, 1);
+  assert.equal(view.campaigns[0]?.used, 2);
+  assert.equal(view.live, 1);
+  assert.equal(
+    (await overviews.overview(merchant.user, { days: '30' })).series.length,
+    30,
+  );
+  await assert.rejects(overviews.overview(merchant.user, { days: '9' }), {
+    status: 400,
+  });
+  await assert.rejects(overviews.overview(a.user), { status: 404 });
 });
