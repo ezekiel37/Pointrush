@@ -4,7 +4,6 @@ import '@fontsource-variable/geist';
 import '@fontsource-variable/geist-mono';
 import './globals.css';
 import { ServiceWorker } from '@/components/shell/service-worker';
-import { isPilot } from '@/lib/features';
 export const metadata: Metadata = {
   title: { default: 'Acticlaim', template: '%s | Acticlaim' },
   description:
@@ -30,11 +29,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <a href="#main-content" className="skip-link">
           Skip to content
         </a>
-        {isPilot && (
-          <p className="pilot-banner" role="note">
-            Test version: payments are simulated and no real money moves.
-          </p>
-        )}
         {children}
         <ServiceWorker />
       </body>

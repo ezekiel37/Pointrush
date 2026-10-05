@@ -130,7 +130,6 @@ test('worker requires only delivery and database settings, independently from AP
 test('development defaults are explicit and deny cross-origin access', () => {
   assert.deepEqual(readEnvironment({}), {
     jobsEnabled: false,
-    releaseStage: 'live',
     nodeEnv: 'development',
     port: 8080,
     corsOrigins: [],
@@ -146,7 +145,6 @@ test('accepts Cloud Run port and deduplicates explicit origins', () => {
     }),
     {
       jobsEnabled: false,
-      releaseStage: 'live',
       nodeEnv: 'test',
       port: 9090,
       corsOrigins: ['https://example.com'],
@@ -340,40 +338,4 @@ test('paid small tasks (jobs) are off unless switched on', () => {
     true,
   );
   assert.throws(() => readEnvironment({ ...apiConfig, FEATURE_JOBS: 'yes' }));
-});
-
-test('a pilot runs in production on Bachs sandbox keys; live needs live keys', () => {
-  const bachs = {
-    ...apiConfig,
-    PAYMENTS_PROVIDER: 'bachs',
-    PAYMENTS_WEBHOOK_SECRET: 'whsec_test_only_0123456789',
-    PAYMENTS_RETURN_ORIGIN: 'https://app.example.test',
-  };
-  const sandbox = 'sk_sandbox_example0123';
-  const live = 'sk_live_example0123';
-  assert.equal(
-    readEnvironment({
-      ...bachs,
-      RELEASE_STAGE: 'pilot',
-      BACHS_API_KEY: sandbox,
-    }).payments?.provider,
-    'bachs',
-  );
-  assert.throws(
-    () =>
-      readEnvironment({
-        ...bachs,
-        RELEASE_STAGE: 'pilot',
-        BACHS_API_KEY: live,
-      }),
-    /sk_live_/,
-  );
-  assert.throws(
-    () => readEnvironment({ ...bachs, BACHS_API_KEY: sandbox }),
-    /sk_live_/,
-  );
-  assert.equal(
-    readEnvironment({ ...bachs, BACHS_API_KEY: live }).payments?.provider,
-    'bachs',
-  );
 });
