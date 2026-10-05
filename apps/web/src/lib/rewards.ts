@@ -275,6 +275,12 @@ export const staffList = z.object({
       username: z.string().nullable(),
       displayName: z.string().nullable(),
       addedAt: date,
+      // Staff only act after accepting; activity helps spot cashier fraud.
+      accepted: z.boolean().default(true),
+      confirmedToday: z.number().int().default(0),
+      confirmedWeek: z.number().int().default(0),
+      weekCashbackKobo: money.default('0'),
+      repeatShoppers: z.number().int().default(0),
     }),
   ),
 });
@@ -289,6 +295,9 @@ export const workplaces = z.object({
         .default([]),
     }),
   ),
+  invitations: z
+    .array(z.object({ id: z.uuid(), business: z.string() }))
+    .default([]),
 });
 
 export const bankList = z.object({
@@ -304,4 +313,6 @@ export const bankAccount = z.object({
       usableFrom: date,
     })
     .nullable(),
+  // "This wasn't me" was pressed; a reviewer must check before withdrawals open.
+  locked: z.boolean().default(false),
 });

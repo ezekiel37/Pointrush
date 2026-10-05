@@ -264,6 +264,78 @@ test('a reviewer approves only after every check, and the decision is recorded o
   });
 });
 
+test('a large campaign needs a second, different reviewer', async ({
+  page,
+}) => {
+  const task = {
+    id: businessId,
+    sponsorName: 'Big Brew Ltd',
+    title: 'Win with every crate',
+    instructions: 'Buy a crate.',
+    proofRequirements: 'Code under the cap.',
+    rejectionCriteria: 'Codes from outside the promotion.',
+    model: 'purchase_cashback',
+    capacity: 1000,
+    rewardKobo: '200000',
+    budgetKobo: '200000000',
+    startsAt: '2099-10-06T09:00:00Z',
+    endsAt: '2099-11-06T09:00:00Z',
+    termsVersion: 1,
+    termsHash: 'a'.repeat(64),
+    campaignTerms: {
+      minSpendKobo: '0',
+      holdHours: 72,
+      placeName: 'Big Brew depot',
+      placeAddress: '1 Depot Road, Aba',
+    },
+    promotionTerms: null,
+    firstApprovedBy: null as string | null,
+  };
+  await page.route('**/api/v1/admin/reviews/tasks?*', (route) =>
+    route.fulfill({ json: { items: [task], nextCursor: null } }),
+  );
+  await page.route(`**/api/v1/admin/reviews/tasks/${businessId}`, (route) =>
+    route.fulfill({ json: task }),
+  );
+  let calls = 0;
+  await page.route(
+    `**/api/v1/admin/reviews/tasks/${businessId}/decision`,
+    (route) => {
+      calls += 1;
+      if (calls === 1) {
+        task.firstApprovedBy = 'b1e2d3f4-4a5b-4c6d-8e9f-0a1b2c3d4e5f';
+        return route.fulfill({
+          json: { awaitingSecondReviewer: true, taskId: businessId },
+        });
+      }
+      return route.fulfill({
+        status: 409,
+        json: { statusCode: 409, reason: 'second_reviewer_required' },
+      });
+    },
+  );
+  await page.goto(`/review/campaigns/${businessId}`);
+  await expect(
+    page.getByText(/two different reviewers must approve it/),
+  ).toBeVisible();
+  await healthy(page);
+  for (const box of await page.getByRole('checkbox').all()) await box.check();
+  await page.getByLabel('What you checked').fill('Permit and terms checked.');
+  await page.getByRole('button', { name: 'Approve campaign' }).click();
+  await page.waitForURL('**/review/campaigns?decided=first');
+  await expect(page.getByText(/A second reviewer must approve/)).toBeVisible();
+  await expect(page.getByText('Needs 2nd approval')).toBeVisible();
+  // The same reviewer trying again is told someone else must do it.
+  await page.getByRole('link', { name: 'Win with every crate' }).click();
+  await expect(page.getByText(/One reviewer has approved/)).toBeVisible();
+  for (const box of await page.getByRole('checkbox').all()) await box.check();
+  await page.getByLabel('What you checked').fill('Checked again.');
+  await page.getByRole('button', { name: 'Approve campaign' }).click();
+  await expect(
+    page.getByText(/A different reviewer must give the second/),
+  ).toBeVisible();
+});
+
 test('without reviewer access the queue explains how to get it', async ({
   page,
 }) => {
@@ -323,7 +395,7 @@ test('a business cancels a campaign that is not live and gets its money back onc
   expect(bodies[0]).toEqual(bodies[1]);
 });
 
-test('an owner adds and removes till staff, and staff see their tills', async ({
+test('an owner invites and removes till staff, sees their activity, and staff accept to see their tills', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -340,6 +412,7 @@ test('an owner adds and removes till staff, and staff see their tills', async ({
           username: 'ada',
           displayName: 'Ada Obi',
           addedAt: '2026-10-05T12:00:00Z',
+          accepted: false,
         },
       ];
     }
@@ -353,29 +426,68 @@ test('an owner adds and removes till staff, and staff see their tills', async ({
   await expect(page.getByText('No staff yet.')).toBeVisible();
   await healthy(page);
   await page.getByLabel('Their Acticlaim username').fill('@ghost');
-  await page.getByRole('button', { name: 'Add to staff' }).click();
+  await page.getByRole('button', { name: 'Invite to staff' }).click();
   await expect(page.getByText(/No active Acticlaim account/)).toBeVisible();
   await page.getByLabel('Their Acticlaim username').fill('@ada');
-  await page.getByRole('button', { name: 'Add to staff' }).click();
+  await page.getByRole('button', { name: 'Invite to staff' }).click();
   await expect(page.getByText('Ada Obi')).toBeVisible();
+  await expect(page.getByText('Waiting to accept')).toBeVisible();
+  // Once accepted, the owner sees what each cashier confirmed.
+  members = [
+    {
+      ...members[0],
+      accepted: true,
+      confirmedToday: 4,
+      confirmedWeek: 31,
+      weekCashbackKobo: '1550000',
+      repeatShoppers: 2,
+    },
+  ];
+  await page.reload();
+  await expect(
+    page.getByText(
+      'Confirmed 4 today · 31 this week · ₦15,500 cash back this week',
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/Confirmed the same 2 shoppers 3 or more times/),
+  ).toBeVisible();
+  await healthy(page);
   await page.getByRole('button', { name: 'Remove' }).click();
   await page.getByRole('button', { name: 'Yes, remove' }).click();
   await expect(page.getByText('No staff yet.')).toBeVisible();
 
-  await page.route('**/api/v1/staff/workplaces', (route) =>
-    route.fulfill({
-      json: {
-        items: [
+  let accepted = false;
+  const workplaces = () => ({
+    items: accepted
+      ? [
           {
             id: businessId,
             name: 'Mama Put Kitchen',
             tills: [{ id: businessId, title: 'Lunch cash back' }],
           },
-        ],
-      },
-    }),
+        ]
+      : [],
+    invitations: accepted
+      ? []
+      : [{ id: staffId, business: 'Mama Put Kitchen' }],
+  });
+  await page.route('**/api/v1/staff/workplaces', (route) =>
+    route.fulfill({ json: workplaces() }),
+  );
+  await page.route(
+    `**/api/v1/staff/invitations/${staffId}/acceptances`,
+    (route) => {
+      accepted = true;
+      return route.fulfill({ json: workplaces() });
+    },
   );
   await page.goto('/staff');
+  await expect(
+    page.getByText(/Only accept if you really work there/),
+  ).toBeVisible();
+  await healthy(page);
+  await page.getByRole('button', { name: 'Accept' }).click();
   await expect(
     page.getByRole('link', { name: 'Lunch cash back' }),
   ).toHaveAttribute('href', `/business/campaigns/${businessId}`);
@@ -434,6 +546,7 @@ test('a reviewer freezes an account with a reason and can restore it', async ({
 }) => {
   const accountId = '3e1e2d3f-4a5b-4c6d-8e9f-0a1b2c3d4e5f';
   let state = 'active';
+  let locked = true;
   const history: Record<string, unknown>[] = [];
   const view = () => ({
     id: accountId,
@@ -442,6 +555,7 @@ test('a reviewer freezes an account with a reason and can restore it', async ({
     accessState: state,
     phoneVerified: true,
     business: false,
+    withdrawalsLocked: locked,
     createdAt: '2026-10-01T12:00:00Z',
     history,
   });
@@ -459,9 +573,22 @@ test('a reviewer freezes an account with a reason and can restore it', async ({
       by: 'reviewer',
       at: '2026-10-05T12:00:00Z',
     });
+    // The reviewer who froze it cannot unfreeze it alone.
+    if (body.toState === 'active')
+      return route.fulfill({
+        status: 409,
+        json: { statusCode: 409, reason: 'access_change_unavailable' },
+      });
     state = body.toState;
     return route.fulfill({ json: view() });
   });
+  await page.route(
+    `**/api/v1/admin/accounts/${accountId}/withdrawal-unlocks`,
+    (route) => {
+      locked = false;
+      return route.fulfill({ json: view() });
+    },
+  );
   await page.goto('/review/accounts');
   await page.getByLabel('Username').fill('@suspect');
   await page.getByRole('button', { name: 'Find account' }).click();
@@ -480,6 +607,18 @@ test('a reviewer freezes an account with a reason and can restore it', async ({
     toState: 'suspended',
     reason: 'Twelve accounts on one device',
   });
+  await page.getByLabel('Reason').fill('Explained');
+  await page.getByRole('button', { name: 'Unfreeze account' }).click();
+  await expect(page.getByText(/Another reviewer must unfreeze/)).toBeVisible();
+
+  await expect(
+    page.getByText(/Withdrawals locked by the account owner/),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Unlock withdrawals' }).click();
+  await page.getByRole('button', { name: 'Yes, I checked: unlock' }).click();
+  await expect(
+    page.getByText(/Withdrawals locked by the account owner/),
+  ).toBeHidden();
 });
 
 test('flagged payments take a note and then show it', async ({ page }) => {

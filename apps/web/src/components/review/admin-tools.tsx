@@ -1,6 +1,7 @@
 'use client';
 import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
+import { ShieldAlert } from 'lucide-react';
 import { z } from 'zod';
 import { ReviewFrame } from './review-frame';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,7 @@ const account = z.object({
   accessState: z.string(),
   phoneVerified: z.boolean(),
   business: z.boolean(),
+  withdrawalsLocked: z.boolean().default(false),
   createdAt: date,
   history: z.array(
     z.object({
@@ -60,6 +62,7 @@ export function AccountTools() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [needsAccess, setNeedsAccess] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
   const attempt = useRef<{ key: string; id: string } | null>(null);
 
   async function find(event: FormEvent) {
@@ -115,8 +118,35 @@ export function AccountTools() {
       setError(
         cause instanceof RequestError &&
           cause.code === 'access_change_unavailable'
-          ? 'This change is not allowed: the account may be closed, already in that state, or your own.'
+          ? toState === 'active'
+            ? 'Another reviewer must unfreeze this account: the person who froze it cannot undo it alone.'
+            : 'This change is not allowed: the account may be closed, already in that state, or your own.'
           : 'We could not record the change. Try again; it is recorded once.',
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function unlock() {
+    if (!found || busy) return;
+    setBusy(true);
+    setError('');
+    try {
+      setFound(
+        await apiRequest(
+          `admin/accounts/${found.id}/withdrawal-unlocks`,
+          account,
+          { method: 'POST', body: {} },
+        ),
+      );
+      setUnlocking(false);
+    } catch (cause) {
+      setNeedsAccess(denied(cause));
+      setError(
+        cause instanceof RequestError && cause.code === 'unlock_unavailable'
+          ? 'You cannot unlock your own withdrawals.'
+          : 'We could not unlock withdrawals. Try again.',
       );
     } finally {
       setBusy(false);
@@ -204,6 +234,49 @@ export function AccountTools() {
                   </Button>
                 )}
               </>
+            )}
+            {found.withdrawalsLocked && (
+              <div className="confirm-strip">
+                <p className="icon-line" style={{ margin: 0 }}>
+                  <ShieldAlert
+                    size={18}
+                    aria-hidden
+                    style={{ color: 'var(--color-danger)' }}
+                  />
+                  Withdrawals locked by the account owner (&ldquo;This
+                  wasn&apos;t me&rdquo;). Contact them and confirm a password
+                  change before unlocking.
+                </p>
+                {unlocking ? (
+                  <div className="row" style={{ justifyContent: 'flex-start' }}>
+                    <Button
+                      type="button"
+                      variant="accent"
+                      disabled={busy}
+                      onClick={() => void unlock()}
+                    >
+                      Yes, I checked: unlock
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setUnlocking(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    style={{ justifySelf: 'start' }}
+                    disabled={busy}
+                    onClick={() => setUnlocking(true)}
+                  >
+                    Unlock withdrawals
+                  </Button>
+                )}
+              </div>
             )}
             {found.history.length > 0 && (
               <dl className="terms-list">

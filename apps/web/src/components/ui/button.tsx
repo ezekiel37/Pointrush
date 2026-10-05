@@ -12,6 +12,7 @@ export const buttonVariants = cva('button', {
       accent: 'button-accent',
       outline: 'button-outline',
       ghost: 'button-ghost',
+      danger: 'button-danger',
     },
   },
   defaultVariants: { variant: 'default' },

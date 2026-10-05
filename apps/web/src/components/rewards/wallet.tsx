@@ -16,7 +16,8 @@ import {
 } from '@/lib/rewards';
 import { BankAccount, usable } from './bank-account';
 import { useApiRead } from '@/lib/use-api-read';
-import { WithdrawalList, WithdrawPanel } from './withdraw';
+import { minWithdrawKobo, WithdrawalList, WithdrawPanel } from './withdraw';
+import { WithdrawalLock } from './withdrawal-lock';
 
 const stateLabel = {
   pending: ['Held', 'chip chip-pending'],
@@ -105,7 +106,8 @@ export function Wallet() {
                   {naira(data.walletKobo)}
                 </p>
                 {data.phoneVerified &&
-                BigInt(data.walletKobo) >= 50000n &&
+                !bank.data?.locked &&
+                BigInt(data.walletKobo) >= minWithdrawKobo &&
                 usable(bank.data?.destination) ? (
                   <Button
                     type="button"
@@ -128,8 +130,10 @@ export function Wallet() {
                     }}
                   >
                     {data.phoneVerified ? (
-                      BigInt(data.walletKobo) < 50000n ? (
-                        'You can withdraw once you have ₦500 or more.'
+                      bank.data?.locked ? (
+                        'Withdrawals are locked while support checks your account.'
+                      ) : BigInt(data.walletKobo) < minWithdrawKobo ? (
+                        'You can withdraw once you have ₦1,000 or more.'
                       ) : bank.data?.destination ? (
                         'Your new bank account can receive money 24 hours after you added it.'
                       ) : (
@@ -168,6 +172,18 @@ export function Wallet() {
               <BankAccount
                 account={bank.data.destination}
                 onSaved={bank.refresh}
+              />
+            )}
+            {bank.data?.destination && (
+              <WithdrawalLock
+                locked={bank.data.locked}
+                onLocked={() => {
+                  setWithdrawing(false);
+                  setNotice('');
+                  bank.refresh();
+                  withdrawals.refresh();
+                  summary.refresh();
+                }}
               />
             )}
             {withdrawing && (

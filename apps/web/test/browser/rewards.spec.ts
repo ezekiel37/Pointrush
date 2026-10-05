@@ -461,7 +461,8 @@ test('a withdrawal holds money once across a dropped response and shows its stat
       json: { items: [], nextCursor: null, observedAt: '2026-10-05T12:00:00Z' },
     }),
   );
-  const bodies: { id: string; amountKobo: string }[] = [];
+  const bodies: { id: string; amountKobo: string; password?: string }[] = [];
+  let locked = false;
   await page.route('**/api/v1/wallet/withdrawals*', (route) => {
     if (route.request().method() === 'GET')
       return route.fulfill({
@@ -480,6 +481,11 @@ test('a withdrawal holds money once across a dropped response and shows its stat
         },
       });
     const body = route.request().postDataJSON();
+    if (body.password !== 'correct horse battery')
+      return route.fulfill({
+        status: 409,
+        json: { statusCode: 409, reason: 'password_required' },
+      });
     bodies.push(body);
     if (bodies.length === 1) return route.abort();
     held = true;
@@ -503,9 +509,14 @@ test('a withdrawal holds money once across a dropped response and shows its stat
           last4: '6789',
           usableFrom: '2026-01-01T00:00:00Z',
         },
+        locked,
       },
     }),
   );
+  await page.route('**/api/v1/wallet/lock', (route) => {
+    locked = true;
+    return route.fulfill({ json: { locked: true } });
+  });
   // Without a verified phone there is no withdraw action, only the reason.
   await page.goto('/wallet');
   await expect(page.getByText(/needs a verified phone number/)).toBeVisible();
@@ -521,6 +532,20 @@ test('a withdrawal holds money once across a dropped response and shows its stat
   await page.getByRole('button', { name: 'Withdraw ₦3,000' }).click();
   await expect(page.getByText('You have ₦2,000 in your wallet.')).toBeVisible();
   await page.getByLabel('Amount in naira').fill('1,200');
+  // The password is asked again, and a wrong one is cleared.
+  await page.getByRole('button', { name: 'Withdraw ₦1,200' }).click();
+  await expect(
+    page.getByText('Enter your password to confirm it is you.'),
+  ).toBeVisible();
+  await page.getByRole('textbox', { name: 'Your password' }).fill('guess');
+  await page.getByRole('button', { name: 'Withdraw ₦1,200' }).click();
+  await expect(page.getByText(/That password is not right/)).toBeVisible();
+  await expect(
+    page.getByRole('textbox', { name: 'Your password' }),
+  ).toHaveValue('');
+  await page
+    .getByRole('textbox', { name: 'Your password' })
+    .fill('correct horse battery');
   await healthy(page);
   await page.getByRole('button', { name: 'Withdraw ₦1,200' }).click();
   await expect(page.locator('main').getByRole('alert')).toContainText(
@@ -533,6 +558,19 @@ test('a withdrawal holds money once across a dropped response and shows its stat
   expect(bodies).toHaveLength(2);
   expect(bodies[0]).toEqual(bodies[1]);
   expect(bodies[0]?.amountKobo).toBe('120000');
+
+  // "This wasn't me" asks once more, then locks withdrawals.
+  await page.getByRole('button', { name: "This wasn't me" }).click();
+  await page.getByRole('button', { name: 'Yes, lock withdrawals' }).click();
+  await expect(
+    page.getByRole('status', { name: 'Withdrawals locked' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Withdraw', exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText('Withdrawals are locked while support checks your account.'),
+  ).toBeVisible();
   await healthy(page);
 });
 

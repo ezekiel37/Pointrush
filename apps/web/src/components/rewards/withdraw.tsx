@@ -10,7 +10,8 @@ import { RequestError } from '@/lib/auth-client';
 import { withdrawal } from '@/lib/rewards';
 
 type Withdrawal = z.infer<typeof withdrawal>;
-const minKobo = 50000n;
+export const minWithdrawKobo = 100000n;
+const minKobo = minWithdrawKobo;
 const maxKobo = 500000000n;
 
 export const withdrawalState = {
@@ -33,11 +34,15 @@ function withdrawError(error: unknown) {
         return 'Add a bank account first.';
       case 'destination_cooling':
         return 'Your new bank account can receive money 24 hours after you added it.';
+      case 'password_required':
+        return 'That password is not right. Enter the password you sign in with.';
+      case 'withdrawals_locked':
+        return 'Withdrawals are locked on this account. Support will contact you before they open again.';
       case 'withdrawal_unavailable':
         return 'Withdrawals need an active account with a verified phone number. Verify it from your wallet.';
     }
     if (error.status === 400)
-      return 'Enter an amount between ₦500 and ₦5,000,000.';
+      return 'Enter an amount between ₦1,000 and ₦5,000,000.';
   }
   return 'We could not confirm the withdrawal. Check your connection and try again; it will never be taken twice.';
 }
@@ -54,6 +59,8 @@ export function WithdrawPanel({
   onCancel: () => void;
 }) {
   const [amount, setAmount] = useState('');
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [invalid, setInvalid] = useState('');
@@ -66,7 +73,7 @@ export function WithdrawPanel({
     event.preventDefault();
     if (busy) return;
     if (!kobo || BigInt(kobo) < minKobo || BigInt(kobo) > maxKobo) {
-      setInvalid('Enter an amount between ₦500 and ₦5,000,000.');
+      setInvalid('Enter an amount between ₦1,000 and ₦5,000,000.');
       return;
     }
     if (BigInt(kobo) > BigInt(walletKobo)) {
@@ -74,6 +81,10 @@ export function WithdrawPanel({
       return;
     }
     setInvalid('');
+    if (!password) {
+      setPasswordError('Enter your password to confirm it is you.');
+      return;
+    }
     if (attempt.current?.amountKobo !== kobo)
       attempt.current = { id: newId(), amountKobo: kobo };
     setBusy(true);
@@ -81,14 +92,17 @@ export function WithdrawPanel({
     try {
       const result = await apiRequest('wallet/withdrawals', withdrawal, {
         method: 'POST',
-        body: attempt.current,
+        body: { ...attempt.current, password },
       });
       attempt.current = null;
       onDone(result);
     } catch (cause) {
       if (cause instanceof RequestError && cause.status < 500)
         attempt.current = null;
-      setError(withdrawError(cause));
+      if (cause instanceof RequestError && cause.code === 'password_required') {
+        setPassword('');
+        setPasswordError(withdrawError(cause));
+      } else setError(withdrawError(cause));
     } finally {
       setBusy(false);
     }
@@ -116,7 +130,7 @@ export function WithdrawPanel({
             setAmount(e.target.value);
             setInvalid('');
           }}
-          hint={`Minimum ₦500. Up to three withdrawals a day.`}
+          hint="Minimum ₦1,000. Up to three withdrawals a day."
           error={invalid}
         />
         {all >= minKobo && (
@@ -132,6 +146,19 @@ export function WithdrawPanel({
             Withdraw everything ({naira(all.toString())})
           </button>
         )}
+        <Field
+          id="withdraw-password"
+          label="Your password"
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            setPasswordError('');
+          }}
+          hint="We ask again so no one else can withdraw from your phone."
+          error={passwordError}
+        />
         {error && <Feedback error>{error}</Feedback>}
         <div className="row" style={{ justifyContent: 'flex-start' }}>
           <Button variant="accent" type="submit" disabled={busy}>

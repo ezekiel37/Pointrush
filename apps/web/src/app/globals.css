@@ -284,6 +284,13 @@
   .button-lime:hover:not(:disabled) {
     background: color-mix(in srgb, var(--color-lime) 85%, #ffffff);
   }
+  .button-danger {
+    background: var(--color-danger);
+    color: var(--color-danger-surface);
+  }
+  .button-danger:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-danger) 88%, #000000);
+  }
   .button-outline {
     background: var(--color-surface);
     color: var(--color-ink);

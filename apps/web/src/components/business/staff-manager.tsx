@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Feedback, Loading } from '@/components/ui/feedback';
 import { Field } from '@/components/ui/field';
 import { WorkFailure } from '@/components/work/work-frame';
-import { apiRequest, newId, shortDate } from '@/lib/api';
+import { apiRequest, naira, newId, shortDate } from '@/lib/api';
+import { TriangleAlert } from 'lucide-react';
 import { RequestError } from '@/lib/auth-client';
 import { staffList } from '@/lib/rewards';
 import { useApiRead } from '@/lib/use-api-read';
@@ -17,7 +18,7 @@ function addError(error: unknown) {
     if (error.status === 404)
       return 'No active Acticlaim account has that username. Ask them to check it on their profile.';
     if (error.code === 'staff_unavailable')
-      return 'They are already on your staff, or the limit of 20 staff is reached.';
+      return 'They are already on your staff or invited, or the limit of 20 staff is reached.';
     if (error.status === 400) return 'Enter their Acticlaim username.';
   }
   return 'We could not add them. Check your connection and try again.';
@@ -101,7 +102,9 @@ export function StaffManager() {
             <div className="card-head">
               <h2 id="staff-heading">Your team</h2>
               <p>
-                Staff cannot earn cash back or claim prizes from your business.
+                Each person must accept your invitation first. Staff cannot earn
+                cash back or claim prizes from your business, and each can
+                confirm at most 100 purchases a day.
               </p>
             </div>
             {staff.data?.items.length ? (
@@ -114,10 +117,16 @@ export function StaffManager() {
                           {m.displayName ?? m.username ?? 'Staff member'}
                         </p>
                         <p className="small-note">
-                          {m.username ? `@${m.username} · ` : ''}added{' '}
+                          {m.username ? `@${m.username} · ` : ''}
+                          {m.accepted ? 'added' : 'invited'}{' '}
                           {shortDate(m.addedAt)}
                         </p>
                       </div>
+                      {!m.accepted && (
+                        <span className="chip chip-pending">
+                          Waiting to accept
+                        </span>
+                      )}
                       {confirming !== m.id && (
                         <Button
                           type="button"
@@ -129,6 +138,26 @@ export function StaffManager() {
                         </Button>
                       )}
                     </div>
+                    {m.accepted && (
+                      <p className="small-note" style={{ margin: 0 }}>
+                        Confirmed {m.confirmedToday} today · {m.confirmedWeek}{' '}
+                        this week · {naira(m.weekCashbackKobo)} cash back this
+                        week
+                      </p>
+                    )}
+                    {m.repeatShoppers > 0 && (
+                      <p
+                        className="icon-line small-note"
+                        style={{ margin: 0, color: 'var(--color-danger)' }}
+                      >
+                        <TriangleAlert size={16} aria-hidden />
+                        Confirmed the same{' '}
+                        {m.repeatShoppers === 1
+                          ? 'shopper'
+                          : `${m.repeatShoppers} shoppers`}{' '}
+                        3 or more times this week. Check these were real sales.
+                      </p>
+                    )}
                     {confirming === m.id && (
                       <div className="confirm-strip">
                         <p style={{ margin: 0 }}>
@@ -186,11 +215,11 @@ export function StaffManager() {
                 setUsername(e.target.value);
                 setError('');
               }}
-              hint="They find it on their profile. They will see your tills under Staff."
+              hint="They find it on their profile. They accept under Staff, then see your tills there."
             />
             {error && <Feedback error>{error}</Feedback>}
             <Button variant="accent" type="submit" disabled={busy}>
-              {busy ? 'Adding…' : 'Add to staff'}
+              {busy ? 'Inviting…' : 'Invite to staff'}
             </Button>
           </form>
         </div>

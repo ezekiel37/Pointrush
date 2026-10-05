@@ -407,7 +407,9 @@ export function CampaignForm({ model }: { model: Model }) {
                     </div>
                     <p className="field-help">
                       Cash back is held this long after each purchase, so you
-                      can void refunded orders.
+                      can void refunded orders. Choose at least as long as your
+                      own refund policy: once it ends, the cash back is the
+                      customer&apos;s even if they return the goods later.
                     </p>
                   </div>
                   {field('voidWhen', 'You may void a purchase when', {

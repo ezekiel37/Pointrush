@@ -29,6 +29,8 @@ const pending = z.object({
   endsAt: date,
   termsVersion: z.number().int(),
   termsHash: z.string(),
+  // Large campaigns: set once the first of two reviewers has approved.
+  firstApprovedBy: z.string().nullable().default(null),
   campaignTerms: z
     .object({
       minSpendKobo: money,
@@ -53,6 +55,10 @@ const queue = z.object({
   nextCursor: z.uuid().nullable(),
 });
 type Pending = z.infer<typeof pending>;
+
+// Campaigns locking ₦1,000,000 or more need two different reviewers.
+const twoReviewerKobo = 100000000n;
+const needsTwo = (task: Pending) => BigInt(task.budgetKobo) >= twoReviewerKobo;
 
 const kind: Record<string, string> = {
   purchase_cashback: 'Cash back',
@@ -83,7 +89,14 @@ export function CampaignQueue() {
       intro="Nothing goes live until it passes here. Money is already locked for every item."
     >
       <div className="grid gap-4" style={{ marginTop: '1rem' }}>
-        {params.get('decided') && <Feedback>Decision recorded.</Feedback>}
+        {params.get('decided') === 'first' ? (
+          <Feedback>
+            First approval recorded. A second reviewer must approve before the
+            campaign can go live.
+          </Feedback>
+        ) : (
+          params.get('decided') && <Feedback>Decision recorded.</Feedback>
+        )}
         {read.loading && !read.data ? (
           <Loading>Loading campaigns…</Loading>
         ) : read.error && accessError(read.error) ? (
@@ -111,6 +124,9 @@ export function CampaignQueue() {
                     {shortDate(item.startsAt)}
                   </p>
                 </div>
+                {item.firstApprovedBy && (
+                  <span className="chip chip-pending">Needs 2nd approval</span>
+                )}
                 <span className="amount">{naira(item.budgetKobo)}</span>
               </li>
             ))}
@@ -184,6 +200,11 @@ function Terms({ task }: { task: Pending }) {
 function decisionError(error: unknown) {
   if (accessError(error))
     return 'Your review access or authenticator check has expired. Verify again, then submit.';
+  if (
+    error instanceof RequestError &&
+    error.code === 'second_reviewer_required'
+  )
+    return 'You gave the first approval. A different reviewer must give the second.';
   if (error instanceof RequestError && error.status === 409)
     return 'This campaign changed or was already decided. Go back to the list.';
   return 'We could not record the decision. Check your connection and submit again; it is recorded once.';
@@ -236,11 +257,19 @@ export function CampaignReview({ id }: { id: string }) {
     setBusy(true);
     setError('');
     try {
-      await apiRequest(`admin/reviews/tasks/${id}/decision`, z.unknown(), {
-        method: 'POST',
-        body: { requestId: attempt.current.id, ...body },
-      });
-      router.push('/review/campaigns?decided=1');
+      const result = await apiRequest(
+        `admin/reviews/tasks/${id}/decision`,
+        z.object({ awaitingSecondReviewer: z.boolean().optional() }),
+        {
+          method: 'POST',
+          body: { requestId: attempt.current.id, ...body },
+        },
+      );
+      router.push(
+        result.awaitingSecondReviewer
+          ? '/review/campaigns?decided=first'
+          : '/review/campaigns?decided=1',
+      );
     } catch (cause) {
       if (cause instanceof RequestError && cause.status < 500)
         attempt.current = null;
@@ -266,6 +295,13 @@ export function CampaignReview({ id }: { id: string }) {
             <section className="card">
               <Terms task={read.data} />
             </section>
+            {needsTwo(read.data) && (
+              <Feedback>
+                {read.data.firstApprovedBy
+                  ? 'One reviewer has approved. Your approval would be the second and makes the campaign ready to go live.'
+                  : 'This campaign locks ₦1,000,000 or more, so two different reviewers must approve it. Yours would be the first.'}
+              </Feedback>
+            )}
             <form className="card grid gap-4" onSubmit={submit} noValidate>
               <fieldset className="form-section">
                 <legend>Checks</legend>
