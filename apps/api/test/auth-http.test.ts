@@ -15,6 +15,8 @@ import { postFundingTransfer } from '../src/funding/funding-ledger.js';
 import { TaskWorkModule } from '../src/tasks/task-work.module.js';
 import { ReviewsModule } from '../src/reviews/reviews.module.js';
 import { CampaignsModule } from '../src/campaigns/campaigns.module.js';
+import { PaymentsModule } from '../src/payments/payments.module.js';
+import { TestPaymentProvider } from '../src/payments/provider.js';
 import { AppModule } from '../src/app.module.js';
 import { AuthService } from '../src/auth/auth.service.js';
 import { createAuth } from '../src/auth/auth.factory.js';
@@ -45,6 +47,7 @@ const auth = createAuth(db, config, async (message) => {
   mailbox.push(message);
 });
 const service = new AuthService(auth, config.baseURL, config.trustedOrigins);
+const payments = new TestPaymentProvider(randomBytes(32).toString('hex'));
 let app: NestExpressApplication;
 let server: Parameters<typeof request>[0];
 let cookie: string;
@@ -59,6 +62,7 @@ before(async () => {
       ReviewsModule,
       TaskWorkModule,
       CampaignsModule,
+      PaymentsModule.forRoot(payments),
     ],
     controllers: [PrivateProbe],
   })
@@ -69,6 +73,7 @@ before(async () => {
     .compile();
   app = module.createNestApplication<NestExpressApplication>({
     logger: false,
+    rawBody: true,
     bodyParser: false,
   });
   configureHttp(
@@ -772,4 +777,39 @@ test('review HTTP boundary rejects missing MFA, expired assurance and missing gr
     .update(schema.authUsers)
     .set({ twoFactorEnabled: false })
     .where(eq(schema.authUsers.id, session.user.id));
+});
+
+test('payment webhooks are public but must be signed over the exact raw body', async () => {
+  const body = JSON.stringify({ id: 'evt_http_1', type: 'customer.updated' });
+  const signed = await request(server)
+    .post('/api/v1/payments/webhooks/test')
+    .set('Content-Type', 'application/json')
+    .set('X-Test-Signature', payments.sign(body))
+    .send(body)
+    .expect(200);
+  assert.deepEqual(signed.body, { received: true, outcome: 'ignored' });
+  // Re-serialised JSON with the same meaning is not the signed body.
+  await request(server)
+    .post('/api/v1/payments/webhooks/test')
+    .set('Content-Type', 'application/json')
+    .set('X-Test-Signature', payments.sign(body))
+    .send(JSON.stringify(JSON.parse(body), null, 2))
+    .expect(400);
+  await request(server)
+    .post('/api/v1/payments/webhooks/test')
+    .set('Content-Type', 'application/json')
+    .send(body)
+    .expect(400);
+  await request(server)
+    .post('/api/v1/payments/webhooks/other')
+    .set('Content-Type', 'application/json')
+    .set('X-Test-Signature', payments.sign(body))
+    .send(body)
+    .expect(400);
+  await request(server).get('/api/v1/wallet/withdrawals').expect(401);
+  await request(server)
+    .post('/api/v1/payments/funding-intents')
+    .set('Origin', origin)
+    .send({ id: randomUUID(), amountKobo: '500000' })
+    .expect(401);
 });

@@ -17,6 +17,8 @@ import { SponsorsController } from './sponsors/sponsors.controller.js';
 import { TaskWorkModule } from './tasks/task-work.module.js';
 import { ReviewsModule } from './reviews/reviews.module.js';
 import { CampaignsModule } from './campaigns/campaigns.module.js';
+import { PaymentsModule } from './payments/payments.module.js';
+import type { PaymentProvider } from './payments/provider.js';
 
 @Module({})
 export class AppModule {
@@ -24,12 +26,19 @@ export class AppModule {
     database?: DatabaseConfig,
     auth?: AuthEnvironment,
     sponsorTermsVersion?: string,
+    payments?: PaymentProvider,
   ): DynamicModule {
     const imports: DynamicModule['imports'] = [
       DatabaseModule.forRoot(database),
       AccountsModule,
     ];
-    if (database) imports.push(ReviewsModule, TaskWorkModule, CampaignsModule);
+    if (database)
+      imports.push(
+        ReviewsModule,
+        TaskWorkModule,
+        CampaignsModule,
+        PaymentsModule.forRoot(payments),
+      );
     if (auth) {
       imports.push(
         AuthModule.forRoot(

@@ -19,6 +19,11 @@ const reasons: Record<string, string> = {
   'More codes than funded prizes': 'codes_exceed_prizes',
   'Codes cannot be issued for this promotion': 'batch_unavailable',
   'Batch action unavailable': 'batch_unavailable',
+  'Withdrawal unavailable': 'withdrawal_unavailable',
+  'Daily withdrawal limit reached': 'withdrawal_daily_limit',
+  'Insufficient wallet balance': 'insufficient_balance',
+  'Insufficient available sponsor funds': 'insufficient_balance',
+  'Funding unavailable': 'funding_unavailable',
 };
 
 function databaseError(error: unknown) {

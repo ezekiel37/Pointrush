@@ -153,3 +153,10 @@ export {
   claimRedemptions,
   claimAttempts,
 } from '../promotions/promotion.schema.js';
+export {
+  fundingIntents,
+  paymentEvents,
+  withdrawals,
+  withdrawalSubmissions,
+  withdrawalOutcomes,
+} from '../payments/payment.schema.js';

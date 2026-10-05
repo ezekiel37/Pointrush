@@ -6,11 +6,17 @@ import { AppModule } from './app.module.js';
 import { readEnvironment } from './config/environment.js';
 import { configureHttp } from './http/configure-http.js';
 import { AuthService } from './auth/auth.service.js';
+import { paymentProvider } from './payments/payments.module.js';
 
 async function bootstrap(): Promise<void> {
   const config = readEnvironment(process.env);
   const app = await NestFactory.create<NestExpressApplication>(
-    AppModule.forRoot(config.database, config.auth, config.sponsorTermsVersion),
+    AppModule.forRoot(
+      config.database,
+      config.auth,
+      config.sponsorTermsVersion,
+      paymentProvider(config.payments),
+    ),
     {
       logger: new ConsoleLogger({ json: true }),
       rawBody: true,

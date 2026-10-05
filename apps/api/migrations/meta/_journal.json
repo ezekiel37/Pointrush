@@ -127,6 +127,13 @@
       "when": 1791142666861,
       "tag": "0017_claim_code_promotions",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791172599015,
+      "tag": "0018_payments_foundation",
+      "breakpoints": true
     }
   ]
 }

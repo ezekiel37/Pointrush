@@ -9,6 +9,8 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from '../../src/database/schema.js';
 import { CampaignsService } from '../../src/campaigns/campaigns.service.js';
 import { PromotionsService } from '../../src/promotions/promotions.service.js';
+import { PaymentsService } from '../../src/payments/payments.service.js';
+import { TestPaymentProvider } from '../../src/payments/provider.js';
 import { TaskWorkService } from '../../src/tasks/task-work.service.js';
 import { readMigrationFiles } from 'drizzle-orm/migrator';
 import { AccountsService } from '../../src/accounts/accounts.service.js';
@@ -723,7 +725,7 @@ test('native concurrent tills cannot exceed campaign capacity and concurrent rel
   }
 });
 
-test('native simultaneous claims of one winning code pay exactly one person', async () => {
+test('native simultaneous claims of one winning code pay exactly one person, who cannot overdraw by racing withdrawals', async () => {
   const other = new DatabaseService(config);
   try {
     let phone = 0;
@@ -776,7 +778,7 @@ test('native simultaneous claims of one winning code pay exactly one person', as
       id: randomUUID(),
       sourceId: clearing!.id,
       destinationId: available!.id,
-      amountKobo: 7000n,
+      amountKobo: 100000n,
       actorId: merchant.account,
       kind: 'funding_confirmed',
       reference: `test:${randomUUID()}`,
@@ -791,7 +793,7 @@ test('native simultaneous claims of one winning code pay exactly one person', as
       rejectionCriteria: 'Invalid codes',
       model: 'claim_code',
       capacity: 1,
-      rewardKobo: '7000',
+      rewardKobo: '100000',
       startsAt: start.toISOString(),
       endsAt: new Date(start.getTime() + 86400000).toISOString(),
       promotionTerms: {
@@ -857,7 +859,75 @@ test('native simultaneous claims of one winning code pay exactly one person', as
       const wallet = wallets.find((w) => w.ownerId === person.account);
       if (wallet) paid += await fundingBalance(database.db, wallet.id);
     }
-    assert.equal(paid, 7000n);
+    assert.equal(paid, 100000n);
+    // Two pools race withdrawals that together exceed the wallet.
+    const winner = people.find((person) =>
+      wallets.some((w) => w.ownerId === person.account),
+    )!;
+    const withdrawals = await Promise.allSettled(
+      [database.db, other.db].map((db) =>
+        new PaymentsService(db).requestWithdrawal(winner.user, {
+          id: randomUUID(),
+          amountKobo: '60000',
+        }),
+      ),
+    );
+    assert.equal(withdrawals.filter((r) => r.status === 'fulfilled').length, 1);
+    const wallet = wallets.find((w) => w.ownerId === winner.account)!;
+    assert.equal(await fundingBalance(database.db, wallet.id), 40000n);
+  } finally {
+    await other.onApplicationShutdown();
+  }
+});
+
+test('native concurrent deliveries of one payment credit the business once', async () => {
+  const other = new DatabaseService(config);
+  try {
+    const user = randomUUID();
+    await database.db.insert(authUsers).values({
+      id: user,
+      name: 'Native',
+      email: `${user}@example.test`,
+      emailVerified: true,
+    });
+    const [account] = await database.db.insert(accounts).values({}).returning();
+    await database.db
+      .insert(authAccountLinks)
+      .values({ accountId: account!.id, authUserId: user });
+    await new SponsorsService(database, 'test-v1').createProfile(user, {
+      name: 'Native funding',
+      acceptTerms: true,
+      termsVersion: 'test-v1',
+    });
+    const provider = new TestPaymentProvider(
+      'native-webhook-secret-long-enough-0000',
+    );
+    const intentId = randomUUID();
+    await new PaymentsService(database.db, provider).createFundingIntent(user, {
+      id: intentId,
+      amountKobo: '500000',
+    });
+    // The same event twice and a provider retry with a new event ID, at once.
+    const deliveries = ['evt_a', 'evt_a', 'evt_b', 'evt_a'].map((id, i) => {
+      const raw = JSON.stringify({
+        id,
+        type: 'collection.succeeded',
+        data: { reference: intentId, amount: '5000.00', currency: 'NGN' },
+      });
+      return new PaymentsService(
+        i % 2 ? other.db : database.db,
+        provider,
+      ).handleWebhook('test', Buffer.from(raw), {
+        'x-test-signature': provider.sign(raw),
+      });
+    });
+    const results = await Promise.all(deliveries);
+    assert.ok(results.every((r) => r.outcome === 'credited'));
+    const [available] = await database.db
+      .select()
+      .from(fundingAccounts)
+      .where(eq(fundingAccounts.ownerId, account!.id));
+    assert.equal(await fundingBalance(database.db, available!.id), 500000n);
   } finally {
     await other.onApplicationShutdown();
   }

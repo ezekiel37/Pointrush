@@ -18,6 +18,12 @@ export interface AuthEnvironment {
 
 const schema = z.object({
   SPONSOR_TERMS_VERSION: z.string().trim().min(1).max(80).optional(),
+  // Only the signing test provider exists until the Bachs adapter is built.
+  PAYMENTS_PROVIDER: z.enum(['test']).optional(),
+  PAYMENTS_WEBHOOK_SECRET: z
+    .string()
+    .refine((value) => value.trim().length >= 32)
+    .optional(),
   NODE_ENV: z
     .enum(['development', 'test', 'production'])
     .default('development'),
@@ -44,8 +50,14 @@ const schema = z.object({
     .pipe(z.number().int().min(1).max(10000)),
 });
 
+export interface PaymentsEnvironment {
+  provider: 'test';
+  webhookSecret: string;
+}
+
 export interface Environment {
   sponsorTermsVersion?: string;
+  payments?: PaymentsEnvironment;
   nodeEnv: 'development' | 'test' | 'production';
   port: number;
   corsOrigins: string[];
@@ -56,6 +68,8 @@ export interface Environment {
 export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
   const {
     SPONSOR_TERMS_VERSION,
+    PAYMENTS_PROVIDER,
+    PAYMENTS_WEBHOOK_SECRET,
     NODE_ENV,
     PORT,
     CORS_ORIGINS,
@@ -74,6 +88,12 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
   }
   for (const origin of origins) {
     assertTrustedOrigin(origin, 'CORS_ORIGINS', NODE_ENV === 'production');
+  }
+  if (Boolean(PAYMENTS_PROVIDER) !== Boolean(PAYMENTS_WEBHOOK_SECRET)) {
+    throw new Error('Payments configuration must be complete');
+  }
+  if (PAYMENTS_PROVIDER === 'test' && NODE_ENV === 'production') {
+    throw new Error('The test payment provider cannot run in production');
   }
   const database = readDatabaseConfig(input);
   const authValues = [
@@ -118,6 +138,14 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
   return {
     ...(SPONSOR_TERMS_VERSION
       ? { sponsorTermsVersion: SPONSOR_TERMS_VERSION }
+      : {}),
+    ...(PAYMENTS_PROVIDER && PAYMENTS_WEBHOOK_SECRET
+      ? {
+          payments: {
+            provider: PAYMENTS_PROVIDER,
+            webhookSecret: PAYMENTS_WEBHOOK_SECRET,
+          },
+        }
       : {}),
     nodeEnv: NODE_ENV,
     port: PORT,

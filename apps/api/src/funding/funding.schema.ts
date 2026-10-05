@@ -28,7 +28,7 @@ export const fundingAccounts = pgTable(
   (t) => [
     check(
       'funding_account_shape',
-      sql`(${t.bucket} = 'clearing' and ${t.ownerId} is null and ${t.allocationId} is null) or (${t.bucket} in ('available', 'reward_wallet') and ${t.ownerId} is not null and ${t.allocationId} is null) or (${t.bucket} = 'task_locked' and ${t.ownerId} is not null and ${t.allocationId} is not null)`,
+      sql`(${t.bucket} = 'clearing' and ${t.ownerId} is null and ${t.allocationId} is null) or (${t.bucket} in ('available', 'reward_wallet', 'payout_hold') and ${t.ownerId} is not null and ${t.allocationId} is null) or (${t.bucket} = 'task_locked' and ${t.ownerId} is not null and ${t.allocationId} is not null)`,
     ),
     uniqueIndex('funding_clearing_unique')
       .on(t.bucket)
@@ -39,6 +39,9 @@ export const fundingAccounts = pgTable(
     uniqueIndex('funding_reward_wallet_unique')
       .on(t.ownerId)
       .where(sql`${t.bucket} = 'reward_wallet'`),
+    uniqueIndex('funding_payout_hold_unique')
+      .on(t.ownerId)
+      .where(sql`${t.bucket} = 'payout_hold'`),
     uniqueIndex('funding_allocation_unique')
       .on(t.allocationId)
       .where(sql`${t.bucket} = 'task_locked'`),
@@ -78,7 +81,7 @@ export const fundingTransfers = pgTable(
     ),
     check(
       'funding_transfer_kind',
-      sql`${t.kind} in ('funding_confirmed', 'task_lock', 'task_reward', 'purchase_cashback', 'prize_claim')`,
+      sql`${t.kind} in ('funding_confirmed', 'task_lock', 'task_reward', 'purchase_cashback', 'prize_claim', 'payout_hold', 'payout_paid', 'payout_returned')`,
     ),
     check('funding_reference_present', sql`length(btrim(${t.reference})) > 0`),
     check('funding_reason_present', sql`length(btrim(${t.reason})) > 0`),

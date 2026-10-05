@@ -202,3 +202,41 @@ test('queue encryption key rejects malformed values without echoing them', () =>
     );
   }
 });
+
+test('payments need a provider and secret together and never the test provider in production', () => {
+  const secret = 'payments-webhook-secret-of-32-chars!';
+  const local = { ...apiConfig, NODE_ENV: 'development' };
+  assert.equal(readEnvironment(local).payments, undefined);
+  assert.deepEqual(
+    readEnvironment({
+      ...local,
+      PAYMENTS_PROVIDER: 'test',
+      PAYMENTS_WEBHOOK_SECRET: secret,
+    }).payments,
+    { provider: 'test', webhookSecret: secret },
+  );
+  assert.throws(
+    () => readEnvironment({ ...local, PAYMENTS_PROVIDER: 'test' }),
+    /must be complete/,
+  );
+  assert.throws(
+    () => readEnvironment({ ...local, PAYMENTS_WEBHOOK_SECRET: secret }),
+    /must be complete/,
+  );
+  assert.throws(() =>
+    readEnvironment({
+      ...local,
+      PAYMENTS_PROVIDER: 'test',
+      PAYMENTS_WEBHOOK_SECRET: 'short',
+    }),
+  );
+  assert.throws(
+    () =>
+      readEnvironment({
+        ...apiConfig,
+        PAYMENTS_PROVIDER: 'test',
+        PAYMENTS_WEBHOOK_SECRET: secret,
+      }),
+    /cannot run in production/,
+  );
+});
