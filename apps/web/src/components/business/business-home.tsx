@@ -211,7 +211,7 @@ export function BusinessHome() {
                   className="icon-line small-note"
                   href="/business/campaigns"
                   style={{
-                    color: 'var(--color-brand)',
+                    color: 'var(--color-brand-text)',
                     fontWeight: 550,
                     whiteSpace: 'nowrap',
                   }}

@@ -21,6 +21,9 @@ test('a business is created against the current terms, then sent to add funds', 
   );
   const bodies: unknown[] = [];
   await page.route('**/api/v1/sponsor/profile', (route) => {
+    // The sidebar also reads the profile; only creation requests count.
+    if (route.request().method() !== 'POST')
+      return route.fulfill({ status: 404, json: { statusCode: 404 } });
     bodies.push(route.request().postDataJSON());
     return route.fulfill({
       json: { id: '5b0f8d4e-1c2a-4e7a-9f3b-2d6c8a1e4f70', name: 'Mama Put' },

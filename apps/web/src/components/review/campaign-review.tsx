@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { z } from 'zod';
-import { Page } from '@/components/shell/app-shell';
+import { ReviewFrame } from './review-frame';
 import { Button } from '@/components/ui/button';
 import { Feedback, Loading } from '@/components/ui/feedback';
 import { WorkFailure } from '@/components/work/work-frame';
@@ -12,7 +12,6 @@ import { ReviewAccess } from '@/components/work/review-access';
 import { apiRequest, money, naira, newId, shortDate } from '@/lib/api';
 import { RequestError } from '@/lib/auth-client';
 import { useApiRead } from '@/lib/use-api-read';
-import { ReviewTabs } from './review-tabs';
 
 const date = z.iso.datetime({ offset: true });
 const pending = z.object({
@@ -79,12 +78,10 @@ export function CampaignQueue() {
   const params = useSearchParams();
   const read = useApiRead('admin/reviews/tasks?limit=50', queue);
   return (
-    <Page
-      eyebrow="Review"
+    <ReviewFrame
       title="Campaigns to review"
       intro="Nothing goes live until it passes here. Money is already locked for every item."
     >
-      <ReviewTabs />
       <div className="grid gap-4" style={{ marginTop: '1rem' }}>
         {params.get('decided') && <Feedback>Decision recorded.</Feedback>}
         {read.loading && !read.data ? (
@@ -122,7 +119,7 @@ export function CampaignQueue() {
           <p className="small-note">Nothing waiting for review.</p>
         )}
       </div>
-    </Page>
+    </ReviewFrame>
   );
 }
 
@@ -253,10 +250,10 @@ export function CampaignReview({ id }: { id: string }) {
   }
 
   return (
-    <Page eyebrow="Review" title={read.data?.title ?? 'Campaign review'}>
-      <Link className="text-link" href="/review/campaigns">
-        Back to the list
-      </Link>
+    <ReviewFrame
+      title={read.data?.title ?? 'Campaign review'}
+      section={{ label: 'Campaigns', href: '/review/campaigns' }}
+    >
       {read.loading && !read.data ? (
         <Loading>Loading campaign…</Loading>
       ) : read.error && accessError(read.error) ? (
@@ -343,6 +340,6 @@ export function CampaignReview({ id }: { id: string }) {
           </div>
         )
       )}
-    </Page>
+    </ReviewFrame>
   );
 }

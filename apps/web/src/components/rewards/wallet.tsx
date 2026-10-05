@@ -65,11 +65,6 @@ export function Wallet() {
     .filter((p) => p.state === 'pending' || p.state === 'releasable')
     .reduce((sum, p) => sum + BigInt(p.cashbackKobo), 0n);
   const data = summary.data;
-  const tier = data?.tier;
-  const progress =
-    tier?.next && tier.next.businesses > 0
-      ? Math.min(1, tier.businesses / tier.next.businesses)
-      : 1;
   return (
     <Page eyebrow="Wallet" title="Your money">
       {summary.loading && !data ? (
@@ -89,16 +84,16 @@ export function Wallet() {
               <div
                 className="card"
                 style={{
-                  background: 'var(--color-ink)',
-                  color: 'var(--color-surface)',
-                  borderColor: 'var(--color-ink)',
+                  background: 'var(--color-ink-fill)',
+                  color: 'var(--color-on-fill)',
+                  borderColor: 'var(--color-ink-fill)',
                 }}
               >
                 <p
                   className="eyebrow"
                   style={{
                     color:
-                      'color-mix(in srgb, var(--color-surface) 70%, transparent)',
+                      'color-mix(in srgb, var(--color-on-fill) 72%, transparent)',
                   }}
                 >
                   In your wallet
@@ -129,7 +124,7 @@ export function Wallet() {
                     className="small-note"
                     style={{
                       color:
-                        'color-mix(in srgb, var(--color-surface) 70%, transparent)',
+                        'color-mix(in srgb, var(--color-on-fill) 72%, transparent)',
                     }}
                   >
                     {data.phoneVerified ? (
@@ -271,65 +266,9 @@ export function Wallet() {
               <WithdrawalList items={withdrawals.data.items} />
             ) : null}
 
-            <section
-              className="grid gap-3"
-              style={{
-                gridTemplateColumns:
-                  'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
-              }}
-            >
-              <div className="card grid gap-2">
-                <p className="eyebrow">Points</p>
-                <p style={{ margin: 0 }}>
-                  <span className="amount" style={{ fontSize: '1.8rem' }}>
-                    {BigInt(data.points.available).toLocaleString('en-NG')}
-                  </span>{' '}
-                  <span className="small-note">available</span>
-                </p>
-                <p className="small-note num">
-                  {BigInt(data.points.pending).toLocaleString('en-NG')} pending
-                  · points are not cash
-                </p>
-              </div>
-              <div className="card grid gap-2">
-                <p className="eyebrow">Tier</p>
-                <p
-                  style={{
-                    margin: 0,
-                    fontFamily: 'var(--font-heading)',
-                    fontSize: '1.6rem',
-                    fontWeight: 700,
-                  }}
-                >
-                  {data.tier.name}
-                </p>
-                {data.tier.next ? (
-                  <>
-                    <div
-                      className="countdown-track"
-                      role="progressbar"
-                      aria-label={`Progress to ${data.tier.next.name}`}
-                      aria-valuemin={0}
-                      aria-valuemax={data.tier.next.businesses}
-                      aria-valuenow={data.tier.businesses}
-                    >
-                      <div
-                        className="countdown-fill"
-                        style={{ transform: `scaleX(${progress})` }}
-                      />
-                    </div>
-                    <p className="small-note num">
-                      {data.tier.businesses} of {data.tier.next.businesses}{' '}
-                      different businesses for {data.tier.next.name}
-                    </p>
-                  </>
-                ) : (
-                  <p className="small-note">Highest tier reached.</p>
-                )}
-              </div>
-            </section>
             <p className="small-note">
-              Won a prize code? <Link href="/claim">Claim it here</Link>.
+              Won a prize code? <Link href="/claim">Claim it here</Link>. Points
+              and your tier are on your <Link href="/profile">profile</Link>.
             </p>
           </div>
         )

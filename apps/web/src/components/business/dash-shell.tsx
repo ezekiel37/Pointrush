@@ -7,13 +7,19 @@ import {
   ArrowLeftRight,
   BriefcaseBusiness,
   CircleHelp,
+  ClipboardCheck,
+  CreditCard,
   LayoutGrid,
   Landmark,
+  Scale,
+  ShieldAlert,
   ScanLine,
   TicketCheck,
   UsersRound,
 } from 'lucide-react';
+import { z } from 'zod';
 import { Brand } from '@/components/auth/auth-frame';
+import { useApiRead } from '@/lib/use-api-read';
 import { NotificationBell } from '@/components/shell/notification-bell';
 
 const groups = [
@@ -40,7 +46,24 @@ const groups = [
     links: [{ href: '/help', label: 'Help', icon: CircleHelp }],
   },
 ];
-const flat = groups.flatMap((g) => g.links);
+// Reviewers get their own tools, not the shopper or business menus.
+const reviewGroups = [
+  {
+    title: 'Review',
+    links: [
+      { href: '/review/campaigns', label: 'Campaigns', icon: ClipboardCheck },
+      { href: '/review/appeals', label: 'Appeals', icon: Scale },
+    ],
+  },
+  {
+    title: 'Safety',
+    links: [
+      { href: '/review/accounts', label: 'Accounts', icon: ShieldAlert },
+      { href: '/review/payments', label: 'Payments', icon: CreditCard },
+    ],
+  },
+];
+const sponsorName = z.object({ name: z.string() });
 
 function isActive(pathname: string, href: string, exact?: boolean) {
   return exact
@@ -83,27 +106,38 @@ function LagosClock() {
 export function DashShell({
   crumbs,
   business,
+  variant = 'business',
   children,
 }: {
   crumbs: { label: string; href?: string }[];
   business?: string;
+  variant?: 'business' | 'review';
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  const review = variant === 'review';
+  const navGroups = review ? reviewGroups : groups;
+  const flat = navGroups.flatMap((g) => g.links);
+  // Pages that already loaded the business pass its name; others look it up.
+  const profile = useApiRead(
+    business || review ? null : 'sponsor/profile',
+    sponsorName,
+  );
+  const name = review ? 'Acticlaim review' : (business ?? profile.data?.name);
   return (
     <div className="dash">
       <aside className="dash-side">
         <Brand />
-        {business && (
+        {name && (
           <div className="dash-business">
             <strong style={{ color: 'var(--color-ink)', fontWeight: 600 }}>
-              {business}
+              {name}
             </strong>
-            Business account
+            {review ? 'Reviewer tools' : 'Business account'}
           </div>
         )}
-        <nav aria-label="Business" className="grid gap-5">
-          {groups.map((group) => (
+        <nav aria-label={review ? 'Review' : 'Business'} className="grid gap-5">
+          {navGroups.map((group) => (
             <div key={group.title} className="dash-group">
               <p>{group.title}</p>
               {group.links.map(({ href, label, icon: Icon, ...rest }) => (
@@ -152,7 +186,10 @@ export function DashShell({
             <NotificationBell />
           </div>
         </header>
-        <nav className="dash-tabs" aria-label="Business sections">
+        <nav
+          className="dash-tabs"
+          aria-label={review ? 'Review sections' : 'Business sections'}
+        >
           {flat.map(({ href, label, ...rest }) => (
             <Link
               key={href}
@@ -193,7 +230,7 @@ export function DashHead({
       }}
     >
       <div className="page-head" style={{ margin: 0 }}>
-        <h1 style={{ fontSize: 'clamp(1.6rem, 4vw, 2rem)' }}>{title}</h1>
+        <h1>{title}</h1>
         {intro && <p>{intro}</p>}
       </div>
       {actions}

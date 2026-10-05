@@ -6,6 +6,7 @@ import { sponsorTaskPage, appealQueue } from '@/lib/review-work';
 import { claimPage } from '@/lib/work';
 import { backingNaira, workDate } from '@/lib/work-format';
 import { WorkFrame, WorkFailure } from './work-frame';
+import { ReviewFrame } from '@/components/review/review-frame';
 import { Loading } from '@/components/ui/feedback';
 import { ReviewAccess } from './review-access';
 function Pages({
@@ -142,7 +143,10 @@ export function AppealQueue() {
   const { after, query } = usePageQuery();
   const read = useWorkRead(`appeals?${query}`, appealQueue);
   return (
-    <WorkFrame title="Pending appeals">
+    <ReviewFrame
+      title="Pending appeals"
+      intro="Independent second decisions on rejected work."
+    >
       <ReviewAccess />
       {read.loading ? (
         <Loading>Loading appeals…</Loading>
@@ -177,6 +181,6 @@ export function AppealQueue() {
           </>
         )
       )}
-    </WorkFrame>
+    </ReviewFrame>
   );
 }

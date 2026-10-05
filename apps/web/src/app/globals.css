@@ -23,6 +23,14 @@
   --color-brand-deep: #0b4d39;
   --color-brand-soft: #e8f3ee;
   --color-lime: #d4f25a;
+  /* Dark fills that carry white text (wallet card, selected pills, primary
+     buttons), and green as text. Separate so dark mode can tune them. */
+  --color-ink-fill: #0e1512;
+  --color-on-fill: #ffffff;
+  /* Text on lime is always dark, in either mode. */
+  --color-on-lime: #0e1512;
+  --color-brand-text: #0f6e50;
+  --color-brand-ink: #0b4d39;
   --color-primary: #0e1512;
   --color-primary-hover: #24302b;
   --color-primary-active: #000000;
@@ -57,6 +65,49 @@
   --tabbar-height: 4.25rem;
 }
 
+/* Dark mode: its own steps, chosen for contrast on dark surfaces rather than
+   an automatic inversion. Muted text stays above 4.5:1 on cards. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --color-canvas: #0c110f;
+    --color-surface: #151c19;
+    --color-sunken: #1b2420;
+    --color-ink: #edf2ef;
+    --color-ink-soft: #c9d3ce;
+    --color-muted: #9ba7a1;
+    --color-faint: #5c6863;
+    --color-border: #5c6863;
+    --color-line: #26302c;
+    --color-divider: #1f2925;
+    --color-brand: #128462;
+    --color-brand-hover: #16946e;
+    --color-brand-soft: #143128;
+    --color-brand-text: #5fd3a4;
+    --color-brand-ink: #a6ead0;
+    --color-ink-fill: #26322d;
+    --color-primary: #edf2ef;
+    --color-primary-hover: #ffffff;
+    --color-primary-active: #ffffff;
+    --color-mint: #143128;
+    --color-success: #5fd3a4;
+    --color-pending: #f0b65a;
+    --color-pending-surface: #3a2a10;
+    --color-info: #8fbaff;
+    --color-info-surface: #15253b;
+    --color-danger: #ff9a90;
+    --color-danger-surface: #3b1714;
+    --shadow-card:
+      0 1px 2px rgb(0 0 0 / 0.3), 0 10px 30px -14px rgb(0 0 0 / 0.6);
+    --shadow-float:
+      0 2px 4px rgb(0 0 0 / 0.3), 0 24px 48px -16px rgb(0 0 0 / 0.7);
+  }
+  /* Primary buttons become light with dark text. */
+  .button-primary {
+    color: #0c110f;
+  }
+}
+
 @layer base {
   * {
     box-sizing: border-box;
@@ -85,8 +136,12 @@
     margin: 0 0 0.75rem;
     text-wrap: balance;
   }
+  /* Page titles: clear but quiet. The landing hero sets its own size. */
   h1 {
-    font-size: clamp(1.9rem, 5vw, 2.6rem);
+    font-size: clamp(1.4rem, 3.4vw, 1.75rem);
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
   }
   h2 {
     font-size: 1.3rem;
@@ -122,7 +177,7 @@
   }
   ::selection {
     background: var(--color-lime);
-    color: var(--color-ink);
+    color: var(--color-on-lime);
   }
   /* Tabular figures only where numbers align in columns. */
   .num,
@@ -154,7 +209,7 @@
     left: 1rem;
     top: -10rem;
     padding: 0.75rem 1rem;
-    background: var(--color-ink);
+    background: var(--color-ink-fill);
     color: var(--color-surface);
     z-index: 50;
     border-radius: 999px;
@@ -208,14 +263,14 @@
   }
   .button-primary {
     background: var(--color-primary);
-    color: #ffffff;
+    color: var(--color-on-fill);
   }
   .button-primary:hover:not(:disabled) {
     background: var(--color-primary-hover);
   }
   .button-accent {
     background: var(--color-brand);
-    color: #ffffff;
+    color: var(--color-on-fill);
     box-shadow: 0 6px 16px -8px rgb(15 110 80 / 0.7);
   }
   .button-accent:hover:not(:disabled) {
@@ -224,7 +279,7 @@
   /* The one action on the dark wallet card. */
   .button-lime {
     background: var(--color-lime);
-    color: var(--color-ink);
+    color: var(--color-on-lime);
   }
   .button-lime:hover:not(:disabled) {
     background: color-mix(in srgb, var(--color-lime) 85%, #ffffff);
@@ -391,7 +446,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--color-brand);
+    color: var(--color-brand-text);
     margin: 0 0 0.5rem;
   }
 
@@ -434,7 +489,7 @@
     background: var(--color-danger-surface);
   }
   .chip-tier {
-    color: var(--color-ink);
+    color: var(--color-on-lime);
     background: var(--color-lime);
   }
   .chip-tier::before {
@@ -501,9 +556,9 @@
     transform: translateY(-2px);
   }
   .card-dark {
-    background: var(--color-ink);
-    color: #ffffff;
-    border-color: var(--color-ink);
+    background: var(--color-ink-fill);
+    color: var(--color-on-fill);
+    border-color: var(--color-ink-fill);
   }
   .card-dark .eyebrow {
     color: var(--color-lime);
@@ -565,8 +620,8 @@
     color: var(--color-ink);
   }
   .app-nav a[aria-current='page'] {
-    color: #ffffff;
-    background: var(--color-ink);
+    color: var(--color-on-fill);
+    background: var(--color-ink-fill);
   }
   .tabbar {
     display: none;
@@ -657,7 +712,7 @@
   }
   .dash-group a[aria-current='page'] {
     background: var(--color-brand-soft);
-    color: var(--color-brand);
+    color: var(--color-brand-text);
     font-weight: 550;
   }
   .dash-foot {
@@ -730,8 +785,8 @@
     color: var(--color-muted);
   }
   .segmented button[aria-pressed='true'] {
-    background: var(--color-ink);
-    color: #ffffff;
+    background: var(--color-ink-fill);
+    color: var(--color-on-fill);
   }
 
   /* Charts (dataviz specs: 2px line, 10% wash, hairline grid). */
@@ -918,7 +973,7 @@
     place-items: center;
     border-radius: 0.75rem;
     background: var(--color-brand-soft);
-    color: var(--color-brand);
+    color: var(--color-brand-text);
     flex-shrink: 0;
   }
   .truncate {
@@ -988,7 +1043,7 @@
       var(--color-brand),
       var(--color-brand-deep)
     );
-    color: #ffffff;
+    color: var(--color-on-fill);
     padding: 1.1rem 1.3rem;
   }
   .ticket-head .eyebrow {
@@ -1119,7 +1174,7 @@
     padding: 0.15rem 0.55rem;
     border-radius: 999px;
     background: var(--color-brand);
-    color: #ffffff;
+    color: var(--color-on-fill);
     font-weight: 550;
   }
   .lp-stage {
@@ -1398,7 +1453,7 @@
     padding: 0 5px;
     border-radius: 999px;
     background: var(--color-brand);
-    color: #ffffff;
+    color: var(--color-on-fill);
     font-size: 0.7rem;
     font-weight: 650;
     line-height: 19px;
@@ -1430,7 +1485,7 @@
   }
   .notice-unread .notice-icon {
     background: var(--color-brand-soft);
-    color: var(--color-brand-deep);
+    color: var(--color-brand-ink);
   }
   .notice-dot {
     position: absolute;
@@ -1468,9 +1523,9 @@
     text-decoration: none;
   }
   .pill-tabs a[aria-current='page'] {
-    background: var(--color-ink);
-    border-color: var(--color-ink);
-    color: #ffffff;
+    background: var(--color-ink-fill);
+    border-color: var(--color-ink-fill);
+    color: var(--color-on-fill);
   }
   .mono {
     font-family: var(--font-mono);
@@ -1531,7 +1586,7 @@
     height: 30px;
     border-radius: 999px;
     background: var(--color-brand-soft);
-    color: var(--color-brand-deep);
+    color: var(--color-brand-ink);
     font-size: 0.85rem;
     font-weight: 650;
   }
@@ -1559,8 +1614,8 @@
     margin: clamp(3.5rem, 9vw, 6rem) 0 1rem;
     padding: clamp(1.75rem, 5vw, 3.5rem);
     border-radius: 1.75rem;
-    background: var(--color-ink);
-    color: #ffffff;
+    background: var(--color-ink-fill);
+    color: var(--color-on-fill);
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
     gap: 2rem;
@@ -1587,7 +1642,7 @@
   }
   .band .button-outline {
     background: transparent;
-    color: #ffffff;
+    color: var(--color-on-fill);
     border-color: rgb(255 255 255 / 0.35);
   }
   .band-cards {
@@ -1616,7 +1671,7 @@
     aspect-ratio: 1.6;
     padding: 1.2rem 1.3rem;
     border-radius: 1.1rem;
-    color: #ffffff;
+    color: var(--color-on-fill);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -1668,14 +1723,14 @@
         var(--color-brand-deep) 60%,
         #072e22 100%
       );
-    color: #ffffff;
+    color: var(--color-on-fill);
     padding: 2.5rem clamp(2rem, 5vw, 4.5rem);
     display: flex;
     flex-direction: column;
   }
   .auth-story .brand-mark {
     background: var(--color-lime);
-    color: var(--color-brand-deep);
+    color: var(--color-on-lime);
   }
   .auth-story :focus-visible {
     outline-color: var(--color-lime);
@@ -1734,7 +1789,7 @@
   }
   .journey li[aria-current='step'] > span {
     background: var(--color-lime);
-    color: var(--color-ink);
+    color: var(--color-on-lime);
     border-color: var(--color-lime);
   }
   .story-footer {
@@ -2031,9 +2086,9 @@
     border: 1px solid var(--color-line);
   }
   .dash-tabs a[aria-current='page'] {
-    background: var(--color-ink);
-    border-color: var(--color-ink);
-    color: #ffffff;
+    background: var(--color-ink-fill);
+    border-color: var(--color-ink-fill);
+    color: var(--color-on-fill);
   }
   .dash-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -2073,7 +2128,7 @@
     color: var(--color-muted);
   }
   .tabbar a[aria-current='page'] {
-    color: var(--color-brand);
+    color: var(--color-brand-text);
   }
   .tabbar a[aria-current='page'] svg {
     background: var(--color-brand-soft);

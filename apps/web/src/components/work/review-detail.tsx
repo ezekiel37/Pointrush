@@ -4,6 +4,7 @@ import { claimView } from '@/lib/claim';
 import { appealView, sponsorOptions, approve, uphold } from '@/lib/review-work';
 import { useWorkRead } from '@/lib/use-work-read';
 import { WorkFrame, WorkFailure } from './work-frame';
+import { ReviewFrame } from '@/components/review/review-frame';
 import { Feedback, Loading } from '@/components/ui/feedback';
 import { Button } from '@/components/ui/button';
 import { ProofHistory } from './proof-history';
@@ -83,7 +84,10 @@ export function AppealReview({ id }: { id: string }) {
   const path =
     read.data && !read.data.resolution ? `appeals/${id}/resolutions` : null;
   return (
-    <WorkFrame title={read.data?.task.title ?? 'Review appeal'}>
+    <ReviewFrame
+      title={read.data?.task.title ?? 'Review appeal'}
+      section={{ label: 'Appeals', href: '/review/appeals' }}
+    >
       <Link className="text-link" href="/review/appeals">
         Back to pending appeals
       </Link>
@@ -129,6 +133,6 @@ export function AppealReview({ id }: { id: string }) {
         options={[approve, uphold]}
         onSaved={read.refresh}
       />
-    </WorkFrame>
+    </ReviewFrame>
   );
 }

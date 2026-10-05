@@ -9,6 +9,7 @@ import { WorkFailure } from '@/components/work/work-frame';
 import { apiRequest } from '@/lib/api';
 import { ownProfile, pointsSummary } from '@/lib/rewards';
 import { useApiRead } from '@/lib/use-api-read';
+import { PointsAndTier } from './points-tier';
 import { ProfileCard } from './profile-card';
 
 export function MyProfile() {
@@ -113,6 +114,8 @@ export function MyProfile() {
             </section>
 
             <ProfileCard data={data} />
+
+            {points.data && <PointsAndTier data={points.data} />}
 
             {points.data?.referral.code && (
               <section className="card grid gap-2">

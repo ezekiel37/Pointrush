@@ -150,7 +150,7 @@ export function VerifyPhone() {
               <BadgeCheck
                 size={20}
                 aria-hidden
-                style={{ color: 'var(--color-brand)' }}
+                style={{ color: 'var(--color-brand-text)' }}
               />
               {phone} is verified
             </p>

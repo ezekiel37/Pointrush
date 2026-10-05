@@ -8,7 +8,6 @@ import {
   Lock,
   Scissors,
   ScanLine,
-  ShieldCheck,
   Store,
   TicketCheck,
   UtensilsCrossed,
@@ -138,9 +137,9 @@ export default function Home() {
               <h2 id="earn-heading">Real money for real activity.</h2>
             </div>
             <p>
-              No tapping, no betting, no follow-for-follow. You earn when a
-              business confirms something real happened: a purchase, a winning
-              code or finished work.
+              No tapping, no betting, no follow-for-follow. The business locks
+              the money first; you earn once it confirms something real
+              happened: a purchase, a winning code or finished work.
             </p>
           </div>
           <ul className="features">
@@ -260,36 +259,6 @@ export default function Home() {
           </ul>
         </section>
 
-        <section className="lp-section" aria-labelledby="how-heading">
-          <div className="lp-center">
-            <p className="eyebrow">How it works</p>
-            <h2 id="how-heading">Locked first. Verified once. Paid once.</h2>
-          </div>
-          <ol className="steps">
-            <li className="card">
-              <h3>A business locks the money</h3>
-              <p className="small-note">
-                Before an offer, promotion or job goes live, the full amount is
-                set aside and our reviewers check it.
-              </p>
-            </li>
-            <li className="card">
-              <h3>You buy, scratch or work</h3>
-              <p className="small-note">
-                Show your code at the till, enter a winning code, or deliver the
-                work you agreed to.
-              </p>
-            </li>
-            <li className="card">
-              <h3>It is confirmed one time</h3>
-              <p className="small-note">
-                Each purchase, code and job counts once. Then the money moves to
-                your wallet.
-              </p>
-            </li>
-          </ol>
-        </section>
-
         <section className="lp-section" aria-labelledby="business-heading">
           <div className="lp-split">
             <div>
@@ -328,34 +297,6 @@ export default function Home() {
               <p className="small-note">
                 Customers trust offers they know are funded.
               </p>
-            </article>
-            <article className="card narrow grid gap-2">
-              <ShieldCheck size={22} aria-hidden />
-              <h3 style={{ margin: 0 }}>Codes nobody can guess</h3>
-              <p className="small-note">
-                Prize codes have 16 random characters, work once, and lock out
-                repeated guessing.
-              </p>
-              <span
-                className="num"
-                style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}
-              >
-                AC-7K4M-9X2Q-PRDH-3VBN
-              </span>
-            </article>
-            <article className="card wide grid gap-3">
-              <h3 style={{ margin: 0 }}>Refunds handled, fraud blocked</h3>
-              <p className="small-note">
-                Cash back waits through your refund window and can be voided
-                with a reason. Codes expire in 15 minutes and work once per
-                shopper, so a photo of a code is worthless.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <span className="chip chip-pending">Held</span>
-                <span className="chip chip-ready">Ready</span>
-                <span className="chip chip-done">Paid</span>
-                <span className="chip chip-muted">Voided</span>
-              </div>
             </article>
           </div>
         </section>

@@ -89,7 +89,7 @@ export function BankAccount({
           <Landmark
             size={20}
             aria-hidden
-            style={{ color: 'var(--color-brand)' }}
+            style={{ color: 'var(--color-brand-text)' }}
           />
           <div style={{ minWidth: 0 }}>
             <p className="truncate" style={{ margin: 0, fontWeight: 600 }}>

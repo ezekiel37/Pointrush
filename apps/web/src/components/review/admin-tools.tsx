@@ -2,7 +2,7 @@
 import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { z } from 'zod';
-import { Page } from '@/components/shell/app-shell';
+import { ReviewFrame } from './review-frame';
 import { Button } from '@/components/ui/button';
 import { Feedback, Loading } from '@/components/ui/feedback';
 import { Field } from '@/components/ui/field';
@@ -11,7 +11,6 @@ import { ReviewAccess } from '@/components/work/review-access';
 import { apiRequest, money, naira, newId, shortDate } from '@/lib/api';
 import { RequestError } from '@/lib/auth-client';
 import { useApiRead } from '@/lib/use-api-read';
-import { ReviewTabs } from './review-tabs';
 
 const date = z.iso.datetime({ offset: true });
 const account = z.object({
@@ -125,12 +124,10 @@ export function AccountTools() {
   }
 
   return (
-    <Page
-      eyebrow="Review"
+    <ReviewFrame
       title="Accounts"
       intro="Freeze an account while you investigate abuse. A frozen account cannot earn, claim, buy or withdraw. Every change is recorded."
     >
-      <ReviewTabs />
       <div className="grid gap-4" style={{ maxWidth: 640, marginTop: '1rem' }}>
         {needsAccess && <ReviewAccess />}
         <form className="card grid gap-3" onSubmit={find} noValidate>
@@ -227,7 +224,7 @@ export function AccountTools() {
           </section>
         )}
       </div>
-    </Page>
+    </ReviewFrame>
   );
 }
 
@@ -264,12 +261,10 @@ export function PaymentReviews() {
   }
 
   return (
-    <Page
-      eyebrow="Review"
+    <ReviewFrame
       title="Flagged payments"
       intro="Verified provider events that credited nothing because they did not match. Fix them with the provider, then record what you did. Notes never move money."
     >
-      <ReviewTabs />
       <div className="grid gap-4" style={{ maxWidth: 720, marginTop: '1rem' }}>
         {error && <Feedback error>{error}</Feedback>}
         {read.loading && !read.data ? (
@@ -337,6 +332,6 @@ export function PaymentReviews() {
           <p className="small-note">No flagged payments.</p>
         )}
       </div>
-    </Page>
+    </ReviewFrame>
   );
 }

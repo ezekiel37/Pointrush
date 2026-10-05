@@ -64,3 +64,10 @@ Shoppers: `AppShell` with a pill navigation bar on wide screens and a bottom tab
 ## Task journey continuation
 
 Task discovery, detail and My tasks extend the account shell using the same light palette, document scrolling, Manrope headings, shared controls and persistent Feedback states. Briefs use plain wrapped text; capacity, deadlines and conditional reward value are visible before joining. Search and paging live in the URL. No new component library, celebratory earning animation, cash balance or identity badge is introduced. Shared owners and verification cases are recorded in UX-CONTRACT.md.
+
+## Round 2 (October 2026)
+
+- Page titles are quieter: 1.4–1.75rem, weight 600. Only the landing hero stays large.
+- Dark mode follows the device setting with its own palette (not an inversion). Fills that carry white text use `--color-ink-fill`; green text uses `--color-brand-text`; text on lime uses `--color-on-lime`. QR codes stay black on white for scanning. A browser test runs the accessibility check in dark mode.
+- Reviewers use the dashboard layout with their own sidebar (Campaigns, Appeals, Accounts, Payments).
+- Points and tier live on the profile; the wallet is only money.

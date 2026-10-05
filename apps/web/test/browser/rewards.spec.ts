@@ -771,3 +771,18 @@ test('a bank account is checked with the bank before withdrawals go to it', asyn
     accountNumber: '0123456789',
   });
 });
+
+test('dark mode keeps every text colour readable', async ({ page }) => {
+  await phone(page);
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.route('**/api/v1/work/tasks?*', (route) =>
+    route.fulfill({ json: { items: [offer], nextCursor: null } }),
+  );
+  await page.goto('/');
+  await healthy(page);
+  await page.goto('/offers');
+  await expect(page.getByText('62 left')).toBeVisible();
+  await healthy(page);
+  await page.goto('/claim');
+  await healthy(page);
+});
