@@ -4,21 +4,21 @@ Migration 0017. A business runs a promotion in the physical world (for example, 
 
 ## Flow and routes
 
-| Route                                       | Who      | Behaviour                                                                                                                                                                              |
-| ------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| POST `/api/v1/sponsor/tasks`                | Business | `model: "claim_code"`, `capacity` = number of prizes, `rewardKobo` = cash prize, `promotionTerms {mode, permit, claimLimitPerPerson 1–20, howToGetCodes}`. Locks prizes × prize value. |
-| POST `/api/v1/promotions/:id/batches`       | Business | `{id, label, size ≤ 5000}`. Returns the codes (`AC-XXXX-XXXX-XXXX-XXXX`) **once** for printing. Allowed after platform approval, before the end date.                                  |
-| POST `/api/v1/code-batches/:id/activations` | Business | Codes become claimable once papers are distributed. Requires publication.                                                                                                              |
-| POST `/api/v1/code-batches/:id/revocations` | Business | `{reason}`. Withdraws a lost or stolen batch; its unclaimed prizes can be reissued.                                                                                                    |
-| GET `/api/v1/promotions/:id/summary`        | Business | Prizes, issued, claimed, available to issue, batches with state.                                                                                                                       |
-| POST `/api/v1/claims`                       | Customer | `{id, code}`. Case, spaces, dashes and the `AC` prefix are ignored. Idempotent on `id`.                                                                                                |
-| GET `/api/v1/claims`                        | Customer | Own claimed prizes.                                                                                                                                                                    |
+| Route                                       | Who      | Behaviour                                                                                                                                                                                                       |
+| ------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST `/api/v1/sponsor/tasks`                | Business | `model: "claim_code"`, `capacity` = number of prizes, `rewardKobo` = cash prize, `promotionTerms {mode: "every_code_wins", permit: null, claimLimitPerPerson 1–20, howToGetCodes}`. Locks prizes × prize value. |
+| POST `/api/v1/promotions/:id/batches`       | Business | `{id, label, size ≤ 5000}`. Returns the codes (`AC-XXXX-XXXX-XXXX-XXXX`) **once** for printing. Allowed after platform approval, before the end date.                                                           |
+| POST `/api/v1/code-batches/:id/activations` | Business | Codes become claimable once papers are distributed. Requires publication.                                                                                                                                       |
+| POST `/api/v1/code-batches/:id/revocations` | Business | `{reason}`. Withdraws a lost or stolen batch; its unclaimed prizes can be reissued.                                                                                                                             |
+| GET `/api/v1/promotions/:id/summary`        | Business | Prizes, issued, claimed, available to issue, batches with state.                                                                                                                                                |
+| POST `/api/v1/claims`                       | Customer | `{id, code}`. Case, spaces, dashes and the `AC` prefix are ignored. Idempotent on `id`.                                                                                                                         |
+| GET `/api/v1/claims`                        | Customer | Own claimed prizes.                                                                                                                                                                                             |
 
 Reasons: `claim_rejected` (unknown, inactive, withdrawn and used codes are deliberately indistinguishable), `claim_limit`, `claim_rate_limit`, `phone_required`, `batch_already_issued`, `codes_exceed_prizes`, `batch_unavailable`.
 
 ## Legal position
 
-A prize won by chance after a purchase is a promotional lottery under state law. Since the Supreme Court judgment of 22 November 2024, states (for example the Lagos State Lotteries and Gaming Authority) license these; the business running the promotion holds the permit. `mode: "chance"` requires a permit authority and number, which platform reviewers check before approval. `mode: "every_code_wins"` (one code per pack, every code pays) involves no chance and needs no permit field. A Nigerian gaming lawyer must confirm Acticlaim's own position before the first live chance-based promotion.
+Acticlaim runs no draws or games of chance: every code created on Acticlaim is funded and wins its prize, and only `mode: "every_code_wins"` is accepted. If a business also hands out papers without codes, that is its own offline promotion, and any state permit it needs is the business's responsibility. Reviewers reject promotion text on Acticlaim that says only some codes win. (Payment providers, Bachs included, prohibit games of chance.) Older chance-mode promotions stay readable.
 
 ## Database-enforced rules
 
@@ -31,7 +31,7 @@ A prize won by chance after a purchase is a promotional lottery under state law.
 
 ## Verification
 
-PGlite tests cover permit rules, one-time code display, capacity, idempotent retries, activation, owner and phone checks, per-person limits, revocation and reissue, guessing lockout, late code insertion, empty batches, forged prize transfers, immutable history and the no-points rule. A native PostgreSQL test proves two simultaneous claims of one code pay exactly one person.
+PGlite tests cover the every-code-wins rule, one-time code display, capacity, idempotent retries, activation, owner and phone checks, per-person limits, revocation and reissue, guessing lockout, late code insertion, empty batches, forged prize transfers, immutable history and the no-points rule. A native PostgreSQL test proves two simultaneous claims of one code pay exactly one person.
 
 ## Known limits
 

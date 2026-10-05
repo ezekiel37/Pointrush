@@ -39,7 +39,7 @@ The business sees confirmations, voids, releases and the share of shoppers who c
 
 ## Claim-code prize promotions
 
-A business runs its own promotion (scratch papers, codes under caps, one code per pack) and locks the prize money with Acticlaim. Acticlaim generates the codes, verifies each claim once and pays the prize. Chance-based promotions need the business's state permit, checked in review. Prize claims never earn points or tier credit. See PROMOTIONS.md.
+A business runs its own promotion (scratch papers, codes under caps, one code per pack) and locks the prize money with Acticlaim. Acticlaim generates the codes, verifies each claim once and pays the prize. Every code created on Acticlaim is funded and wins; Acticlaim runs no games of chance. Prize claims never earn points or tier credit. See PROMOTIONS.md.
 
 ## Points, referrals and tiers
 
