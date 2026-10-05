@@ -57,7 +57,7 @@ Root directory `apps/web`. Changing any of these needs a rebuild.
 
 ## 5. Before inviting anyone
 
-1. Run the database setup, then appoint the first reviewers (`npm run reviewers:provision`, see TASK_REVIEW.md) and turn on their authenticator app.
+1. Run the database setup, then appoint the first reviewers (`npm run reviewers:provision`, see ADMIN_ACCESS_PLAN.md) and turn on their authenticator app.
 2. Daily database backup, and one test restore.
 3. End-to-end run on the real site: sign up, verify email and phone, fund a campaign through Bachs sandbox, confirm a purchase at the till, release cash back, withdraw, claim a prize code, void and dispute.
 4. Cloudflare rate limits on `api.acticlaim.com` (SECURITY_REVIEW.md, M6).
