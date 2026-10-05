@@ -42,7 +42,7 @@ export class AppModule {
         ReviewsModule,
         TaskWorkModule,
         CampaignsModule,
-        PaymentsModule.forRoot(payments),
+        PaymentsModule.forRoot(payments, auth),
         PhoneModule.forRoot(sms?.provider, sms?.config),
       );
     if (auth) {

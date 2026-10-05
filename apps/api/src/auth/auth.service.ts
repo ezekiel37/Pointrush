@@ -32,4 +32,21 @@ export class AuthService {
   ): ReturnType<PointRushAuth['api']['getSession']> {
     return this.auth.api.getSession({ headers: fromNodeHeaders(headers) });
   }
+
+  // Re-checks the signed-in person's password before a sensitive action, so a
+  // stolen session alone cannot move money.
+  async verifyPassword(
+    headers: IncomingMessage['headers'],
+    password: string,
+  ): Promise<boolean> {
+    try {
+      const result = await this.auth.api.verifyPassword({
+        headers: fromNodeHeaders(headers),
+        body: { password },
+      });
+      return result.status === true;
+    } catch {
+      return false;
+    }
+  }
 }

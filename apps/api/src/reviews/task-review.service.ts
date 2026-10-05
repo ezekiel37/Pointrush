@@ -10,7 +10,14 @@ import { z } from 'zod';
 import { accounts } from '../database/schema.js';
 import { sponsorProfiles, sponsorTasks } from '../sponsors/sponsor.schema.js';
 import type { FundingDatabase } from '../funding/funding-ledger.js';
-import { taskReviewerGrants, taskReviews } from './task-review.schema.js';
+import {
+  campaignFirstApprovals,
+  taskReviewerGrants,
+  taskReviews,
+} from './task-review.schema.js';
+
+// Campaigns locking ₦1,000,000 or more need two different reviewers.
+export const largeCampaignKobo = 100000000n;
 
 const inputSchema = z
   .object({
@@ -192,6 +199,37 @@ export class TaskReviewService {
         throw new ConflictException(
           'Task review is stale; reload the current terms',
         );
+      // Large campaigns need two different reviewers. The first approval is
+      // recorded on its own and the campaign stays in review.
+      if (
+        value.decision === 'approved' &&
+        task.budgetKobo >= largeCampaignKobo
+      ) {
+        const [first] = await tx
+          .select()
+          .from(campaignFirstApprovals)
+          .where(
+            and(
+              eq(campaignFirstApprovals.taskId, task.id),
+              eq(campaignFirstApprovals.termsVersion, value.termsVersion),
+            ),
+          );
+        if (!first) {
+          await tx.insert(campaignFirstApprovals).values({
+            taskId: task.id,
+            termsVersion: value.termsVersion,
+            reviewerId,
+            reason: value.reason,
+          });
+          return { awaitingSecondReviewer: true as const, taskId: task.id };
+        }
+        if (first.reviewerId === reviewerId)
+          throw new ConflictException({
+            statusCode: 409,
+            message: 'A different reviewer must give the second approval',
+            reason: 'second_reviewer_required',
+          });
+      }
       const [review] = await tx
         .insert(taskReviews)
         .values({ ...value, reviewerId, grantId: grant.id, requestHash })
@@ -223,6 +261,9 @@ const reviewFields = {
   termsVersion: sponsorTasks.termsVersion,
   termsHash: sponsorTasks.requestHash,
   reviewState: sponsorTasks.reviewState,
+  firstApprovedBy: sql<
+    string | null
+  >`(select f.reviewer_id::text from campaign_first_approvals f where f.task_id = ${sponsorTasks.id} and f.terms_version = ${sponsorTasks.termsVersion})`,
 };
 function reviewResult<T extends { rewardKobo: bigint; budgetKobo: bigint }>(
   row: T,

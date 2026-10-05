@@ -183,6 +183,13 @@
       "when": 1791196268610,
       "tag": "0025_payout_destinations",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1791212771096,
+      "tag": "0026_security_hardening",
+      "breakpoints": true
     }
   ]
 }

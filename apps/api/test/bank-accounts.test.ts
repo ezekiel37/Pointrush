@@ -4,6 +4,9 @@ import { after, afterEach, test } from 'node:test';
 import { sql } from 'drizzle-orm';
 import * as s from '../src/database/schema.js';
 import { CampaignsService } from '../src/campaigns/campaigns.service.js';
+import { AdminService } from '../src/admin/admin.service.js';
+import { MemorySecurityAlerts } from '../src/auth/security-alerts.js';
+import { NotificationsService } from '../src/notifications/notifications.service.js';
 import { PaymentsService } from '../src/payments/payments.service.js';
 import {
   ProviderError,
@@ -60,13 +63,14 @@ async function earn(person: Identity, cashback: string) {
     await travel('0');
   }
 }
-const withdraw = (person: Identity, amountKobo = '50000') =>
+const withdraw = (person: Identity, amountKobo = '100000') =>
   payments.requestWithdrawal(person.user, { id: randomUUID(), amountKobo });
 
 test('a bank account is checked by the provider and shown only masked', async () => {
   const person = await earner();
   assert.deepEqual(await payments.destination(person.user), {
     destination: null,
+    locked: false,
   });
   assert.equal(
     await reason(
@@ -156,7 +160,7 @@ test('the payout job sends once, returns money on a refusal and keeps it on an o
       bankCode: '058',
       accountNumber: '0123456789',
     });
-  const first = await withdraw(a, '60000');
+  const first = await withdraw(a, '120000');
 
   // Provider outage: nothing is lost, the money stays held for the next run.
   provider.failPayouts = new ProviderError('HTTP_503', false);
@@ -180,7 +184,7 @@ test('the payout job sends once, returns money on a refusal and keeps it on an o
   );
 
   // A permanent refusal ends the withdrawal and returns the money.
-  const refused = await withdraw(b, '70000');
+  const refused = await withdraw(b, '140000');
   provider.failPayouts = new ProviderError('DESTINATION_REJECTED', true);
   await payments.submitPendingWithdrawals();
   const state = (await payments.withdrawalList(b.user)).items.find(
@@ -188,4 +192,69 @@ test('the payout job sends once, returns money on a refusal and keeps it on an o
   );
   assert.equal(state?.state, 'failed');
   void c;
+});
+
+test('a new bank account alerts the owner, and "this wasn\'t me" stops withdrawals until a reviewer checks', async () => {
+  const alerts = new MemorySecurityAlerts();
+  const guarded = new PaymentsService(db, provider, alerts);
+  const person = await earner('300000');
+  await guarded.addDestination(person.user, {
+    bankCode: '058',
+    accountNumber: '5555555555',
+  });
+  assert.deepEqual(
+    alerts.sent.map((a) => [a.accountId, a.subject]),
+    [[person.account, 'A bank account was added to your Acticlaim wallet']],
+  );
+  assert.ok(!alerts.sent[0]!.text.includes('5555555555'));
+  // A withdrawal waiting to be sent is stopped and the money comes back.
+  const queued = await withdraw(person, '200000');
+  assert.deepEqual(await guarded.lockWithdrawals(person.user), {
+    locked: true,
+  });
+  assert.equal(
+    (await guarded.withdrawalList(person.user)).items.find(
+      (w) => w.id === queued.id,
+    )?.state,
+    'failed',
+  );
+  await guarded.submitPendingWithdrawals();
+  assert.equal(
+    provider.payouts.filter((p) => p.withdrawalId === queued.id).length,
+    0,
+  );
+  assert.equal((await guarded.destination(person.user)).locked, true);
+  assert.equal(await reason(withdraw(person)), 'withdrawals_locked');
+  assert.equal(alerts.sent.length, 2);
+  const inbox = await new NotificationsService(db).list(person.user);
+  const titles = inbox.items.map((n) => n.title);
+  assert.ok(titles.includes('Withdrawals locked'));
+  assert.match(
+    inbox.items.find((n) => n.title === 'Bank account added')!.body,
+    /Guaranty Trust Bank ending 5555/,
+  );
+  // Locking twice is harmless.
+  await guarded.lockWithdrawals(person.user);
+
+  // Only a reviewer other than the owner can unlock.
+  const admin = new AdminService(db);
+  assert.equal(
+    await reason(admin.unlockWithdrawals(person.user, person.account)),
+    403,
+  );
+  const reviewer = await identity();
+  await db.insert(s.taskReviewerGrants).values({
+    reviewerId: reviewer.account,
+    grantedBy: reviewer.account,
+    reason: 'Unlock test',
+    expiresAt: new Date(Date.now() + 3600000),
+  });
+  assert.equal(
+    (await admin.unlockWithdrawals(reviewer.user, person.account))
+      .withdrawalsLocked,
+    false,
+  );
+  assert.equal((await withdraw(person)).state, 'held');
+  await assert.rejects(db.execute(sql`delete from withdrawal_locks`));
+  await assert.rejects(db.execute(sql`delete from withdrawal_unlocks`));
 });

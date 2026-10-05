@@ -279,7 +279,7 @@ test('withdrawals hold money at once, pay out once and return on failure', async
     await reason(
       payments.requestWithdrawal(unverified.user, {
         id: randomUUID(),
-        amountKobo: '50000',
+        amountKobo: '100000',
       }),
     ),
     'destination_required',
@@ -288,20 +288,20 @@ test('withdrawals hold money at once, pay out once and return on failure', async
     bankCode: '058',
     accountNumber: '0123456789',
   });
-  await earn(unverified, '80000');
+  await earn(unverified, '160000');
   assert.equal(
     await reason(
       payments.requestWithdrawal(unverified.user, {
         id: randomUUID(),
-        amountKobo: '50000',
+        amountKobo: '100000',
       }),
     ),
     'withdrawal_unavailable',
   );
 
   const person = await verifiedPerson();
-  await earn(person, '200000');
-  assert.equal(await balance(person.account, 'reward_wallet'), 200000n);
+  await earn(person, '400000');
+  assert.equal(await balance(person.account, 'reward_wallet'), 400000n);
   await assert.rejects(
     payments.requestWithdrawal(person.user, {
       id: randomUUID(),
@@ -313,12 +313,12 @@ test('withdrawals hold money at once, pay out once and return on failure', async
     await reason(
       payments.requestWithdrawal(person.user, {
         id: randomUUID(),
-        amountKobo: '300000',
+        amountKobo: '600000',
       }),
     ),
     'insufficient_balance',
   );
-  const first = { id: randomUUID(), amountKobo: '120000' };
+  const first = { id: randomUUID(), amountKobo: '240000' };
   assert.equal(
     (await payments.requestWithdrawal(person.user, first)).state,
     'held',
@@ -327,19 +327,19 @@ test('withdrawals hold money at once, pay out once and return on failure', async
     (await payments.requestWithdrawal(person.user, first)).id,
     first.id,
   );
-  assert.equal(await balance(person.account, 'reward_wallet'), 80000n);
-  assert.equal(await balance(person.account, 'payout_hold'), 120000n);
+  assert.equal(await balance(person.account, 'reward_wallet'), 160000n);
+  assert.equal(await balance(person.account, 'payout_hold'), 240000n);
   // The held money cannot be withdrawn again.
   assert.equal(
     await reason(
       payments.requestWithdrawal(person.user, {
         id: randomUUID(),
-        amountKobo: '100000',
+        amountKobo: '200000',
       }),
     ),
     'insufficient_balance',
   );
-  const second = { id: randomUUID(), amountKobo: '50000' };
+  const second = { id: randomUUID(), amountKobo: '100000' };
   await payments.requestWithdrawal(person.user, second);
 
   assert.equal(
@@ -367,7 +367,7 @@ test('withdrawals hold money at once, pay out once and return on failure', async
       await deliver({
         id: 'po_2',
         type: 'payout.succeeded',
-        data: { reference: first.id, amount: '1200.00' },
+        data: { reference: first.id, amount: '2400.00' },
       })
     ).outcome,
     'payout_paid',
@@ -377,7 +377,7 @@ test('withdrawals hold money at once, pay out once and return on failure', async
       await deliver({
         id: 'po_3',
         type: 'payout.failed',
-        data: { reference: second.id, amount: '500.00' },
+        data: { reference: second.id, amount: '1000.00' },
       })
     ).outcome,
     'payout_failed',
@@ -388,7 +388,7 @@ test('withdrawals hold money at once, pay out once and return on failure', async
       await deliver({
         id: 'po_4',
         type: 'payout.failed',
-        data: { reference: first.id, amount: '1200.00' },
+        data: { reference: first.id, amount: '2400.00' },
       })
     ).outcome,
     'mismatch',
@@ -398,13 +398,13 @@ test('withdrawals hold money at once, pay out once and return on failure', async
       await deliver({
         id: 'po_5',
         type: 'payout.succeeded',
-        data: { reference: first.id, amount: '1200.00' },
+        data: { reference: first.id, amount: '2400.00' },
       })
     ).outcome,
     'payout_paid',
   );
   assert.equal(await balance(person.account, 'payout_hold'), 0n);
-  assert.equal(await balance(person.account, 'reward_wallet'), 80000n);
+  assert.equal(await balance(person.account, 'reward_wallet'), 160000n);
   const list = await payments.withdrawalList(person.user);
   assert.deepEqual(
     list.items.map((w) => [w.id, w.state]).sort(),
@@ -427,20 +427,20 @@ test('withdrawals hold money at once, pay out once and return on failure', async
 
 test('a person can request at most three withdrawals a day', async () => {
   const person = await verifiedPerson();
-  await earn(person, '300000');
+  await earn(person, '600000');
   for (let i = 0; i < 3; i++)
     await payments.requestWithdrawal(person.user, {
       id: randomUUID(),
-      amountKobo: '50000',
+      amountKobo: '100000',
     });
   assert.equal(
     await reason(
       payments.requestWithdrawal(person.user, {
         id: randomUUID(),
-        amountKobo: '50000',
+        amountKobo: '100000',
       }),
     ),
     'withdrawal_daily_limit',
   );
-  assert.equal(await balance(person.account, 'reward_wallet'), 150000n);
+  assert.equal(await balance(person.account, 'reward_wallet'), 300000n);
 });

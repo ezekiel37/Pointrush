@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 export {
   taskReviewerGrants,
   taskReviews,
+  campaignFirstApprovals,
 } from '../reviews/task-review.schema.js';
 export { sponsorProfiles, sponsorTasks } from '../sponsors/sponsor.schema.js';
 export {
@@ -161,6 +162,8 @@ export {
   fundingIntents,
   paymentEvents,
   payoutDestinations,
+  withdrawalLocks,
+  withdrawalUnlocks,
   withdrawals,
   withdrawalSubmissions,
   withdrawalOutcomes,
@@ -173,6 +176,7 @@ export { notificationReads } from '../notifications/notification.schema.js';
 export {
   businessStaff,
   businessStaffRemovals,
+  businessStaffAcceptances,
 } from '../sponsors/staff.schema.js';
 export {
   accountAccessChanges,

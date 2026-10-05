@@ -26,6 +26,10 @@ export class StaffController {
   remove(@Req() r: AuthenticatedRequest, @Param('id') id: string) {
     return this.staff.remove(r[AUTH_USER_ID], id);
   }
+  @Post('staff/invitations/:id/acceptances')
+  accept(@Req() r: AuthenticatedRequest, @Param('id') id: string) {
+    return this.staff.accept(r[AUTH_USER_ID], id);
+  }
   @Get('staff/workplaces')
   workplaces(@Req() r: AuthenticatedRequest) {
     return this.staff.workplaces(r[AUTH_USER_ID]);

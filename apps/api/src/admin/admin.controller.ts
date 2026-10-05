@@ -28,6 +28,10 @@ export class AdminController {
   ) {
     return this.admin.setAccess(r[AUTH_USER_ID], id, body);
   }
+  @Post('accounts/:id/withdrawal-unlocks')
+  unlock(@Req() r: AuthenticatedRequest, @Param('id') id: string) {
+    return this.admin.unlockWithdrawals(r[AUTH_USER_ID], id);
+  }
   @Get('payments/flagged')
   flagged(@Req() r: AuthenticatedRequest) {
     return this.admin.flaggedPayments(r[AUTH_USER_ID]);

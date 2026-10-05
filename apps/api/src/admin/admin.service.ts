@@ -49,7 +49,9 @@ export class AdminService {
       await tx.execute(sql`
         select a.id, a.access_state, a.created_at, u.username, p.display_name,
           exists (select 1 from verified_phones v where v.account_id = a.id) as phone_verified,
-          exists (select 1 from sponsor_profiles sp where sp.owner_id = a.id) as business
+          exists (select 1 from sponsor_profiles sp where sp.owner_id = a.id) as business,
+          exists (select 1 from withdrawal_locks l where l.account_id = a.id
+            and not exists (select 1 from withdrawal_unlocks u where u.lock_id = l.id)) as withdrawals_locked
         from accounts a
         left join usernames u on u.account_id = a.id and u.is_current
         left join account_profiles p on p.account_id = a.id
@@ -78,6 +80,7 @@ export class AdminService {
       accessState: String(account.access_state),
       phoneVerified: Boolean(account.phone_verified),
       business: Boolean(account.business),
+      withdrawalsLocked: Boolean(account.withdrawals_locked),
       createdAt: iso(account.created_at),
       history,
     };
@@ -121,6 +124,23 @@ export class AdminService {
           actorId: actor,
         });
       else if (existing.accountId !== accountId) throw new NotFoundException();
+      return this.accountView(tx, accountId);
+    });
+  }
+
+  // A reviewer reopens withdrawals after checking a "this wasn't me" lock.
+  async unlockWithdrawals(user: string, accountId: string) {
+    if (!z.uuid().safeParse(accountId).success) throw new NotFoundException();
+    return this.reviewer(user, async (tx, actor) => {
+      const open = rows(
+        await tx.execute(sql`
+          select l.id from withdrawal_locks l where l.account_id = ${accountId}
+            and not exists (select 1 from withdrawal_unlocks u where u.lock_id = l.id)`),
+      );
+      for (const lock of open)
+        await tx
+          .insert(s.withdrawalUnlocks)
+          .values({ lockId: String(lock.id), actorId: actor });
       return this.accountView(tx, accountId);
     });
   }

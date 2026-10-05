@@ -53,7 +53,7 @@ async function grant(reviewerId: string, expired = false) {
       .returning()
   )[0]!;
 }
-async function task() {
+async function task(rewardKobo = '200') {
   const ownerId = await account();
   const userId = randomUUID();
   await db.insert(schema.authUsers).values({
@@ -80,7 +80,7 @@ async function task() {
     sourceId: clearing,
     destinationId: available!.id,
     actorId: ownerId,
-    amountKobo: 200n,
+    amountKobo: BigInt(rewardKobo),
     kind: 'funding_confirmed',
     reference: `test:${randomUUID()}`,
     reason: 'Synthetic funds',
@@ -93,7 +93,7 @@ async function task() {
     rejectionCriteria: 'Copied work',
     model: 'selected_assignment',
     capacity: 1,
-    rewardKobo: '200',
+    rewardKobo,
     startsAt: new Date(Date.now() + 86400000).toISOString(),
     endsAt: new Date(Date.now() + 172800000).toISOString(),
   });
@@ -102,6 +102,12 @@ async function task() {
     .from(schema.sponsorTasks)
     .where(eq(schema.sponsorTasks.id, created.id));
   return { row: row!, ownerId };
+}
+// Small campaigns are decided by one reviewer and return the review row.
+async function decided(reviewer: string, input: ReturnType<typeof command>) {
+  const result = await service.decide(reviewer, input);
+  assert.ok('id' in result);
+  return result;
 }
 function command(row: typeof schema.sponsorTasks.$inferSelect) {
   return {
@@ -120,7 +126,7 @@ test('approval records evidence and updates review status without publishing or 
   const reviewer = await account();
   const permission = await grant(reviewer);
   const input = command(row);
-  const result = await service.decide(reviewer, input);
+  const result = await decided(reviewer, input);
   assert.equal(result.grantId, permission.id);
   assert.equal(result.termsHash, row.requestHash);
   const [updated] = await db
@@ -130,7 +136,7 @@ test('approval records evidence and updates review status without publishing or 
   assert.equal(updated!.reviewState, 'approved');
   assert.equal(updated!.lifecycle, 'not_live');
   assert.equal(await fundingBalance(db, row.allocationAccountId), 200n);
-  assert.equal((await service.decide(reviewer, input)).id, result.id);
+  assert.equal((await decided(reviewer, input)).id, result.id);
   await assert.rejects(
     service.decide(reviewer, { ...input, reason: 'Changed decision evidence' }),
     ConflictException,
@@ -284,7 +290,7 @@ test('database blocks direct approval, forged review inserts and audit rewrites'
       checklist: { ...taskReviewChecklist, fairRewardTerms: false },
     }),
   );
-  const review = await service.decide(reviewer, command(row));
+  const review = await decided(reviewer, command(row));
   await assert.rejects(
     db
       .update(schema.taskReviews)
@@ -358,4 +364,44 @@ test('review reads return exact JSON-safe money and bounded pages', async () => 
     service.getPending(await account(), row.id),
     ForbiddenException,
   );
+});
+
+test('campaigns of ₦1,000,000 or more need two different reviewers', async () => {
+  const { row } = await task('100000000');
+  const first = await account();
+  const firstGrant = await grant(first);
+  const second = await account();
+  await grant(second);
+  const input = command(row);
+  assert.deepEqual(await service.decide(first, input), {
+    awaitingSecondReviewer: true,
+    taskId: row.id,
+  });
+  const [waiting] = await db
+    .select()
+    .from(schema.sponsorTasks)
+    .where(eq(schema.sponsorTasks.id, row.id));
+  assert.equal(waiting!.reviewState, 'pending_review');
+  // The first reviewer cannot give the second approval.
+  await assert.rejects(
+    service.decide(first, { ...input, requestId: randomUUID() }),
+    ConflictException,
+  );
+  // Nor can the database be used to skip it.
+  await assert.rejects(
+    db.insert(schema.taskReviews).values({
+      ...input,
+      reviewerId: first,
+      grantId: firstGrant.id,
+      requestHash: 'a'.repeat(64),
+    }),
+  );
+  const review = await decided(second, { ...input, requestId: randomUUID() });
+  assert.equal(review.decision, 'approved');
+  const [approved] = await db
+    .select()
+    .from(schema.sponsorTasks)
+    .where(eq(schema.sponsorTasks.id, row.id));
+  assert.equal(approved!.reviewState, 'approved');
+  await assert.rejects(db.execute(sql`delete from campaign_first_approvals`));
 });

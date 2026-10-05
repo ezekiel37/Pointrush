@@ -34,7 +34,23 @@ export class StaffService {
   private async staffRows(tx: FundingDatabase, sponsorId: string) {
     return rows(
       await tx.execute(sql`
-        select s.id, s.created_at, u.username, p.display_name
+        select s.id, s.created_at, u.username, p.display_name,
+          exists (select 1 from business_staff_acceptances a where a.staff_id = s.id) as accepted,
+          (select count(*)::int from purchase_confirmations c join sponsor_tasks t on t.id = c.task_id
+            where t.sponsor_id = s.sponsor_id and c.actor_id = s.account_id
+              and c.created_at > clock_timestamp() - interval '24 hours') as today,
+          (select count(*)::int from purchase_confirmations c join sponsor_tasks t on t.id = c.task_id
+            where t.sponsor_id = s.sponsor_id and c.actor_id = s.account_id
+              and c.created_at > clock_timestamp() - interval '7 days') as week,
+          (select coalesce(sum(t.reward_kobo), 0)::text from purchase_confirmations c join sponsor_tasks t on t.id = c.task_id
+            where t.sponsor_id = s.sponsor_id and c.actor_id = s.account_id
+              and c.created_at > clock_timestamp() - interval '7 days') as week_cashback,
+          -- Shoppers this person confirmed three or more times in a week.
+          (select count(*)::int from (select c.account_id from purchase_confirmations c
+            join sponsor_tasks t on t.id = c.task_id
+            where t.sponsor_id = s.sponsor_id and c.actor_id = s.account_id
+              and c.created_at > clock_timestamp() - interval '7 days'
+            group by c.account_id having count(*) >= 3) repeat) as repeat_shoppers
         from business_staff s
         left join usernames u on u.account_id = s.account_id and u.is_current
         left join account_profiles p on p.account_id = s.account_id
@@ -46,6 +62,11 @@ export class StaffService {
       username: r.username == null ? null : String(r.username),
       displayName: r.display_name == null ? null : String(r.display_name),
       addedAt: new Date(String(r.created_at)).toISOString(),
+      accepted: Boolean(r.accepted),
+      confirmedToday: Number(r.today ?? 0),
+      confirmedWeek: Number(r.week ?? 0),
+      weekCashbackKobo: String(r.week_cashback ?? '0'),
+      repeatShoppers: Number(r.repeat_shoppers ?? 0),
     }));
   }
 
@@ -112,6 +133,28 @@ export class StaffService {
     });
   }
 
+  // The invited person accepts; until then they have no till access.
+  async accept(user: string, staffId: string) {
+    if (!z.uuid().safeParse(staffId).success) throw new NotFoundException();
+    await actorTransaction(this.db, user, async (tx, actor) => {
+      const [invite] = await tx
+        .select()
+        .from(s.businessStaff)
+        .where(
+          and(
+            eq(s.businessStaff.id, staffId),
+            eq(s.businessStaff.accountId, actor),
+          ),
+        );
+      if (!invite) throw new NotFoundException();
+      await tx
+        .insert(s.businessStaffAcceptances)
+        .values({ staffId })
+        .onConflictDoNothing();
+    });
+    return this.workplaces(user);
+  }
+
   // Businesses this person works at, with the cash back tills they can run.
   async workplaces(user: string) {
     return actorTransaction(this.db, user, async (tx, actor) => {
@@ -123,6 +166,7 @@ export class StaffService {
           left join sponsor_tasks t on t.sponsor_id = sp.id and t.model = 'purchase_cashback'
             and t.lifecycle = 'published' and t.ends_at > clock_timestamp()
           where s.account_id = ${actor}
+            and exists (select 1 from business_staff_acceptances a where a.staff_id = s.id)
             and not exists (select 1 from business_staff_removals r where r.staff_id = s.id)
           order by sp.name, t.ends_at`),
       );
@@ -132,6 +176,7 @@ export class StaffService {
           from business_staff s
           join sponsor_tasks t on t.sponsor_id = s.sponsor_id
           where s.account_id = ${actor}
+            and exists (select 1 from business_staff_acceptances a where a.staff_id = s.id)
             and not exists (select 1 from business_staff_removals r where r.staff_id = s.id)
             and t.model = 'claim_code' and t.lifecycle = 'published'
             and jsonb_typeof(t.promotion_terms->'prize') = 'object'
@@ -165,7 +210,16 @@ export class StaffService {
           title: String(p.title),
           item: String(p.item),
         });
-      return { items: [...businesses.values()] };
+      const invitations = rows(
+        await tx.execute(sql`
+          select s.id, sp.name from business_staff s
+          join sponsor_profiles sp on sp.id = s.sponsor_id
+          where s.account_id = ${actor}
+            and not exists (select 1 from business_staff_acceptances a where a.staff_id = s.id)
+            and not exists (select 1 from business_staff_removals r where r.staff_id = s.id)
+          order by s.created_at`),
+      ).map((r) => ({ id: String(r.id), business: String(r.name) }));
+      return { items: [...businesses.values()], invitations };
     });
   }
 }

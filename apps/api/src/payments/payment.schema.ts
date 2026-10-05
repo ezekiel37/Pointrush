@@ -111,7 +111,7 @@ export const withdrawals = pgTable(
   (t) => [
     check(
       'withdrawal_amount',
-      sql`${t.amountKobo} between 50000 and 500000000`,
+      sql`${t.amountKobo} between 100000 and 500000000`,
     ),
     index('withdrawal_account').on(t.accountId, t.createdAt),
   ],
@@ -151,3 +151,27 @@ export const withdrawalOutcomes = pgTable(
     check('withdrawal_outcome_kind', sql`${t.outcome} in ('paid', 'failed')`),
   ],
 );
+
+// "This wasn't me": the owner (or a reviewer) stops all withdrawals at once.
+// Only a reviewer lifts it, after checking.
+export const withdrawalLocks = pgTable(
+  'withdrawal_locks',
+  {
+    id: uuid('id').primaryKey(),
+    accountId: uuid('account_id')
+      .notNull()
+      .references(() => accounts.id),
+    reason: varchar('reason', { length: 300 }).notNull(),
+    createdAt: at('created_at').notNull().defaultNow(),
+  },
+  (t) => [index('withdrawal_lock_account').on(t.accountId)],
+);
+export const withdrawalUnlocks = pgTable('withdrawal_unlocks', {
+  lockId: uuid('lock_id')
+    .primaryKey()
+    .references(() => withdrawalLocks.id),
+  actorId: uuid('actor_id')
+    .notNull()
+    .references(() => accounts.id),
+  createdAt: at('created_at').notNull().defaultNow(),
+});

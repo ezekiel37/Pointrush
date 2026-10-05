@@ -20,6 +20,8 @@ export class AuthModule {
   ): DynamicModule {
     return {
       module: AuthModule,
+      // Other modules re-check passwords before sensitive actions.
+      global: true,
       imports: [AccountsModule],
       controllers: [AuthController],
       providers: [

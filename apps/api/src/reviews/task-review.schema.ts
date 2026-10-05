@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
   check,
+  primaryKey,
   integer,
   jsonb,
   pgTable,
@@ -98,4 +99,24 @@ export const taskReviews = pgTable(
       sql`${t.decision} <> 'approved' or ${t.checklist} = '{"permittedObjective":true,"clearInstructions":true,"feasibleProof":true,"fairRewardTerms":true,"safeDestinations":true}'::jsonb`,
     ),
   ],
+);
+
+// Large campaigns need two different reviewers. The first approval is held
+// here; the second reviewer's decision is the one that takes effect.
+export const campaignFirstApprovals = pgTable(
+  'campaign_first_approvals',
+  {
+    taskId: uuid('task_id')
+      .notNull()
+      .references(() => sponsorTasks.id),
+    termsVersion: integer('terms_version').notNull(),
+    reviewerId: uuid('reviewer_id')
+      .notNull()
+      .references(() => accounts.id),
+    reason: varchar('reason', { length: 1000 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.taskId, t.termsVersion] })],
 );

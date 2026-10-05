@@ -67,6 +67,18 @@ function describe(r: Row) {
         body: 'The payment provider confirmed your payment.',
         href: '/business/funds',
       };
+    case 'bank_added':
+      return {
+        title: 'Bank account added',
+        body: `${reason} (${business}). Not you? Open your wallet and press "This wasn't me".`,
+        href: '/wallet',
+      };
+    case 'withdrawals_locked':
+      return {
+        title: 'Withdrawals locked',
+        body: 'Your balance is safe. Support will check your account before withdrawals open again.',
+        href: '/wallet',
+      };
     default:
       return {
         title: `${amount} returned to your balance`,
@@ -120,6 +132,16 @@ export class NotificationsService {
             left join sponsor_tasks t on t.allocation_account_id = f.source_id
             where a.owner_id = ${actor} and a.bucket = 'available'
               and f.kind in ('funding_confirmed', 'campaign_return')
+            union all
+            select 'bank:' || d.id, 'bank_added', d.created_at,
+              null, d.bank_name || ' ending ' || d.account_last4, null, d.account_name
+            from payout_destinations d
+            where d.account_id = ${actor}
+            union all
+            select 'lock:' || l.id, 'withdrawals_locked', l.created_at,
+              null, null, null, null
+            from withdrawal_locks l
+            where l.account_id = ${actor}
           ) e
           where e.at > clock_timestamp() - interval '30 days'
           order by e.at desc, e.id

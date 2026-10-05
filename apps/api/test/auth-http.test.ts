@@ -827,3 +827,45 @@ test('payment webhooks are public but must be signed over the exact raw body', a
     .send({ id: randomUUID(), amountKobo: '500000' })
     .expect(401);
 });
+
+test('withdrawing needs the account password again', async () => {
+  const withdrawEmail = 'withdraw-http@example.test';
+  await request(server)
+    .post('/api/v1/auth/sign-up/email')
+    .set('Origin', origin)
+    .send({ email: withdrawEmail, password, name: 'Withdraw User' })
+    .expect(200);
+  const message = mailbox.find((item) => item.to === withdrawEmail);
+  assert.ok(message);
+  const url = new URL(message.url);
+  await request(server)
+    .get(url.pathname + url.search)
+    .expect(302);
+  const login = await request(server)
+    .post('/api/v1/auth/sign-in/email')
+    .set('Origin', origin)
+    .send({ email: withdrawEmail, password })
+    .expect(200);
+  const cookie = (login.headers['set-cookie'] as unknown as string[])
+    .find((item) => item.includes('session_token'))
+    ?.split(';')[0];
+  assert.ok(cookie);
+  const attempt = (body: Record<string, unknown>) =>
+    request(server)
+      .post('/api/v1/wallet/withdrawals')
+      .set('Origin', origin)
+      .set('Cookie', cookie)
+      .send({ id: randomUUID(), amountKobo: '100000', ...body });
+  for (const body of [
+    {},
+    { password: 'not-the-password-1' },
+    { password: 1 },
+  ]) {
+    const refused = await attempt(body).expect(409);
+    assert.equal(refused.body.reason, 'password_required');
+  }
+  // With the right password the request reaches the wallet rules (this user
+  // has not finished setting up an account, so those refuse it).
+  const checked = await attempt({ password }).expect(403);
+  assert.equal(checked.body.message, 'Active linked account required');
+});

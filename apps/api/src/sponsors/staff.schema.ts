@@ -36,3 +36,11 @@ export const businessStaffRemovals = pgTable('business_staff_removals', {
     .references(() => accounts.id),
   createdAt: at('created_at').notNull().defaultNow(),
 });
+
+// Staff only become staff once they accept; nobody is added silently.
+export const businessStaffAcceptances = pgTable('business_staff_acceptances', {
+  staffId: uuid('staff_id')
+    .primaryKey()
+    .references(() => businessStaff.id),
+  createdAt: at('created_at').notNull().defaultNow(),
+});

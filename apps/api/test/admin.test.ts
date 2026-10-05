@@ -103,7 +103,19 @@ test('only appointed reviewers can freeze, and every change is audited and rever
     ),
     'access_change_unavailable',
   );
-  const restored = await admin.setAccess(reviewer.user, target.account, {
+  // The reviewer who froze an account cannot unfreeze it alone.
+  assert.equal(
+    await reason(
+      admin.setAccess(reviewer.user, target.account, {
+        id: randomUUID(),
+        toState: 'active',
+        reason: 'Changed my mind',
+      }),
+    ),
+    'access_change_unavailable',
+  );
+  const second = await appointed();
+  const restored = await admin.setAccess(second.user, target.account, {
     id: randomUUID(),
     toState: 'active',
     reason: 'Explained: shared family phone',

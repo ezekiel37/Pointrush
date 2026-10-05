@@ -4,6 +4,7 @@ import type { PaymentsEnvironment } from '../config/environment.js';
 import { DatabaseService } from '../database/database.service.js';
 import { PaymentsController } from './payments.controller.js';
 import { PaymentsService } from './payments.service.js';
+import { QueuedSecurityAlerts } from '../auth/security-alerts.js';
 import { BachsProvider } from './bachs.js';
 import { TestPaymentProvider } from './provider.js';
 import type { PaymentProvider } from './provider.js';
@@ -26,7 +27,10 @@ export function paymentProvider(
 
 @Module({})
 export class PaymentsModule {
-  static forRoot(provider?: PaymentProvider): DynamicModule {
+  static forRoot(
+    provider?: PaymentProvider,
+    alerts?: { emailEncryptionKey: string; emailFrom: string },
+  ): DynamicModule {
     return {
       module: PaymentsModule,
       controllers: [PaymentsController],
@@ -36,7 +40,17 @@ export class PaymentsModule {
           provide: PaymentsService,
           inject: [DatabaseService, PAYMENT_PROVIDER],
           useFactory: (db: DatabaseService, value: PaymentProvider | null) =>
-            new PaymentsService(db.db, value ?? undefined),
+            new PaymentsService(
+              db.db,
+              value ?? undefined,
+              alerts
+                ? new QueuedSecurityAlerts(
+                    db.db,
+                    alerts.emailEncryptionKey,
+                    alerts.emailFrom,
+                  )
+                : undefined,
+            ),
         },
       ],
     };

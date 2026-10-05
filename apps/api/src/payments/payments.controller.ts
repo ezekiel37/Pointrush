@@ -1,10 +1,12 @@
 import {
   BadRequestException,
   Body,
+  ConflictException,
   Controller,
   Get,
   HttpCode,
   Inject,
+  Optional,
   Param,
   Post,
   Query,
@@ -14,6 +16,8 @@ import type { RawBodyRequest } from '@nestjs/common';
 import type { Request } from 'express';
 import { AUTH_USER_ID, PublicRoute } from '../auth/session.guard.js';
 import type { AuthenticatedRequest } from '../auth/session.guard.js';
+import { AuthService } from '../auth/auth.service.js';
+import { RateLimit } from '../http/rate-limit.js';
 import { InvalidWebhook } from './provider.js';
 import { PaymentsService } from './payments.service.js';
 
@@ -21,6 +25,7 @@ import { PaymentsService } from './payments.service.js';
 export class PaymentsController {
   constructor(
     @Inject(PaymentsService) private readonly payments: PaymentsService,
+    @Optional() @Inject(AuthService) private readonly auth?: AuthService,
   ) {}
   @Post('payments/funding-intents')
   fund(@Req() r: AuthenticatedRequest, @Body() body: unknown) {
@@ -59,9 +64,28 @@ export class PaymentsController {
   addDestination(@Req() r: AuthenticatedRequest, @Body() body: unknown) {
     return this.payments.addDestination(r[AUTH_USER_ID], body);
   }
+  // Withdrawing needs the password again, and few attempts a minute, so a
+  // stolen session or guessed password cannot drain a wallet.
   @Post('wallet/withdrawals')
-  withdraw(@Req() r: AuthenticatedRequest, @Body() body: unknown) {
-    return this.payments.requestWithdrawal(r[AUTH_USER_ID], body);
+  @RateLimit({ limit: 10, windowMs: 60000 })
+  async withdraw(@Req() r: AuthenticatedRequest, @Body() body: unknown) {
+    const { password, ...request } =
+      body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
+    if (
+      !this.auth ||
+      typeof password !== 'string' ||
+      !(await this.auth.verifyPassword(r.headers, password))
+    )
+      throw new ConflictException({
+        statusCode: 409,
+        message: 'Enter your password to withdraw',
+        reason: 'password_required',
+      });
+    return this.payments.requestWithdrawal(r[AUTH_USER_ID], request);
+  }
+  @Post('wallet/lock')
+  lock(@Req() r: AuthenticatedRequest) {
+    return this.payments.lockWithdrawals(r[AUTH_USER_ID]);
   }
   @Get('wallet/withdrawals')
   withdrawals(@Req() r: AuthenticatedRequest, @Query() query: unknown) {

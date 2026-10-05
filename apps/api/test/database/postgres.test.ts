@@ -880,13 +880,13 @@ test('native simultaneous claims of one winning code pay exactly one person, who
           new TestPaymentProvider('native-webhook-secret-long-enough-0000'),
         ).requestWithdrawal(winner.user, {
           id: randomUUID(),
-          amountKobo: '60000',
+          amountKobo: '100000',
         }),
       ),
     );
     assert.equal(withdrawals.filter((r) => r.status === 'fulfilled').length, 1);
     const wallet = wallets.find((w) => w.ownerId === winner.account)!;
-    assert.equal(await fundingBalance(database.db, wallet.id), 40000n);
+    assert.equal(await fundingBalance(database.db, wallet.id), 0n);
   } finally {
     await other.onApplicationShutdown();
   }

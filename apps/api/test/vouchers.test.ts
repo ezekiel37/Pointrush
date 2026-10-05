@@ -95,10 +95,11 @@ test('an item prize gives a voucher; handover returns the deposit, or the winner
     accountId: cashier.account,
     isCurrent: true,
   });
-  await new StaffService(db).add(owner.user, {
+  const hired = await new StaffService(db).add(owner.user, {
     id: randomUUID(),
     username: 'fizz_till',
   });
+  await new StaffService(db).accept(cashier.user, hired.items[0]!.id);
   assert.deepEqual(
     (await new StaffService(db).workplaces(cashier.user)).items[0]?.prizes,
     [{ id: run.id, title: 'Scratch and win', item: 'A crate of Fizz' }],

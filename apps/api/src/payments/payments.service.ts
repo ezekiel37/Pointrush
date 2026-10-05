@@ -11,6 +11,7 @@ import type { FundingDatabase } from '../funding/funding-ledger.js';
 import { postFundingTransfer } from '../funding/funding-ledger.js';
 import * as s from '../database/schema.js';
 import { actorTransaction } from '../tasks/actor-transaction.js';
+import type { SecurityAlerts } from '../auth/security-alerts.js';
 import { InvalidWebhook, ProviderError } from './provider.js';
 import type {
   Bank,
@@ -29,7 +30,7 @@ const intentInput = z
   .object({ id: z.uuid(), amountKobo: money(100000n, 10000000000n) })
   .strict();
 const withdrawalInput = z
-  .object({ id: z.uuid(), amountKobo: money(50000n, 500000000n) })
+  .object({ id: z.uuid(), amountKobo: money(100000n, 500000000n) })
   .strict();
 const pageInput = z
   .object({
@@ -62,6 +63,7 @@ export class PaymentsService {
   constructor(
     private readonly db: FundingDatabase,
     private readonly provider?: PaymentProvider,
+    private readonly alerts?: SecurityAlerts,
   ) {}
 
   private requireProvider() {
@@ -368,7 +370,8 @@ export class PaymentsService {
           desc(s.payoutDestinations.id),
         )
         .limit(1);
-      if (!row) return { destination: null };
+      const locked = await this.isLocked(tx, actor);
+      if (!row) return { destination: null, locked };
       const [older] = await tx
         .select({ id: s.payoutDestinations.id })
         .from(s.payoutDestinations)
@@ -390,8 +393,58 @@ export class PaymentsService {
             ? new Date(row.createdAt.getTime() + 86400000)
             : row.createdAt,
         },
+        locked,
       };
     });
+  }
+
+  private async isLocked(tx: FundingDatabase, accountId: string) {
+    const [lock] = await tx
+      .select({ id: s.withdrawalLocks.id })
+      .from(s.withdrawalLocks)
+      .where(
+        and(
+          eq(s.withdrawalLocks.accountId, accountId),
+          sql`not exists (select 1 from withdrawal_unlocks u where u.lock_id = ${s.withdrawalLocks.id})`,
+        ),
+      )
+      .limit(1);
+    return Boolean(lock);
+  }
+
+  // "This wasn't me": stops every withdrawal until a reviewer checks.
+  async lockWithdrawals(user: string) {
+    const accountId = await actorTransaction(
+      this.db,
+      user,
+      async (tx, actor) => {
+        if (!(await this.isLocked(tx, actor)))
+          await tx.insert(s.withdrawalLocks).values({
+            id: randomUUID(),
+            accountId: actor,
+            reason: 'Locked by the account owner from the wallet',
+          });
+        // Withdrawals not yet sent to the bank are stopped; the money returns
+        // to the wallet.
+        await tx.execute(sql`
+          insert into withdrawal_outcomes (withdrawal_id, outcome, reason)
+          select w.id, 'failed', 'Stopped: withdrawals locked by the account owner'
+          from withdrawals w
+          where w.account_id = ${actor}
+            and not exists (select 1 from withdrawal_submissions x where x.withdrawal_id = w.id)
+            and not exists (select 1 from withdrawal_outcomes o where o.withdrawal_id = w.id)
+          on conflict do nothing`);
+        return actor;
+      },
+    );
+    await this.alerts
+      ?.notify(
+        accountId,
+        'Withdrawals from your Acticlaim wallet are locked',
+        'You locked withdrawals. Your balance is safe. Acticlaim support will check your account and contact you before withdrawals open again.',
+      )
+      .catch(() => undefined);
+    return { locked: true };
   }
 
   // The provider checks the account at the bank first; only then is it saved.
@@ -424,18 +477,32 @@ export class PaymentsService {
         reason: 'bank_unavailable',
       });
     }
-    await actorTransaction(this.db, user, async (tx, actor) => {
-      await tx.insert(s.payoutDestinations).values({
-        id: randomUUID(),
-        accountId: actor,
-        provider: provider.name,
-        providerDestinationId: found.destinationId,
-        bankCode: value.bankCode,
-        bankName: found.bankName.slice(0, 120),
-        accountName: found.accountName.slice(0, 160),
-        accountLast4: found.last4,
-      });
-    });
+    const accountId = await actorTransaction(
+      this.db,
+      user,
+      async (tx, actor) => {
+        await tx.insert(s.payoutDestinations).values({
+          id: randomUUID(),
+          accountId: actor,
+          provider: provider.name,
+          providerDestinationId: found.destinationId,
+          bankCode: value.bankCode,
+          bankName: found.bankName.slice(0, 120),
+          accountName: found.accountName.slice(0, 160),
+          accountLast4: found.last4,
+        });
+        return actor;
+      },
+    );
+    // Every bank account change is told to the owner, so a thief who took
+    // over the account cannot redirect money quietly.
+    await this.alerts
+      ?.notify(
+        accountId,
+        'A bank account was added to your Acticlaim wallet',
+        `${found.accountName}, ${found.bankName} ending ${found.last4}, can now receive your withdrawals. If you already had a bank account, the new one can receive money after 24 hours.`,
+      )
+      .catch(() => undefined);
     return this.destination(user);
   }
 
@@ -459,7 +526,9 @@ export class PaymentsService {
       )
       .where(
         sql`not exists (select 1 from withdrawal_submissions w where w.withdrawal_id = ${s.withdrawals.id})
-          and not exists (select 1 from withdrawal_outcomes o where o.withdrawal_id = ${s.withdrawals.id})`,
+          and not exists (select 1 from withdrawal_outcomes o where o.withdrawal_id = ${s.withdrawals.id})
+          and not exists (select 1 from withdrawal_locks l where l.account_id = ${s.withdrawals.accountId}
+            and not exists (select 1 from withdrawal_unlocks u where u.lock_id = l.id))`,
       )
       .orderBy(s.withdrawals.createdAt)
       .limit(limit);

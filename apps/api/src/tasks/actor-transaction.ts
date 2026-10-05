@@ -42,6 +42,10 @@ const reasons: Record<string, string> = {
   'New bank account is not usable yet': 'destination_cooling',
   'Bank account unavailable': 'destination_unavailable',
   'Too many bank account changes': 'destination_limit',
+  'Withdrawals are locked': 'withdrawals_locked',
+  'Staff daily confirmation limit reached': 'staff_daily_limit',
+  'A second reviewer must approve': 'second_reviewer_required',
+  'Unlock unavailable': 'unlock_unavailable',
 };
 
 function databaseError(error: unknown) {
