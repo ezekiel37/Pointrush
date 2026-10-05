@@ -30,7 +30,7 @@ function withdrawError(error: unknown) {
       case 'withdrawal_daily_limit':
         return 'You can make three withdrawals a day. Try again tomorrow.';
       case 'withdrawal_unavailable':
-        return 'Withdrawals need an active account with a verified phone number.';
+        return 'Withdrawals need an active account with a verified phone number. Verify it from your wallet.';
     }
     if (error.status === 400)
       return 'Enter an amount between ₦500 and ₦5,000,000.';

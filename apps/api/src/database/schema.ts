@@ -160,3 +160,7 @@ export {
   withdrawalSubmissions,
   withdrawalOutcomes,
 } from '../payments/payment.schema.js';
+export {
+  phoneChallenges,
+  phoneChallengeAttempts,
+} from '../phone/phone.schema.js';

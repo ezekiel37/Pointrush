@@ -10,6 +10,8 @@ import * as schema from '../../src/database/schema.js';
 import { CampaignsService } from '../../src/campaigns/campaigns.service.js';
 import { PromotionsService } from '../../src/promotions/promotions.service.js';
 import { PaymentsService } from '../../src/payments/payments.service.js';
+import { PhoneService } from '../../src/phone/phone.service.js';
+import { TestSmsProvider } from '../../src/phone/sms.js';
 import { TestPaymentProvider } from '../../src/payments/provider.js';
 import { TaskWorkService } from '../../src/tasks/task-work.service.js';
 import { readMigrationFiles } from 'drizzle-orm/migrator';
@@ -931,6 +933,53 @@ test('native concurrent deliveries of one payment credit the business once', asy
       .from(fundingAccounts)
       .where(eq(fundingAccounts.ownerId, account!.id));
     assert.equal(await fundingBalance(database.db, available!.id), 500000n);
+  } finally {
+    await other.onApplicationShutdown();
+  }
+});
+
+test('native parallel code guesses from two pools never exceed five attempts', async () => {
+  const other = new DatabaseService(config);
+  try {
+    const user = randomUUID();
+    await database.db.insert(authUsers).values({
+      id: user,
+      name: 'Native',
+      email: `${user}@example.test`,
+      emailVerified: true,
+    });
+    const [account] = await database.db.insert(accounts).values({}).returning();
+    await database.db
+      .insert(authAccountLinks)
+      .values({ accountId: account!.id, authUserId: user });
+    const sms = new TestSmsProvider();
+    const challenge = await new PhoneService(database.db, sms).requestCode(
+      user,
+      {
+        phoneNumber: `0809${String(Date.now()).slice(-7)}`,
+      },
+    );
+    const code = /(\d{6})/.exec(sms.sent[0]!.body)![1]!;
+    const wrong = code === '000000' ? '111111' : '000000';
+    await Promise.allSettled(
+      Array.from({ length: 12 }, (_, i) =>
+        new PhoneService(i % 2 ? other.db : database.db, sms).verify(user, {
+          challengeId: challenge.challengeId,
+          code: wrong,
+        }),
+      ),
+    );
+    const attempts = await pool.query(
+      'select count(*)::int as n from phone_challenge_attempts where challenge_id = $1',
+      [challenge.challengeId],
+    );
+    assert.equal(attempts.rows[0].n, 5);
+    await assert.rejects(
+      new PhoneService(database.db, sms).verify(user, {
+        challengeId: challenge.challengeId,
+        code,
+      }),
+    );
   } finally {
     await other.onApplicationShutdown();
   }

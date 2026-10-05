@@ -124,9 +124,19 @@ export function Wallet() {
                         'color-mix(in srgb, var(--color-surface) 70%, transparent)',
                     }}
                   >
-                    {data.phoneVerified
-                      ? 'You can withdraw once you have ₦500 or more.'
-                      : 'Withdrawing needs a verified phone number. Phone verification opens soon; your balance is safe and recorded.'}
+                    {data.phoneVerified ? (
+                      'You can withdraw once you have ₦500 or more.'
+                    ) : (
+                      <>
+                        Withdrawing needs a verified phone number.{' '}
+                        <Link
+                          href="/verify-phone?next=/wallet"
+                          style={{ color: 'var(--color-lime)' }}
+                        >
+                          Verify your phone
+                        </Link>
+                      </>
+                    )}
                   </p>
                 )}
               </div>

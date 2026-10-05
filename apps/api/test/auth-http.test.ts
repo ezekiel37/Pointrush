@@ -16,6 +16,7 @@ import { TaskWorkModule } from '../src/tasks/task-work.module.js';
 import { ReviewsModule } from '../src/reviews/reviews.module.js';
 import { CampaignsModule } from '../src/campaigns/campaigns.module.js';
 import { PaymentsModule } from '../src/payments/payments.module.js';
+import { PhoneModule } from '../src/phone/phone.module.js';
 import { TestPaymentProvider } from '../src/payments/provider.js';
 import { AppModule } from '../src/app.module.js';
 import { AuthService } from '../src/auth/auth.service.js';
@@ -63,6 +64,7 @@ before(async () => {
       TaskWorkModule,
       CampaignsModule,
       PaymentsModule.forRoot(payments),
+      PhoneModule.forRoot(),
     ],
     controllers: [PrivateProbe],
   })
@@ -813,6 +815,12 @@ test('payment webhooks are public but must be signed over the exact raw body', a
     .send(body)
     .expect(400);
   await request(server).get('/api/v1/wallet/withdrawals').expect(401);
+  await request(server).get('/api/v1/phone').expect(401);
+  await request(server)
+    .post('/api/v1/phone/challenges')
+    .set('Origin', origin)
+    .send({ phoneNumber: '08031234567' })
+    .expect(401);
   await request(server)
     .post('/api/v1/payments/funding-intents')
     .set('Origin', origin)

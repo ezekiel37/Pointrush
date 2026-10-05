@@ -24,6 +24,10 @@ const reasons: Record<string, string> = {
   'Insufficient wallet balance': 'insufficient_balance',
   'Insufficient available sponsor funds': 'insufficient_balance',
   'Funding unavailable': 'funding_unavailable',
+  'Phone unavailable': 'phone_unavailable',
+  'Phone code cooldown': 'code_cooldown',
+  'Phone code limit': 'code_limit',
+  'Phone code expired': 'code_expired',
 };
 
 function databaseError(error: unknown) {

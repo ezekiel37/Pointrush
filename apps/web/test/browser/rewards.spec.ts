@@ -519,3 +519,57 @@ test('a withdrawal holds money once across a dropped response and shows its stat
   expect(bodies[0]?.amountKobo).toBe('120000');
   await healthy(page);
 });
+
+test('phone verification sends a code, explains a wrong one and returns to the next page', async ({
+  page,
+}) => {
+  await phone(page);
+  const challengeId = '9a1e2d3f-4a5b-4c6d-8e9f-0a1b2c3d4e5f';
+  await page.route('**/api/v1/phone', (route) =>
+    route.fulfill({ json: { verified: false, phone: null } }),
+  );
+  const sent: unknown[] = [];
+  await page.route('**/api/v1/phone/challenges', (route) => {
+    sent.push(route.request().postDataJSON());
+    return route.fulfill({
+      json: {
+        challengeId,
+        phone: '+234 ••• 4567',
+        expiresAt: new Date(Date.now() + 600000).toISOString(),
+        resendAt: new Date(Date.now() + 60000).toISOString(),
+      },
+    });
+  });
+  await page.route('**/api/v1/phone/verifications', (route) => {
+    const body = route.request().postDataJSON();
+    return body.code === '123456'
+      ? route.fulfill({ json: { verified: true, phone: '+234 ••• 4567' } })
+      : route.fulfill({
+          status: 409,
+          json: { statusCode: 409, reason: 'code_wrong' },
+        });
+  });
+  await page.route('**/api/v1/points', (route) =>
+    route.fulfill({ status: 401, json: { statusCode: 401 } }),
+  );
+  await page.goto('/verify-phone?next=/claim');
+  await healthy(page);
+  await page.getByLabel('Mobile number').fill('0803 123 4567');
+  await page.getByRole('button', { name: 'Send code' }).click();
+  await expect(page.getByText('+234 ••• 4567')).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: /Send again in/ }),
+  ).toBeDisabled();
+  expect(sent).toEqual([{ phoneNumber: '0803 123 4567' }]);
+  await page.getByLabel('6-digit code').fill('000000');
+  await page.getByRole('button', { name: 'Verify' }).click();
+  await expect(page.getByText('That code is not right.')).toBeVisible();
+  await page.getByLabel('6-digit code').fill('123456');
+  await healthy(page);
+  await page.getByRole('button', { name: 'Verify' }).click();
+  await expect(page.getByText('+234 ••• 4567 is verified')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Continue' })).toHaveAttribute(
+    'href',
+    '/claim',
+  );
+});

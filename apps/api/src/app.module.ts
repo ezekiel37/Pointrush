@@ -19,6 +19,9 @@ import { ReviewsModule } from './reviews/reviews.module.js';
 import { CampaignsModule } from './campaigns/campaigns.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
 import type { PaymentProvider } from './payments/provider.js';
+import { PhoneModule } from './phone/phone.module.js';
+import type { PhoneConfig } from './phone/phone.service.js';
+import type { SmsProvider } from './phone/sms.js';
 
 @Module({})
 export class AppModule {
@@ -27,6 +30,7 @@ export class AppModule {
     auth?: AuthEnvironment,
     sponsorTermsVersion?: string,
     payments?: PaymentProvider,
+    sms?: { provider?: SmsProvider; config?: PhoneConfig },
   ): DynamicModule {
     const imports: DynamicModule['imports'] = [
       DatabaseModule.forRoot(database),
@@ -38,6 +42,7 @@ export class AppModule {
         TaskWorkModule,
         CampaignsModule,
         PaymentsModule.forRoot(payments),
+        PhoneModule.forRoot(sms?.provider, sms?.config),
       );
     if (auth) {
       imports.push(

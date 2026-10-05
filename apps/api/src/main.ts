@@ -7,6 +7,7 @@ import { readEnvironment } from './config/environment.js';
 import { configureHttp } from './http/configure-http.js';
 import { AuthService } from './auth/auth.service.js';
 import { paymentProvider } from './payments/payments.module.js';
+import { smsProvider } from './phone/phone.module.js';
 
 async function bootstrap(): Promise<void> {
   const config = readEnvironment(process.env);
@@ -16,6 +17,10 @@ async function bootstrap(): Promise<void> {
       config.auth,
       config.sponsorTermsVersion,
       paymentProvider(config.payments),
+      {
+        provider: smsProvider(config.sms),
+        ...(config.sms ? { config: config.sms } : {}),
+      },
     ),
     {
       logger: new ConsoleLogger({ json: true }),

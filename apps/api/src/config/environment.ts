@@ -24,6 +24,25 @@ const schema = z.object({
     .string()
     .refine((value) => value.trim().length >= 32)
     .optional(),
+  // Only the in-memory test provider exists until an SMS adapter is chosen.
+  SMS_PROVIDER: z.enum(['test']).optional(),
+  // Country calling codes SMS may go to, e.g. "+234,+233". Limits SMS fraud.
+  SMS_ALLOWED_PREFIXES: z
+    .string()
+    .default('+234')
+    .transform((v) =>
+      v
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean),
+    )
+    .pipe(z.array(z.string().regex(/^\+[1-9]\d{0,3}$/)).min(1)),
+  SMS_DAILY_LIMIT: z
+    .string()
+    .regex(/^\d+$/)
+    .default('500')
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(100000)),
   NODE_ENV: z
     .enum(['development', 'test', 'production'])
     .default('development'),
@@ -55,9 +74,16 @@ export interface PaymentsEnvironment {
   webhookSecret: string;
 }
 
+export interface SmsEnvironment {
+  provider: 'test';
+  allowedPrefixes: string[];
+  dailyLimit: number;
+}
+
 export interface Environment {
   sponsorTermsVersion?: string;
   payments?: PaymentsEnvironment;
+  sms?: SmsEnvironment;
   nodeEnv: 'development' | 'test' | 'production';
   port: number;
   corsOrigins: string[];
@@ -70,6 +96,9 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
     SPONSOR_TERMS_VERSION,
     PAYMENTS_PROVIDER,
     PAYMENTS_WEBHOOK_SECRET,
+    SMS_PROVIDER,
+    SMS_ALLOWED_PREFIXES,
+    SMS_DAILY_LIMIT,
     NODE_ENV,
     PORT,
     CORS_ORIGINS,
@@ -94,6 +123,9 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
   }
   if (PAYMENTS_PROVIDER === 'test' && NODE_ENV === 'production') {
     throw new Error('The test payment provider cannot run in production');
+  }
+  if (SMS_PROVIDER === 'test' && NODE_ENV === 'production') {
+    throw new Error('The test SMS provider cannot run in production');
   }
   const database = readDatabaseConfig(input);
   const authValues = [
@@ -144,6 +176,15 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
           payments: {
             provider: PAYMENTS_PROVIDER,
             webhookSecret: PAYMENTS_WEBHOOK_SECRET,
+          },
+        }
+      : {}),
+    ...(SMS_PROVIDER
+      ? {
+          sms: {
+            provider: SMS_PROVIDER,
+            allowedPrefixes: SMS_ALLOWED_PREFIXES,
+            dailyLimit: SMS_DAILY_LIMIT,
           },
         }
       : {}),

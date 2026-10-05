@@ -240,3 +240,33 @@ test('payments need a provider and secret together and never the test provider i
     /cannot run in production/,
   );
 });
+
+test('SMS is restricted to configured countries and never the test provider in production', () => {
+  const local = { ...apiConfig, NODE_ENV: 'development' };
+  assert.equal(readEnvironment(local).sms, undefined);
+  assert.deepEqual(readEnvironment({ ...local, SMS_PROVIDER: 'test' }).sms, {
+    provider: 'test',
+    allowedPrefixes: ['+234'],
+    dailyLimit: 500,
+  });
+  assert.deepEqual(
+    readEnvironment({
+      ...local,
+      SMS_PROVIDER: 'test',
+      SMS_ALLOWED_PREFIXES: '+234, +233',
+      SMS_DAILY_LIMIT: '50',
+    }).sms,
+    { provider: 'test', allowedPrefixes: ['+234', '+233'], dailyLimit: 50 },
+  );
+  assert.throws(() =>
+    readEnvironment({
+      ...local,
+      SMS_PROVIDER: 'test',
+      SMS_ALLOWED_PREFIXES: '234',
+    }),
+  );
+  assert.throws(
+    () => readEnvironment({ ...apiConfig, SMS_PROVIDER: 'test' }),
+    /cannot run in production/,
+  );
+});

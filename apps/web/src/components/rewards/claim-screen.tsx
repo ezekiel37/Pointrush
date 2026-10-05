@@ -29,7 +29,7 @@ function claimError(error: unknown) {
       case 'claim_rate_limit':
         return 'Too many codes did not work. For your security, try again in an hour.';
       case 'phone_required':
-        return 'Verify your phone number to claim prizes. Phone verification is not available yet in this version.';
+        return 'Verify your phone number to claim prizes. Your code stays valid.';
     }
     if (error.status === 403)
       return 'Your account cannot claim prizes right now. Check your account status.';
@@ -117,7 +117,22 @@ export function PrizeClaimScreen() {
               onChange={(event) => setCode(event.target.value)}
               disabled={busy}
             />
-            {error && <Feedback error>{error}</Feedback>}
+            {error && (
+              <Feedback error>
+                {error}
+                {error.startsWith('Verify your phone') && (
+                  <>
+                    {' '}
+                    <Link
+                      className="text-link"
+                      href={`/verify-phone?next=${encodeURIComponent('/claim')}`}
+                    >
+                      Verify now
+                    </Link>
+                  </>
+                )}
+              </Feedback>
+            )}
             <Button variant="accent" type="submit" disabled={busy}>
               {busy ? 'Checking code…' : 'Claim prize'}
             </Button>

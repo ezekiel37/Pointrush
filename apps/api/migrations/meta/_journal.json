@@ -134,6 +134,13 @@
       "when": 1791172599015,
       "tag": "0018_payments_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791185923917,
+      "tag": "0019_phone_verification",
+      "breakpoints": true
     }
   ]
 }
