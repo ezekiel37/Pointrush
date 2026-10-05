@@ -84,3 +84,27 @@ export const purchaseReleases = pgTable('purchase_releases', {
     .references(() => purchaseConfirmations.id),
   createdAt: at('created_at').notNull().defaultNow(),
 });
+
+// Unused campaign money returned to the business's available balance: the
+// whole budget before publication, or what no shopper is owed after the end.
+// The amount is computed by the database, never supplied by the caller.
+export const campaignReturns = pgTable(
+  'campaign_returns',
+  {
+    id: uuid('id').primaryKey(),
+    taskId: uuid('task_id')
+      .notNull()
+      .references(() => sponsorTasks.id),
+    actorId: uuid('actor_id')
+      .notNull()
+      .references(() => accounts.id),
+    amountKobo: bigint('amount_kobo', { mode: 'bigint' })
+      .notNull()
+      .default(sql`0`),
+    createdAt: at('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    check('campaign_return_positive', sql`${t.amountKobo} > 0`),
+    index('campaign_return_task').on(t.taskId),
+  ],
+);

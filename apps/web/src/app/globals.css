@@ -1359,6 +1359,14 @@
     color: var(--color-ink);
     white-space: normal;
   }
+  .confirm-strip {
+    display: grid;
+    gap: 0.75rem;
+    padding: 0.9rem 1rem;
+    border-radius: 14px;
+    background: var(--color-canvas);
+    border: 1px solid var(--color-line);
+  }
   .terms-list {
     display: grid;
     margin: 0;

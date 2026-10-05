@@ -28,6 +28,10 @@ const reasons: Record<string, string> = {
   'Phone code cooldown': 'code_cooldown',
   'Phone code limit': 'code_limit',
   'Phone code expired': 'code_expired',
+  'Campaign funds cannot be returned': 'return_unavailable',
+  'Campaign funds are still in use': 'funds_in_use',
+  'Nothing to return': 'nothing_to_return',
+  'Campaign was cancelled': 'campaign_cancelled',
 };
 
 function databaseError(error: unknown) {

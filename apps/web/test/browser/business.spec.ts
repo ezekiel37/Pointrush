@@ -270,3 +270,52 @@ test('without reviewer access the queue explains how to get it', async ({
   await page.goto('/review/campaigns');
   await expect(page.getByText(/recent authenticator check/)).toBeVisible();
 });
+
+test('a business cancels a campaign that is not live and gets its money back once', async ({
+  page,
+}) => {
+  let cancelled = false;
+  const draftId = '6c1e2d3f-4a5b-4c6d-8e9f-0a1b2c3d4e5f';
+  await page.route('**/api/v1/business/overview?*', (route) =>
+    route.fulfill({
+      json: overview([
+        {
+          id: draftId,
+          title: 'Weekend cash back',
+          model: 'purchase_cashback',
+          capacity: 40,
+          used: 0,
+          reviewState: 'pending_review',
+          lifecycle: 'draft',
+          endsAt: '2099-12-10T18:00:00Z',
+          rewardKobo: '50000',
+          published: false,
+          cancelled,
+          balanceKobo: cancelled ? '0' : '2000000',
+        },
+      ]),
+    }),
+  );
+  const bodies: unknown[] = [];
+  await page.route(`**/api/v1/campaigns/${draftId}/returns`, (route) => {
+    bodies.push(route.request().postDataJSON());
+    if (bodies.length === 1) return route.abort();
+    cancelled = true;
+    return route.fulfill({
+      json: { id: draftId, taskId: draftId, amountKobo: '2000000' },
+    });
+  });
+  await page.goto('/business/campaigns');
+  await page.getByRole('button', { name: 'Cancel and return' }).click();
+  await expect(page.getByText(/It can never go live afterwards/)).toBeVisible();
+  await healthy(page);
+  await page.getByRole('button', { name: 'Yes, cancel it' }).click();
+  await expect(page.getByText(/never be returned twice/)).toBeVisible();
+  await page.getByRole('button', { name: 'Yes, cancel it' }).click();
+  await expect(
+    page.getByText('₦20,000 is back in your available balance.'),
+  ).toBeVisible();
+  await expect(page.getByText('Cancelled', { exact: true })).toBeVisible();
+  expect(bodies).toHaveLength(2);
+  expect(bodies[0]).toEqual(bodies[1]);
+});

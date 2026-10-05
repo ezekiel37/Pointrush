@@ -188,6 +188,14 @@ export const businessCampaign = z.object({
   endsAt: date,
   rewardKobo: money,
   reviewNote: z.string().nullable().optional(),
+  published: z.boolean().optional(),
+  cancelled: z.boolean().optional(),
+  balanceKobo: money.optional(),
+});
+export const campaignReturn = z.object({
+  id: z.uuid(),
+  taskId: z.uuid(),
+  amountKobo: money,
 });
 export const businessOverview = z.object({
   business: z.object({ id: z.uuid(), name: z.string() }),

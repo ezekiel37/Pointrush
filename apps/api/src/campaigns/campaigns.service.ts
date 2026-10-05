@@ -287,6 +287,51 @@ export class CampaignsService {
     });
   }
 
+  // Returns unused campaign money to the business; the database decides how
+  // much (everything before publication, the unowed remainder after the end).
+  async returnFunds(user: string, taskId: string, input: unknown) {
+    parse(id, taskId);
+    const value = parse(z.object({ id: z.uuid() }).strict(), input);
+    return actorTransaction(this.db, user, async (tx, actor) => {
+      const [existing] = await tx
+        .select()
+        .from(s.campaignReturns)
+        .where(eq(s.campaignReturns.id, value.id));
+      if (existing) {
+        if (existing.taskId !== taskId || existing.actorId !== actor)
+          throw new NotFoundException();
+      } else {
+        const [owned] = await tx
+          .select({ id: s.sponsorTasks.id })
+          .from(s.sponsorTasks)
+          .innerJoin(
+            s.sponsorProfiles,
+            eq(s.sponsorProfiles.id, s.sponsorTasks.sponsorId),
+          )
+          .where(
+            and(
+              eq(s.sponsorTasks.id, taskId),
+              eq(s.sponsorProfiles.ownerId, actor),
+            ),
+          );
+        if (!owned) throw new NotFoundException();
+        await tx
+          .insert(s.campaignReturns)
+          .values({ id: value.id, taskId, actorId: actor });
+      }
+      const [row] = await tx
+        .select()
+        .from(s.campaignReturns)
+        .where(eq(s.campaignReturns.id, value.id));
+      return {
+        id: row!.id,
+        taskId,
+        amountKobo: row!.amountKobo.toString(),
+        createdAt: row!.createdAt,
+      };
+    });
+  }
+
   async purchases(user: string, input: unknown = {}) {
     const query = parse(pageInput, input);
     const limit = query.limit ?? 25;

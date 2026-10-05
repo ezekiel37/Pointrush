@@ -35,3 +35,14 @@ PGlite tests cover the full flow, idempotent retries, code replay, minimum spend
 - Unused campaign funds stay locked after the campaign ends; settlement and refunds are not implemented.
 - Shopper payout from the reward wallet (Bachs) is not implemented.
 - Return-visit campaign designs are planned, not built.
+
+## Returning unused money (migration 0020)
+
+POST `/api/v1/campaigns/:id/returns` with `{id}` (idempotent) returns campaign money to the business's available balance. The database computes the amount; the caller never supplies it.
+
+- Before publication: the whole remaining budget, and the campaign is cancelled. It can then be neither approved nor published (`campaign_cancelled`).
+- After a cash back offer or prize promotion ends: the balance minus cash back still owed to shoppers (confirmed, not voided, not yet released). That owed money stays locked until each shopper releases it. Returns can be repeated as more becomes free.
+- Live campaigns (`funds_in_use`) and published jobs keep their money; jobs can still be paid through open appeals.
+- Reasons: `return_unavailable`, `funds_in_use`, `nothing_to_return`, `campaign_cancelled`.
+
+Known limit: cash back a shopper never releases stays locked indefinitely. An automatic release after a long grace period is a later decision, since it moves money without the shopper's action.

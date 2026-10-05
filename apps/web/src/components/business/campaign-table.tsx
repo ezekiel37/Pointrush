@@ -26,8 +26,9 @@ const job = {
 };
 
 export function campaignStatus(
-  c: Pick<Campaign, 'reviewState' | 'lifecycle' | 'endsAt'>,
+  c: Pick<Campaign, 'reviewState' | 'lifecycle' | 'endsAt' | 'cancelled'>,
 ) {
+  if (c.cancelled) return ['Cancelled', 'chip chip-muted'] as const;
   if (c.lifecycle === 'published')
     return Date.parse(c.endsAt) > Date.now()
       ? (['Live', 'chip chip-done'] as const)

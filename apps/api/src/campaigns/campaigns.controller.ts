@@ -44,6 +44,14 @@ export class CampaignsController {
   ) {
     return this.campaigns.summary(r[AUTH_USER_ID], id, query);
   }
+  @Post('campaigns/:id/returns')
+  returnFunds(
+    @Req() r: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    return this.campaigns.returnFunds(r[AUTH_USER_ID], id, body);
+  }
   @Get('purchases')
   purchases(@Req() r: AuthenticatedRequest, @Query() query: unknown) {
     return this.campaigns.purchases(r[AUTH_USER_ID], query);

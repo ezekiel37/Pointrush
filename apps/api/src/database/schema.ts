@@ -138,6 +138,7 @@ export {
   purchaseConfirmations,
   purchaseVoids,
   purchaseReleases,
+  campaignReturns,
 } from '../campaigns/campaign.schema.js';
 export {
   pointsPools,

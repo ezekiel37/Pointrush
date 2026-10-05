@@ -89,6 +89,10 @@ export class BusinessOverviewService {
               (select r.reason from task_reviews r where r.task_id = o.id
                 order by r.created_at desc limit 1)
             end as review_note,
+            exists (select 1 from task_publications p where p.task_id = o.id) as published,
+            exists (select 1 from campaign_returns c where c.task_id = o.id) as returned,
+            (select coalesce(sum(case when f.destination_id = o.allocation_account_id then f.amount_kobo else -f.amount_kobo end), 0)
+              from funding_transfers f where f.source_id = o.allocation_account_id or f.destination_id = o.allocation_account_id)::text as balance_kobo,
             case
               when o.model = 'purchase_cashback' then (select count(*) from purchase_confirmations p
                 where p.task_id = o.id and not exists (select 1 from purchase_voids v where v.confirmation_id = p.id))
@@ -107,6 +111,9 @@ export class BusinessOverviewService {
         endsAt: new Date(String(r.ends_at)).toISOString(),
         rewardKobo: kobo(r.reward_kobo),
         reviewNote: r.review_note == null ? null : String(r.review_note),
+        published: Boolean(r.published),
+        cancelled: Boolean(r.returned) && !r.published,
+        balanceKobo: kobo(r.balance_kobo),
       }));
 
       return {

@@ -15,6 +15,7 @@ import { businessOverview } from '@/lib/rewards';
 import { useApiRead } from '@/lib/use-api-read';
 import { CampaignTable } from './campaign-table';
 import { DashHead, DashShell } from './dash-shell';
+import { FundsBack } from './funds-back';
 
 const dayLabel = (day: string, long: boolean) =>
   new Intl.DateTimeFormat('en-NG', {
@@ -252,6 +253,7 @@ export function CampaignListPage({
     (c) =>
       c.reviewState === 'approved' &&
       c.lifecycle !== 'published' &&
+      !c.cancelled &&
       notEnded(c.endsAt),
   );
 
@@ -331,6 +333,7 @@ export function CampaignListPage({
                 </ul>
               </section>
             )}
+            <FundsBack items={items} onDone={overview.refresh} />
             <section className="card">
               <CampaignTable
                 items={items}
