@@ -1,6 +1,15 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
+import {
+  BadgeCheck,
+  Bell,
+  CircleSlash,
+  Landmark,
+  RotateCcw,
+  Wallet,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { z } from 'zod';
 import { Page } from '@/components/shell/app-shell';
 import { Loading } from '@/components/ui/feedback';
@@ -8,6 +17,19 @@ import { WorkFailure } from '@/components/work/work-frame';
 import { apiRequest, shortDate } from '@/lib/api';
 import { notificationFeed } from '@/lib/rewards';
 import { useApiRead } from '@/lib/use-api-read';
+
+// One icon per kind, so the feed can be scanned without reading every line.
+const kindIcon: Record<string, LucideIcon> = {
+  cashback_ready: Wallet,
+  cashback_voided: CircleSlash,
+  withdrawal_paid: Landmark,
+  withdrawal_failed: RotateCcw,
+  review_approved: BadgeCheck,
+  review_changes_required: Bell,
+  review_rejected: CircleSlash,
+  funding_confirmed: Landmark,
+  campaign_return: RotateCcw,
+};
 
 export function Notifications() {
   const feed = useApiRead('notifications', notificationFeed);
@@ -37,7 +59,13 @@ export function Notifications() {
                 href={item.href}
                 className={`card notice${item.unread ? ' notice-unread' : ''}`}
               >
-                <span className="notice-dot" aria-hidden />
+                <span className="notice-icon" aria-hidden>
+                  {(() => {
+                    const Icon = kindIcon[item.kind] ?? Bell;
+                    return <Icon size={18} />;
+                  })()}
+                  {item.unread && <span className="notice-dot" />}
+                </span>
                 <span style={{ minWidth: 0 }}>
                   <span className="notice-title">
                     {item.unread && <span className="sr-only">New: </span>}

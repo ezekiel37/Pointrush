@@ -48,7 +48,9 @@ export function OfferList() {
                   </p>
                   {offer.campaignTerms && (
                     <p className="small-note">
-                      Spend {naira(offer.campaignTerms.minSpendKobo)} or more
+                      {offer.campaignTerms.minSpendKobo === '0'
+                        ? 'Any purchase'
+                        : `Spend ${naira(offer.campaignTerms.minSpendKobo)} or more`}
                     </p>
                   )}
                   {offer.campaignTerms && (
@@ -61,7 +63,7 @@ export function OfferList() {
                     >
                       <MapPin size={15} aria-hidden />
                       <span className="truncate">
-                        {offer.campaignTerms.placeName}
+                        {offer.campaignTerms.placeAddress}
                       </span>
                     </p>
                   )}

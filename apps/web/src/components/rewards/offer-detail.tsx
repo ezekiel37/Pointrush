@@ -222,7 +222,9 @@ export function OfferDetail({ id }: { id: string }) {
                 <div>
                   <dt className="eyebrow">Minimum spend</dt>
                   <dd className="amount" style={{ margin: 0 }}>
-                    {naira(terms.minSpendKobo)}
+                    {terms.minSpendKobo === '0'
+                      ? 'Any purchase'
+                      : naira(terms.minSpendKobo)}
                   </dd>
                 </div>
                 <div>

@@ -1314,6 +1314,16 @@
     padding: 0 0.35rem;
   }
   /* Campaign creation: grouped fields and a sticky money summary. */
+  /* Till: confirm on the left, what just happened on the right. */
+  .till-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+  }
+  .till-grid > section > h2 {
+    margin-top: 0;
+  }
   .create-grid {
     display: grid;
     grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
@@ -1396,7 +1406,7 @@
   }
   .notice {
     display: grid;
-    grid-template-columns: 10px minmax(0, 1fr);
+    grid-template-columns: 40px minmax(0, 1fr);
     gap: 0.85rem;
     color: inherit;
     text-decoration: none;
@@ -1408,13 +1418,28 @@
     display: grid;
     gap: 0.2rem;
   }
-  .notice-dot {
-    width: 8px;
-    height: 8px;
-    margin-top: 0.45rem;
-    border-radius: 999px;
+  .notice-icon {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--color-canvas);
+    color: var(--color-ink-soft, var(--color-ink));
   }
-  .notice-unread .notice-dot {
+  .notice-unread .notice-icon {
+    background: var(--color-brand-soft);
+    color: var(--color-brand-deep);
+  }
+  .notice-dot {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--color-surface);
+    border-radius: 999px;
     background: var(--color-brand);
   }
   .notice-title {
@@ -1928,7 +1953,7 @@
     display: flex;
     align-items: flex-start;
     gap: 0.75rem;
-    padding: 1rem 0;
+    padding: 0.45rem 0;
     cursor: pointer;
   }
   .work-consent input {
@@ -1968,6 +1993,9 @@
 }
 
 @media (max-width: 980px) {
+  .till-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .create-grid {
     grid-template-columns: minmax(0, 1fr);
   }

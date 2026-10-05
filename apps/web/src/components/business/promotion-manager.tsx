@@ -3,7 +3,7 @@ import { PrizeHandover } from './prize-handover';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Download, Printer, TriangleAlert } from 'lucide-react';
+import { Ban, Download, Printer, TriangleAlert } from 'lucide-react';
 import type { z } from 'zod';
 import { DashHead, DashShell } from './dash-shell';
 import { Button } from '@/components/ui/button';
@@ -311,13 +311,13 @@ export function PromotionManager({ id }: { id: string }) {
                           {batch.state !== 'revoked' &&
                             revoking?.id !== batch.id && (
                               <Button
-                                variant="ghost"
+                                variant="outline"
                                 type="button"
                                 onClick={() =>
                                   setRevoking({ id: batch.id, reason: '' })
                                 }
                               >
-                                Withdraw
+                                <Ban size={15} aria-hidden /> Cancel codes
                               </Button>
                             )}
                         </div>
@@ -343,7 +343,7 @@ export function PromotionManager({ id }: { id: string }) {
                           >
                             <Field
                               id={`revoke-${batch.id}`}
-                              label="Why withdraw this batch?"
+                              label="Why cancel these codes?"
                               hint="Unclaimed codes stop working. Their prizes can be issued again."
                               placeholder="Box of papers lost in transit"
                               value={revoking.reason}
@@ -360,7 +360,7 @@ export function PromotionManager({ id }: { id: string }) {
                                 type="submit"
                                 disabled={busy || !revoking.reason.trim()}
                               >
-                                Withdraw batch
+                                Cancel this batch
                               </Button>
                               <Button
                                 variant="ghost"

@@ -339,13 +339,13 @@ export function CampaignListPage({
                 </ul>
               </section>
             )}
-            <FundsBack items={items} onDone={overview.refresh} />
             <section className="card">
               <CampaignTable
                 items={items}
                 empty="Nothing here yet. Create one to get started."
               />
             </section>
+            <FundsBack items={items} onDone={overview.refresh} />
           </div>
         )
       )}
