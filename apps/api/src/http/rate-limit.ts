@@ -5,7 +5,7 @@ import {
   SetMetadata,
 } from '@nestjs/common';
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
+import type { Reflector } from '@nestjs/core';
 import type { Response } from 'express';
 import { AUTH_USER_ID } from '../auth/session.guard.js';
 import type { AuthenticatedRequest } from '../auth/session.guard.js';
