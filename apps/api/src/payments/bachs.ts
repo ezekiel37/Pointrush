@@ -151,7 +151,9 @@ export class BachsProvider implements PaymentProvider {
         pricing: { currency: 'NGN', amount: koboToDecimal(input.amountKobo) },
         // Our intent ID comes back on collection.succeeded as data.reference.
         reference: input.intentId,
-        payment_method_types: ['NGN_CARD', 'NGN_BANK_TRANSFER'],
+        // Bank transfer only: card payments can be charged back weeks later,
+        // after the money has been paid out (see SECURITY_REVIEW.md, C1).
+        payment_method_types: ['NGN_BANK_TRANSFER'],
         success_url: `${returnTo}?paid=1`,
         cancel_url: returnTo,
         expires_in_minutes: 60,

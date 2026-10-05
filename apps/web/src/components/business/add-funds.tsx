@@ -142,7 +142,7 @@ export function AddFunds() {
                     setAmount(e.target.value);
                     setInvalid('');
                   }}
-                  hint="Minimum ₦1,000. Card, transfer and bank options appear on the next page."
+                  hint="Minimum ₦1,000. You pay by bank transfer on the next page."
                   error={invalid}
                 />
                 {error && <Feedback error>{error}</Feedback>}
@@ -160,7 +160,8 @@ export function AddFunds() {
                 </Button>
                 <p className="small-note icon-line">
                   <LockKeyhole size={15} aria-hidden /> You pay on the payment
-                  provider&apos;s page. Acticlaim never sees your card.
+                  provider&apos;s page by bank transfer. Card payments are not
+                  accepted for funding.
                 </p>
               </form>
             </section>

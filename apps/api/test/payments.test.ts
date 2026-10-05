@@ -444,3 +444,34 @@ test('a person can request at most three withdrawals a day', async () => {
   );
   assert.equal(await balance(person.account, 'reward_wallet'), 300000n);
 });
+
+test('a person can withdraw at most N1,000,000 a day in total', async () => {
+  const person = await verifiedPerson();
+  // Below N1,000,000 each, so one reviewer can approve the campaigns.
+  await earn(person, '90000000');
+  await earn(person, '90000000');
+  // One withdrawal above N1,000,000 is refused outright.
+  await assert.rejects(
+    payments.requestWithdrawal(person.user, {
+      id: randomUUID(),
+      amountKobo: '100000100',
+    }),
+    { status: 400 },
+  );
+  const first = { id: randomUUID(), amountKobo: '70000000' };
+  await payments.requestWithdrawal(person.user, first);
+  assert.equal(
+    await reason(
+      payments.requestWithdrawal(person.user, {
+        id: randomUUID(),
+        amountKobo: '40000000',
+      }),
+    ),
+    'withdrawal_daily_limit',
+  );
+  await payments.requestWithdrawal(person.user, {
+    id: randomUUID(),
+    amountKobo: '30000000',
+  });
+  assert.equal(await balance(person.account, 'reward_wallet'), 80000000n);
+});

@@ -8,9 +8,9 @@ The core money engine is strong: every naira moves through a double-entry ledger
 
 | Item                  | Status                                                                                                                                                                                                                                        |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| C1 stolen cards       | Open. Decision: switch funding to bank transfer only, and handle disputes.                                                                                                                                                                    |
-| C2 regulation         | Open. Needs a lawyer; not a code change.                                                                                                                                                                                                      |
-| C3 withdrawal limits  | Open. Owner's decision on lower limits and BVN.                                                                                                                                                                                               |
+| C1 stolen cards       | **Partly fixed**: funding is bank transfer only (no cards). Dispute handling and business verification still open.                                                                                                                            |
+| C2 regulation         | Open. Bachs's terms say each business remains responsible for its own regulatory obligations; its licence does not cover Acticlaim. Needs a lawyer.                                                                                           |
+| C3 withdrawal limits  | **Lowered**: at most ₦1,000,000 per withdrawal and per day in total, three withdrawals a day. BVN tiers still open.                                                                                                                           |
 | C4 account takeover   | **Fixed**: email and in-app alert on every bank account added; "This wasn't me" locks withdrawals and stops any not yet sent; password asked again on every withdrawal (10 tries a minute); a different reviewer must unlock.                 |
 | H1 void abuse         | Open.                                                                                                                                                                                                                                         |
 | H2 cashier fraud      | **Mostly fixed**: per-staff totals today and this week, cash back this week, a warning when a cashier confirms the same shopper 3+ times a week, and a cap of 100 confirmations per cashier a day (database rule). Receipt numbers not added. |
@@ -24,6 +24,14 @@ The core money engine is strong: every naira moves through a double-entry ledger
 | M5 single reviewer    | **Fixed**: campaigns of ₦1,000,000 or more need two different reviewers; the reviewer who froze an account cannot unfreeze it alone.                                                                                                          |
 | M6 edge rate limits   | Open: set at Cloudflare at deployment.                                                                                                                                                                                                        |
 | M7 permits            | Process: keep a register of verified permits.                                                                                                                                                                                                 |
+
+## What Bachs's documentation says (checked 5 October 2026)
+
+- **Licence.** Bachs verifies Acticlaim (product, owner ID through Smile ID, bank account) but states that "you remain responsible for your own tax and regulatory obligations". Nothing says Bachs's licence covers a platform holding other people's money. Bachs Connect gives each business and person its own balance held by Bachs, which may help, but this needs a lawyer's opinion.
+- **Prohibited businesses.** Bachs lists "gambling and games of chance" and "unlicensed financial services" as not permitted. Chance-mode prize promotions ("some codes win") look like games of chance to a compliance reviewer, even with a state permit. Confirm in writing with Bachs before enabling them, or launch with every-code-wins only.
+- **USDT.** Bachs collects USDT (TRC-20, BEP-20, ERC-20, Solana) and pays out USDT on TRC-20 and BEP-20, from a USD balance. Withdrawals cost 1% (minimum 1 USDT). Acticlaim does not use it: crypto payouts cannot be reversed, are harder to trace, and make the laundering risk in C3 worse.
+- **Balance.** `GET /v1/balances` returns Acticlaim's available and pending balance per currency. M3 is a daily job that compares it with what Acticlaim owes.
+- **Deposit limits.** Each Bachs account has a per-charge limit that Bachs sets; large funding may fail with `DEPOSIT_LIMIT_EXCEEDED` until Bachs raises it.
 
 ## Critical: fix before real money
 

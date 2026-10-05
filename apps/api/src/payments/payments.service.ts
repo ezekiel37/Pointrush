@@ -30,7 +30,7 @@ const intentInput = z
   .object({ id: z.uuid(), amountKobo: money(100000n, 10000000000n) })
   .strict();
 const withdrawalInput = z
-  .object({ id: z.uuid(), amountKobo: money(100000n, 500000000n) })
+  .object({ id: z.uuid(), amountKobo: money(100000n, 100000000n) })
   .strict();
 const pageInput = z
   .object({

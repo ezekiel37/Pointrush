@@ -87,10 +87,8 @@ test('checkout charges exact naira with our reference and a retry-safe key', asy
   );
   assert.deepEqual(call.body!.pricing, { currency: 'NGN', amount: '5000.50' });
   assert.equal(call.body!.reference, intent);
-  assert.deepEqual(call.body!.payment_method_types, [
-    'NGN_CARD',
-    'NGN_BANK_TRANSFER',
-  ]);
+  // Bank transfer only: cards can be charged back after payout.
+  assert.deepEqual(call.body!.payment_method_types, ['NGN_BANK_TRANSFER']);
   assert.equal(
     call.body!.success_url,
     'https://acticlaim.com/business/funds?paid=1',

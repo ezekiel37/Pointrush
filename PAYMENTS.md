@@ -8,7 +8,7 @@ Migration 0018. Money enters when a business funds its account and leaves when a
 | ------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | POST `/api/v1/payments/funding-intents`    | Business | `{id, amountKobo}` (₦1,000 to ₦100,000,000). Records the intent, then returns the provider `checkoutUrl`. A retry after checkout started is `checkout_started`.          |
 | POST `/api/v1/payments/webhooks/:provider` | Provider | Public; authenticated only by the provider signature over the exact raw body. 400 when it cannot be verified, otherwise 200 with the outcome.                            |
-| POST `/api/v1/wallet/withdrawals`          | Person   | `{id, amountKobo, password}` (₦1,000 to ₦5,000,000). The password is checked again. Idempotent on `id`. Moves the money into a hold at once.                             |
+| POST `/api/v1/wallet/withdrawals`          | Person   | `{id, amountKobo, password}` (₦1,000 to ₦1,000,000). The password is checked again. Idempotent on `id`. Moves the money into a hold at once.                             |
 | POST `/api/v1/wallet/lock`                 | Person   | "This wasn't me": locks withdrawals and stops any not yet sent to the bank. Only a different reviewer can unlock (`POST /api/v1/admin/accounts/:id/withdrawal-unlocks`). |
 | GET `/api/v1/wallet/withdrawals`           | Person   | Own withdrawals, newest first, with state `held`, `sent`, `paid` or `failed`.                                                                                            |
 
@@ -24,7 +24,7 @@ Every bank account added sends the owner an email (through the sign-in email que
 
 ## Money out
 
-1. A withdrawal requires an active account with a verified phone and allows three a day. In the same transaction the amount moves from the wallet to `payout_hold`, so it cannot be spent or withdrawn twice.
+1. A withdrawal requires an active account with a verified phone and allows three a day and at most ₦1,000,000 a day in total (refused payouts do not count). In the same transaction the amount moves from the wallet to `payout_hold`, so it cannot be spent or withdrawn twice.
 2. `PaymentsService.submitPendingWithdrawals()` hands held withdrawals to the provider. The withdrawal ID is the idempotency key.
 3. A verified `payout.succeeded` closes the hold (to clearing); `payout.failed` returns the money to the wallet. Each withdrawal has one outcome, ever. A repeat of the same result is a no-op; a contradicting later event is recorded as `mismatch` and changes nothing.
 
@@ -53,7 +53,7 @@ A provider adapter must:
 
 The Bachs adapter (`apps/api/src/payments/bachs.ts`) follows https://docs.bachs.io:
 
-- **Funding.** `POST /v1/checkout-sessions` with a raw NGN amount (`pricing`), our intent ID as `reference`, NGN card and bank transfer only, and `Idempotency-Key: checkout:<intent>`. The business returns to `/business/funds?paid=1`, but only the `collection.succeeded` webhook credits. It must carry our reference, the exact amount, NGN and `status: SUCCEEDED`; `ACCEPTED` or `OVERPAID` collections go to review as `mismatch`.
+- **Funding.** `POST /v1/checkout-sessions` with a raw NGN amount (`pricing`), our intent ID as `reference`, NGN bank transfer only (cards are not offered: a card payment can be charged back after the money has been paid out), and `Idempotency-Key: checkout:<intent>`. The business returns to `/business/funds?paid=1`, but only the `collection.succeeded` webhook credits. It must carry our reference, the exact amount, NGN and `status: SUCCEEDED`; `ACCEPTED` or `OVERPAID` collections go to review as `mismatch`.
 - **Bank accounts.** `POST /v1/payouts/destinations` checks the account at the bank. Only an `approved` account is saved, with the bank's own account name and the last four digits; the full number is not stored. A changed account cannot receive money for 24 hours, and at most three accounts can be added in 30 days.
 - **Payouts.** `POST /v1/payouts` to the saved destination, with the withdrawal ID as `reference` and `Idempotency-Key: withdrawal:<id>`, so a retry never pays twice. The amount is what the person receives; Bachs charges its fee on top, from Acticlaim's balance. `payout.paid` and `payout.failed` settle the withdrawal.
 - **Failures.** A rejected destination ends the withdrawal and returns the money. Anything else (Bachs unreachable, `INSUFFICIENT_BALANCE`, `ORGANIZATION_IN_DEBT`, rate limits) leaves it held and is retried with the same key.

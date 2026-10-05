@@ -190,6 +190,13 @@
       "when": 1791212771096,
       "tag": "0026_security_hardening",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1791214752196,
+      "tag": "0027_withdrawal_daily_total",
+      "breakpoints": true
     }
   ]
 }

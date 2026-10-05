@@ -111,7 +111,7 @@ export const withdrawals = pgTable(
   (t) => [
     check(
       'withdrawal_amount',
-      sql`${t.amountKobo} between 100000 and 500000000`,
+      sql`${t.amountKobo} between 100000 and 100000000`,
     ),
     index('withdrawal_account').on(t.accountId, t.createdAt),
   ],

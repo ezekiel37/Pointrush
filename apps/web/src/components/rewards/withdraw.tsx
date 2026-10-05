@@ -12,7 +12,7 @@ import { withdrawal } from '@/lib/rewards';
 type Withdrawal = z.infer<typeof withdrawal>;
 export const minWithdrawKobo = 100000n;
 const minKobo = minWithdrawKobo;
-const maxKobo = 500000000n;
+const maxKobo = 100000000n;
 
 export const withdrawalState = {
   held: ['Processing', 'chip chip-pending'],
@@ -29,7 +29,7 @@ function withdrawError(error: unknown) {
       case 'insufficient_balance':
         return 'That is more than your wallet balance.';
       case 'withdrawal_daily_limit':
-        return 'You can make three withdrawals a day. Try again tomorrow.';
+        return 'You can withdraw up to ₦1,000,000 a day, in up to three withdrawals. Try a smaller amount or try again tomorrow.';
       case 'destination_required':
         return 'Add a bank account first.';
       case 'destination_cooling':
@@ -42,7 +42,7 @@ function withdrawError(error: unknown) {
         return 'Withdrawals need an active account with a verified phone number. Verify it from your wallet.';
     }
     if (error.status === 400)
-      return 'Enter an amount between ₦1,000 and ₦5,000,000.';
+      return 'Enter an amount between ₦1,000 and ₦1,000,000.';
   }
   return 'We could not confirm the withdrawal. Check your connection and try again; it will never be taken twice.';
 }
@@ -73,7 +73,7 @@ export function WithdrawPanel({
     event.preventDefault();
     if (busy) return;
     if (!kobo || BigInt(kobo) < minKobo || BigInt(kobo) > maxKobo) {
-      setInvalid('Enter an amount between ₦1,000 and ₦5,000,000.');
+      setInvalid('Enter an amount between ₦1,000 and ₦1,000,000.');
       return;
     }
     if (BigInt(kobo) > BigInt(walletKobo)) {
@@ -130,7 +130,7 @@ export function WithdrawPanel({
             setAmount(e.target.value);
             setInvalid('');
           }}
-          hint="Minimum ₦1,000. Up to three withdrawals a day."
+          hint="From ₦1,000 to ₦1,000,000 a day, in up to three withdrawals."
           error={invalid}
         />
         {all >= minKobo && (
