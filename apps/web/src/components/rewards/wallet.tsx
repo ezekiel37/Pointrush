@@ -18,6 +18,7 @@ import { BankAccount, usable } from './bank-account';
 import { useApiRead } from '@/lib/use-api-read';
 import { minWithdrawKobo, WithdrawalList, WithdrawPanel } from './withdraw';
 import { WithdrawalLock } from './withdrawal-lock';
+import { VoidDispute } from './void-dispute';
 
 const stateLabel = {
   pending: ['Held', 'chip chip-pending'],
@@ -267,6 +268,13 @@ export function Wallet() {
                             <span className={chip}>{text}</span>
                           )}
                         </div>
+                        {item.state === 'voided' && (
+                          <VoidDispute
+                            item={item}
+                            now={Date.parse(purchases.data!.observedAt)}
+                            onDone={purchases.refresh}
+                          />
+                        )}
                       </li>
                     );
                   })}

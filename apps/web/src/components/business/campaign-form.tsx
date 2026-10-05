@@ -107,9 +107,6 @@ export function CampaignForm({ model }: { model: Model }) {
     placeName: '',
     placeAddress: '',
     voidWhen: 'Refunded or cancelled orders.',
-    mode: 'every_code_wins' as 'every_code_wins' | 'chance',
-    permitAuthority: '',
-    permitNumber: '',
     claimLimit: '1',
     howToGetCodes: '',
     prizeType: 'cash' as 'cash' | 'item',
@@ -167,12 +164,6 @@ export function CampaignForm({ model }: { model: Model }) {
       if (form.prizeType === 'item' && !form.prizeItem.trim())
         next.prizeItem =
           'Describe the prize, for example a crate of 12 drinks.';
-      if (form.mode === 'chance') {
-        if (!form.permitAuthority.trim())
-          next.permitAuthority = 'Name the authority that issued your permit.';
-        if (!form.permitNumber.trim())
-          next.permitNumber = 'Enter your permit number.';
-      }
     }
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -205,14 +196,8 @@ export function CampaignForm({ model }: { model: Model }) {
           proofRequirements: 'A valid, unused winning code.',
           rejectionCriteria: 'Invalid, used or withdrawn codes.',
           promotionTerms: {
-            mode: form.mode,
-            permit:
-              form.mode === 'chance'
-                ? {
-                    authority: form.permitAuthority.trim(),
-                    number: form.permitNumber.trim(),
-                  }
-                : null,
+            mode: 'every_code_wins',
+            permit: null,
             claimLimitPerPerson: Number(form.claimLimit),
             howToGetCodes: form.howToGetCodes.trim(),
             ...(form.prizeType === 'item'
@@ -419,46 +404,12 @@ export function CampaignForm({ model }: { model: Model }) {
               </>
             ) : (
               <Section title="Codes and winners">
-                <div className="field">
-                  <span className="field-label" id="mode-label">
-                    Who wins
-                  </span>
-                  <div
-                    className="segmented preset-row two"
-                    role="group"
-                    aria-labelledby="mode-label"
-                  >
-                    {(
-                      [
-                        ['every_code_wins', 'Every code wins'],
-                        ['chance', 'Some codes win'],
-                      ] as const
-                    ).map(([mode, label]) => (
-                      <button
-                        key={mode}
-                        type="button"
-                        aria-pressed={form.mode === mode}
-                        onClick={() => set('mode')(mode)}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                  <p className="field-help">
-                    {form.mode === 'chance'
-                      ? 'A prize won by chance is a state-licensed promotion. Your permit is checked before approval.'
-                      : 'One code per pack and every code pays: no permit is needed.'}
-                  </p>
-                </div>
-                {form.mode === 'chance' && (
-                  <div className="pair">
-                    {field('permitAuthority', 'Permit issued by', {
-                      maxLength: 160,
-                      placeholder: 'Lagos State Lotteries and Gaming Authority',
-                    })}
-                    {field('permitNumber', 'Permit number', { maxLength: 160 })}
-                  </div>
-                )}
+                <p className="field-help" style={{ margin: 0 }}>
+                  Every code you create here is funded and wins its prize.
+                  Acticlaim does not run draws. If you also hand out papers
+                  without codes, that promotion and any permit it needs are your
+                  responsibility.
+                </p>
                 <div className="pair">
                   {field('claimLimit', 'Prizes per person', {
                     inputMode: 'numeric',

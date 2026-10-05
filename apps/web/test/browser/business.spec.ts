@@ -127,7 +127,7 @@ test('a cash back offer locks exactly what the business can afford and survives 
   });
 });
 
-test('a chance promotion requires the state permit; every-code-wins does not', async ({
+test('a prize promotion funds every code: there is no chance mode', async ({
   page,
 }) => {
   await page.route('**/api/v1/business/overview?*', (route) =>
@@ -144,12 +144,10 @@ test('a chance promotion requires the state permit; every-code-wins does not', a
   await page.getByLabel('Prize per winning code (₦)').fill('5,000');
   await page.getByLabel('Number of prizes').fill('4');
   await page.getByLabel('Where customers find codes').fill('Under the cap');
-  await page.getByRole('button', { name: 'Some codes win' }).click();
-  await page.getByRole('button', { name: 'Lock ₦20,000 and submit' }).click();
-  await expect(page.getByText('Enter your permit number.')).toBeVisible();
-  expect(bodies).toHaveLength(0);
-  await page.getByLabel('Permit issued by').fill('LSLGA');
-  await page.getByLabel('Permit number').fill('LG-2026-118');
+  await expect(
+    page.getByRole('button', { name: 'Some codes win' }),
+  ).toHaveCount(0);
+  await expect(page.getByText(/Acticlaim does not run draws/)).toBeVisible();
   await healthy(page);
   await page.getByRole('button', { name: 'Lock ₦20,000 and submit' }).click();
   await page.waitForURL('**/business/promotions?created=1');
@@ -157,8 +155,8 @@ test('a chance promotion requires the state permit; every-code-wins does not', a
     model: 'claim_code',
     rewardKobo: '500000',
     promotionTerms: {
-      mode: 'chance',
-      permit: { authority: 'LSLGA', number: 'LG-2026-118' },
+      mode: 'every_code_wins',
+      permit: null,
       claimLimitPerPerson: 1,
       howToGetCodes: 'Under the cap',
     },
@@ -619,6 +617,59 @@ test('a reviewer freezes an account with a reason and can restore it', async ({
   await expect(
     page.getByText(/Withdrawals locked by the account owner/),
   ).toBeHidden();
+});
+
+test('a reviewer decides a void dispute with a reason, and the shopper can be paid', async ({
+  page,
+}) => {
+  const disputeId = '5d1e2d3f-4a5b-4c6d-8e9f-0a1b2c3d4e5f';
+  let decided = false;
+  const bodies: Record<string, unknown>[] = [];
+  await page.route('**/api/v1/admin/disputes', (route) =>
+    route.fulfill({
+      json: {
+        items: decided
+          ? []
+          : [
+              {
+                id: disputeId,
+                title: 'Lunch cash back',
+                business: 'Mama Put Kitchen',
+                shopper: 'ada',
+                amountKobo: '450000',
+                cashbackKobo: '50000',
+                purchasedAt: '2026-10-04T12:00:00Z',
+                voidReason: 'Refunded at the counter',
+                voidedAt: '2026-10-04T15:00:00Z',
+                note: 'Rice and chicken, receipt 0412',
+                disputedAt: '2026-10-05T09:00:00Z',
+                campaignConfirmed: 40,
+                campaignVoided: 8,
+              },
+            ],
+      },
+    }),
+  );
+  await page.route(`**/api/v1/admin/disputes/${disputeId}/rulings`, (route) => {
+    bodies.push(route.request().postDataJSON());
+    decided = true;
+    return route.fulfill({ json: { id: disputeId, decision: 'reversed' } });
+  });
+  await page.goto('/review/disputes');
+  await expect(page.getByText('Rice and chicken, receipt 0412')).toBeVisible();
+  await expect(page.getByText('8 of 40 purchases (20%)')).toBeVisible();
+  await healthy(page);
+  await page.getByRole('button', { name: 'Pay the shopper' }).click();
+  await expect(page.getByText(/Write the reason/)).toBeVisible();
+  expect(bodies).toHaveLength(0);
+  await page.getByLabel('Reason').fill('Receipt matches the till record.');
+  await page.getByRole('button', { name: 'Pay the shopper' }).click();
+  await expect(page.getByText(/The shopper has been paid/)).toBeVisible();
+  await expect(page.getByText('No disputes waiting.')).toBeVisible();
+  expect(bodies[0]).toEqual({
+    decision: 'reversed',
+    reason: 'Receipt matches the till record.',
+  });
 });
 
 test('flagged payments take a note and then show it', async ({ page }) => {

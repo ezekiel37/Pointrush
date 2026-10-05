@@ -44,6 +44,8 @@ export const offerSummary = z.object({
   rewardBackingKobo: money,
   model: z.string(),
   campaignTerms: campaignTerms.nullable(),
+  // Share of purchases this business voided (180 days); null below 10.
+  voidRatePercent: z.number().int().nullable().default(null),
 });
 export const offerPage = page(offerSummary);
 export const offerDetail = z.object({
@@ -77,6 +79,11 @@ export const purchase = z.object({
   releaseAt: date,
   createdAt: date,
   state: purchaseState,
+  // Voids: the business's reason, until when the shopper can dispute, and
+  // the dispute's state ('open', 'upheld' or 'reversed').
+  voidReason: z.string().nullable().default(null),
+  disputeUntil: date.nullable().default(null),
+  dispute: z.enum(['open', 'upheld', 'reversed']).nullable().default(null),
 });
 export const purchasePage = page(purchase).extend({ observedAt: date });
 
@@ -151,6 +158,7 @@ export const campaignSummary = z.object({
   voided: z.number().int(),
   released: z.number().int(),
   remaining: z.number().int(),
+  voidsLeft: z.number().int().default(3),
   returningShoppers: z.number().int(),
   recent: purchasePage,
 });

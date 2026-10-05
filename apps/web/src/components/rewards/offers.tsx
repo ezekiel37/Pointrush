@@ -67,7 +67,11 @@ export function OfferList() {
                       </span>
                     </p>
                   )}
-                  <p className="small-note">Ends {shortDate(offer.endsAt)}</p>
+                  <p className="small-note">
+                    Ends {shortDate(offer.endsAt)}
+                    {offer.voidRatePercent !== null &&
+                      ` · Business voids ${offer.voidRatePercent}% of purchases`}
+                  </p>
                 </Link>
               </li>
             );

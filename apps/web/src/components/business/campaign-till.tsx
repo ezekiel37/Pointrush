@@ -124,7 +124,9 @@ export function CampaignTill({ id }: { id: string }) {
       setError(
         cause instanceof RequestError && cause.code === 'void_rejected'
           ? 'This purchase can no longer be voided: its refund window has passed.'
-          : tillError(cause),
+          : cause instanceof RequestError && cause.code === 'void_limit'
+            ? 'You have used all your voids for this campaign (20% of purchases). Contact Acticlaim support if there is a real problem.'
+            : tillError(cause),
       );
     } finally {
       setBusy(false);
@@ -252,6 +254,7 @@ export function CampaignTill({ id }: { id: string }) {
                           >
                             <span className={chip}>{label}</span>
                             {item.state === 'pending' &&
+                              data.voidsLeft > 0 &&
                               voiding?.id !== item.id && (
                                 <Button
                                   variant="outline"
@@ -273,7 +276,7 @@ export function CampaignTill({ id }: { id: string }) {
                               <Field
                                 id={`void-${item.id}`}
                                 label="Reason for voiding"
-                                hint="The shopper sees that this cash back was withdrawn."
+                                hint={`The shopper sees your reason and can ask an Acticlaim reviewer to check it. The money stays locked for 7 days. Voids left: ${data.voidsLeft}.`}
                                 placeholder="Refunded at the counter"
                                 value={voiding.reason}
                                 onChange={(event) =>

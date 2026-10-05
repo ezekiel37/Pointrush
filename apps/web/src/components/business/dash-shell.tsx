@@ -15,6 +15,7 @@ import {
   ShieldAlert,
   ScanLine,
   TicketCheck,
+  Undo2,
   UsersRound,
 } from 'lucide-react';
 import { z } from 'zod';
@@ -53,6 +54,7 @@ const reviewGroups = [
     links: [
       { href: '/review/campaigns', label: 'Campaigns', icon: ClipboardCheck },
       { href: '/review/appeals', label: 'Appeals', icon: Scale },
+      { href: '/review/disputes', label: 'Void disputes', icon: Undo2 },
     ],
   },
   {

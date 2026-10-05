@@ -277,6 +277,80 @@ test('wallet separates paid money from held cash back and releases once', async 
   expect(released).toBe(1);
 });
 
+test('a shopper disputes a void within 7 days and sees it waiting for a reviewer', async ({
+  page,
+}) => {
+  await phone(page);
+  let disputed = false;
+  const notes: string[] = [];
+  await page.route('**/api/v1/points', (route) =>
+    route.fulfill({
+      json: {
+        points: { available: '0', pending: '0' },
+        walletKobo: '0',
+        tier: {
+          name: 'New',
+          businesses: 1,
+          next: { name: 'Bronze', businesses: 3 },
+        },
+        phoneVerified: false,
+        referral: { code: null, referredBy: null, referred: 0, rewarded: 0 },
+      },
+    }),
+  );
+  await page.route('**/api/v1/purchases?*', (route) =>
+    route.fulfill({
+      json: {
+        items: [
+          {
+            id: purchaseId,
+            taskId: offerId,
+            title: 'Lunch cash back',
+            businessName: 'Mama Put Kitchen',
+            amountKobo: '450000',
+            cashbackKobo: '50000',
+            releaseAt: '2026-10-07T12:00:00Z',
+            createdAt: '2026-10-04T12:00:00Z',
+            state: 'voided',
+            voidReason: 'Refunded at the counter',
+            disputeUntil: disputed ? null : '2026-10-11T12:00:00Z',
+            dispute: disputed ? 'open' : null,
+          },
+        ],
+        nextCursor: null,
+        observedAt: '2026-10-05T12:00:00Z',
+      },
+    }),
+  );
+  await page.route(`**/api/v1/purchases/${purchaseId}/disputes`, (route) => {
+    notes.push(route.request().postDataJSON().note);
+    disputed = true;
+    return route.fulfill({ json: { confirmationId: purchaseId } });
+  });
+  await page.route('**/api/v1/wallet/withdrawals?*', (route) =>
+    route.fulfill({ json: { items: [], nextCursor: null } }),
+  );
+  await page.goto('/wallet');
+  await expect(
+    page.getByText("Business's reason: Refunded at the counter"),
+  ).toBeVisible();
+  await healthy(page);
+  await page.getByRole('button', { name: 'This was a real purchase' }).click();
+  await page.getByRole('button', { name: 'Send dispute' }).click();
+  await expect(page.getByText(/Say what you bought/)).toBeVisible();
+  await page
+    .getByLabel(/What did you buy/)
+    .fill('Rice and chicken, receipt 0412');
+  await page.getByRole('button', { name: 'Send dispute' }).click();
+  await expect(
+    page.getByText(/A reviewer is checking your dispute/),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'This was a real purchase' }),
+  ).toHaveCount(0);
+  expect(notes).toEqual(['Rice and chicken, receipt 0412']);
+});
+
 test('till confirms a typed code with exact kobo and replays an uncertain confirmation', async ({
   page,
 }) => {
