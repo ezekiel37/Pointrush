@@ -149,11 +149,11 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
       'PAYMENTS_RETURN_ORIGIN',
       NODE_ENV === 'production',
     );
-    // Real money only with a live key, and live keys only in production.
-    if ((NODE_ENV === 'production') !== BACHS_API_KEY.startsWith('sk_live_'))
-      throw new Error(
-        'Use a sk_live_ Bachs key in production and a sk_sandbox_ key elsewhere',
-      );
+    // Live keys (real money) only in production. Production may also run on
+    // a sandbox key while the service is being tried out; switching to live
+    // is a key change (see LAUNCH.md).
+    if (NODE_ENV !== 'production' && BACHS_API_KEY.startsWith('sk_live_'))
+      throw new Error('A sk_live_ Bachs key can only be used in production');
   } else if (BACHS_API_KEY) {
     throw new Error('BACHS_API_KEY is set but PAYMENTS_PROVIDER is not bachs');
   }

@@ -31,6 +31,18 @@ async function bootstrap(): Promise<void> {
   );
   const authHandler = config.auth ? app.get(AuthService).handler : undefined;
   configureHttp(app, config, authHandler);
+  if (
+    config.nodeEnv === 'production' &&
+    config.payments?.provider === 'bachs' &&
+    config.payments.apiKey.startsWith('sk_sandbox_')
+  )
+    process.stdout.write(
+      JSON.stringify({
+        level: 'warn',
+        event: 'payments_sandbox',
+        message: 'Payments use the Bachs sandbox: no real money moves.',
+      }) + '\n',
+    );
   app.enableShutdownHooks();
   await app.listen(config.port, '0.0.0.0');
 }

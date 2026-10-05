@@ -277,7 +277,7 @@ test('SMS is restricted to configured countries and never the test provider in p
   );
 });
 
-test('Bachs needs a key, secret and return origin, with live keys only in production', () => {
+test('Bachs needs a key, secret and return origin; live keys only in production, which also accepts sandbox keys', () => {
   const sandbox = {
     ...apiConfig,
     NODE_ENV: 'development',
@@ -305,9 +305,9 @@ test('Bachs needs a key, secret and return origin, with live keys only in produc
       readEnvironment({ ...sandbox, BACHS_API_KEY: 'sk_live_abcdef123456' }),
     /sk_live_/,
   );
-  assert.throws(
-    () => readEnvironment({ ...sandbox, NODE_ENV: 'production' }),
-    /sk_live_/,
+  assert.equal(
+    readEnvironment({ ...sandbox, NODE_ENV: 'production' }).payments?.provider,
+    'bachs',
   );
   assert.equal(
     readEnvironment({
