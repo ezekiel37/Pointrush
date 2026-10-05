@@ -4,6 +4,27 @@ October 2026. Scope: the API, database rules, payments (Bachs), web app and the 
 
 The core money engine is strong: every naira moves through a double-entry ledger whose rules are enforced by the database, every money-moving request is idempotent, webhooks are signed and replay-protected, and concurrency races are tested on real PostgreSQL. The serious risks are not "hackers breaking in"; they are people using the product exactly as designed to move money where it should not go.
 
+## Status (5 October 2026)
+
+| Item                  | Status                                                                                                                                                                                                                                        |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C1 stolen cards       | Open. Decision: switch funding to bank transfer only, and handle disputes.                                                                                                                                                                    |
+| C2 regulation         | Open. Needs a lawyer; not a code change.                                                                                                                                                                                                      |
+| C3 withdrawal limits  | Open. Owner's decision on lower limits and BVN.                                                                                                                                                                                               |
+| C4 account takeover   | **Fixed**: email and in-app alert on every bank account added; "This wasn't me" locks withdrawals and stops any not yet sent; password asked again on every withdrawal (10 tries a minute); a different reviewer must unlock.                 |
+| H1 void abuse         | Open.                                                                                                                                                                                                                                         |
+| H2 cashier fraud      | **Mostly fixed**: per-staff totals today and this week, cash back this week, a warning when a cashier confirms the same shopper 3+ times a week, and a cap of 100 confirmations per cashier a day (database rule). Receipt numbers not added. |
+| H3 leaked prize codes | Open.                                                                                                                                                                                                                                         |
+| H4 SIM farms          | Open.                                                                                                                                                                                                                                         |
+| H5 fee scams          | Ongoing: the app says Acticlaim never charges to claim; alert emails repeat it.                                                                                                                                                               |
+| M1 staff consent      | **Fixed**: a person must accept the invitation before they become staff.                                                                                                                                                                      |
+| M2 fee drain          | **Fixed**: minimum withdrawal ₦1,000.                                                                                                                                                                                                         |
+| M3 balance shortfall  | Open: needs the Bachs balance API in the daily job.                                                                                                                                                                                           |
+| M4 refund after hold  | **Fixed**: the campaign form tells businesses to choose a hold at least as long as their refund policy.                                                                                                                                       |
+| M5 single reviewer    | **Fixed**: campaigns of ₦1,000,000 or more need two different reviewers; the reviewer who froze an account cannot unfreeze it alone.                                                                                                          |
+| M6 edge rate limits   | Open: set at Cloudflare at deployment.                                                                                                                                                                                                        |
+| M7 permits            | Process: keep a register of verified permits.                                                                                                                                                                                                 |
+
 ## Critical: fix before real money
 
 ### C1. Stolen cards funding campaigns, cashed out through mule accounts

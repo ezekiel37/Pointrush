@@ -4,14 +4,17 @@ Migration 0018. Money enters when a business funds its account and leaves when a
 
 ## Routes
 
-| Route                                      | Who      | Behaviour                                                                                                                                                       |
-| ------------------------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| POST `/api/v1/payments/funding-intents`    | Business | `{id, amountKobo}` (₦1,000 to ₦100,000,000). Records the intent, then returns the provider `checkoutUrl`. A retry after checkout started is `checkout_started`. |
-| POST `/api/v1/payments/webhooks/:provider` | Provider | Public; authenticated only by the provider signature over the exact raw body. 400 when it cannot be verified, otherwise 200 with the outcome.                   |
-| POST `/api/v1/wallet/withdrawals`          | Person   | `{id, amountKobo}` (₦500 to ₦5,000,000). Idempotent on `id`. Moves the money into a hold at once.                                                               |
-| GET `/api/v1/wallet/withdrawals`           | Person   | Own withdrawals, newest first, with state `held`, `sent`, `paid` or `failed`.                                                                                   |
+| Route                                      | Who      | Behaviour                                                                                                                                                                |
+| ------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| POST `/api/v1/payments/funding-intents`    | Business | `{id, amountKobo}` (₦1,000 to ₦100,000,000). Records the intent, then returns the provider `checkoutUrl`. A retry after checkout started is `checkout_started`.          |
+| POST `/api/v1/payments/webhooks/:provider` | Provider | Public; authenticated only by the provider signature over the exact raw body. 400 when it cannot be verified, otherwise 200 with the outcome.                            |
+| POST `/api/v1/wallet/withdrawals`          | Person   | `{id, amountKobo, password}` (₦1,000 to ₦5,000,000). The password is checked again. Idempotent on `id`. Moves the money into a hold at once.                             |
+| POST `/api/v1/wallet/lock`                 | Person   | "This wasn't me": locks withdrawals and stops any not yet sent to the bank. Only a different reviewer can unlock (`POST /api/v1/admin/accounts/:id/withdrawal-unlocks`). |
+| GET `/api/v1/wallet/withdrawals`           | Person   | Own withdrawals, newest first, with state `held`, `sent`, `paid` or `failed`.                                                                                            |
 
-Reasons: `payments_unavailable` (503, no provider configured), `checkout_started`, `withdrawal_unavailable` (inactive account or no verified phone), `withdrawal_daily_limit`, `insufficient_balance`.
+Reasons: `payments_unavailable` (503, no provider configured), `checkout_started`, `withdrawal_unavailable` (inactive account or no verified phone), `withdrawal_daily_limit`, `insufficient_balance`, `password_required` (missing or wrong password), `withdrawals_locked`.
+
+Every bank account added sends the owner an email (through the sign-in email queue, with no links) and an in-app notice. The ₦1,000 minimum keeps payout fees, which Acticlaim pays, from being drained by many tiny withdrawals.
 
 ## Money in
 
