@@ -99,3 +99,25 @@ test('database URL errors do not echo credentials', () => {
     );
   }
 });
+
+test("a provider's own root certificate is added, never used to skip verification", () => {
+  const pem =
+    '-----BEGIN CERTIFICATE-----\nMIIBexample\n-----END CERTIFICATE-----';
+  const url = 'postgresql://user:secret@pooler.example.com/postgres';
+  assert.deepEqual(
+    readDatabaseConfig({ DATABASE_URL: url, DATABASE_CA_CERT: pem })?.ssl,
+    { rejectUnauthorized: true, ca: pem },
+  );
+  // Pasted on one line with \n escapes, as some dashboards store it.
+  assert.deepEqual(
+    readDatabaseConfig({
+      DATABASE_URL: url,
+      DATABASE_CA_CERT: pem.replace(/\n/g, '\\n'),
+    })?.ssl,
+    { rejectUnauthorized: true, ca: pem },
+  );
+  assert.throws(
+    () => readDatabaseConfig({ DATABASE_URL: url, DATABASE_CA_CERT: 'nope' }),
+    /DATABASE_CA_CERT/,
+  );
+});

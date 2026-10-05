@@ -31,7 +31,7 @@ npm run db:migrate
 npm run dev:api
 ```
 
-The API and migration commands load `apps/api/.env` when present. The migration command requires `MIGRATION_DATABASE_URL`; it intentionally does not fall back to the runtime URL. Use `DATABASE_SSL_MODE=disable-local` only for explicit loopback connections. Remote URLs must validate TLS certificates. Optional `sslmode=verify-full` is accepted and normalized; other URL options are rejected so driver parsing cannot override TLS policy. Add provider-specific CA support through an explicit reviewed change if needed; never use `rejectUnauthorized: false`.
+The API and migration commands load `apps/api/.env` when present. The migration command requires `MIGRATION_DATABASE_URL`; it intentionally does not fall back to the runtime URL. Use `DATABASE_SSL_MODE=disable-local` only for explicit loopback connections. Remote URLs must validate TLS certificates. Optional `sslmode=verify-full` is accepted and normalized; other URL options are rejected so driver parsing cannot override TLS policy. For providers that sign with their own root certificate (Supabase), set `DATABASE_CA_CERT` to that certificate's PEM text; it is added to verification, never used to skip it. Never use `rejectUnauthorized: false`.
 
 ## Migration Delivery
 

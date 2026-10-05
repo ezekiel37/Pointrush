@@ -1,0 +1,12 @@
+# Files Cloud Build does not need to receive.
+.git/
+node_modules/
+**/node_modules/
+dist/
+.test-dist/
+.next/
+test-results/
+playwright-report/
+screens/
+.env
+.env.*

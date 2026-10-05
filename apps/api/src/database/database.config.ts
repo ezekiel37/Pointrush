@@ -5,7 +5,7 @@ const poolSize = z.coerce.number().int().min(1).max(20).default(5);
 
 export interface DatabaseConfig {
   connectionString: string;
-  ssl: false | { rejectUnauthorized: true };
+  ssl: false | { rejectUnauthorized: true; ca?: string };
   max: number;
 }
 
@@ -58,11 +58,23 @@ export function readDatabaseConfig(
       'DATABASE_SSL_MODE must verify TLS except for explicit local development',
     );
   }
+  // Providers such as Supabase sign their certificates with their own root
+  // certificate. DATABASE_CA_CERT adds it (PEM text) so verification still
+  // happens; without it only publicly trusted certificates are accepted.
+  const ca = input.DATABASE_CA_CERT?.replace(/\\n/g, '\n').trim();
+  if (
+    ca !== undefined &&
+    !/^-----BEGIN CERTIFICATE-----[\s\S]+-----END CERTIFICATE-----$/.test(ca)
+  )
+    throw new Error('Invalid DATABASE_CA_CERT');
   const size = poolSize.safeParse(input.DATABASE_POOL_MAX);
   if (!size.success) throw new Error('Invalid DATABASE_POOL_MAX');
   return {
     connectionString: url.toString(),
-    ssl: mode === 'disable-local' ? false : { rejectUnauthorized: true },
+    ssl:
+      mode === 'disable-local'
+        ? false
+        : { rejectUnauthorized: true, ...(ca ? { ca } : {}) },
     max: size.data,
   };
 }

@@ -137,7 +137,7 @@ Retain current names rather than rename working configuration:
 | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Web, public build-time | NEXT_PUBLIC_API_ORIGIN                                                                                                                                      |
 | Runtime                | NODE_ENV, PORT, CORS_ORIGINS                                                                                                                                |
-| Database               | DATABASE_URL, DATABASE_SSL_MODE, DATABASE_POOL_MAX                                                                                                          |
+| Database               | DATABASE_URL, DATABASE_SSL_MODE, DATABASE_POOL_MAX, DATABASE_CA_CERT                                                                                        |
 | Migration only         | MIGRATION_DATABASE_URL                                                                                                                                      |
 | Reviewer provisioning  | REVIEWER_PROVISIONING_DATABASE_URL, REVIEWER_OPERATOR_ACCOUNT_ID, REVIEWER_OPERATOR_TOKEN, REVIEWER_OPERATOR_TOKEN_SHA256 (local tool only; not configured) |
 | Authentication         | AUTH_SECRET, AUTH_BASE_URL, AUTH_TRUSTED_ORIGINS                                                                                                            |
