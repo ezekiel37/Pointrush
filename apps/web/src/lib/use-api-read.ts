@@ -4,7 +4,13 @@ import type { z } from 'zod';
 import { apiRequest } from './api';
 // Reads an API path, refreshing on reconnect and when the tab becomes visible.
 // Changing the path never shows the previous resource's private data.
-export function useApiRead<T>(path: string | null, schema: z.ZodType<T>) {
+// `keep` holds the previous result while a new path loads; use it only when the
+// paths are views of the same resource (for example, a date range).
+export function useApiRead<T>(
+  path: string | null,
+  schema: z.ZodType<T>,
+  { keep = false }: { keep?: boolean } = {},
+) {
   const [version, setVersion] = useState(0);
   const [state, setState] = useState<{
     data: T | null;
@@ -19,7 +25,7 @@ export function useApiRead<T>(path: string | null, schema: z.ZodType<T>) {
     // Synchronize API state; never retain another resource's private data.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setState((current) => ({
-      data: current.path === path ? current.data : null,
+      data: keep || current.path === path ? current.data : null,
       error: null,
       loading: true,
       path,
@@ -34,7 +40,7 @@ export function useApiRead<T>(path: string | null, schema: z.ZodType<T>) {
           setState({ data: null, error, loading: false, path });
       });
     return () => controller.abort();
-  }, [path, schema, version]);
+  }, [path, schema, version, keep]);
   useEffect(() => {
     const visible = () => {
       if (document.visibilityState === 'visible') refresh();
@@ -49,7 +55,11 @@ export function useApiRead<T>(path: string | null, schema: z.ZodType<T>) {
   return {
     ...(state.path === path
       ? state
-      : { data: null, error: null, loading: path !== null }),
+      : {
+          data: keep ? state.data : null,
+          error: null,
+          loading: path !== null,
+        }),
     refresh,
   };
 }

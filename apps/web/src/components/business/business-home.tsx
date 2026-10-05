@@ -1,117 +1,250 @@
 'use client';
 import Link from 'next/link';
+import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
-import { z } from 'zod';
-import { Page } from '@/components/shell/app-shell';
+import { AreaChart } from '@/components/charts/area-chart';
+import { StatusBreakdown } from '@/components/charts/status-breakdown';
 import { Loading } from '@/components/ui/feedback';
 import { WorkFailure } from '@/components/work/work-frame';
-import { naira, shortDate } from '@/lib/api';
+import { naira } from '@/lib/api';
 import { RequestError } from '@/lib/auth-client';
-import { sponsorTaskPage } from '@/lib/rewards';
+import { businessOverview } from '@/lib/rewards';
 import { useApiRead } from '@/lib/use-api-read';
+import { CampaignTable } from './campaign-table';
+import { DashHead, DashShell } from './dash-shell';
 
-const businessProfile = z.object({ id: z.uuid(), name: z.string() });
-const kinds: Record<string, { label: string; href: (id: string) => string }> = {
-  purchase_cashback: {
-    label: 'Cash back offer',
-    href: (id) => `/business/campaigns/${id}`,
-  },
-  claim_code: {
-    label: 'Prize promotion',
-    href: (id) => `/business/promotions/${id}`,
-  },
-};
-const job = { label: 'Job', href: (id: string) => `/sponsor/tasks/${id}` };
+const dayLabel = (day: string, long: boolean) =>
+  new Intl.DateTimeFormat('en-NG', {
+    ...(long ? { day: 'numeric', month: 'short' } : { weekday: 'short' }),
+    timeZone: 'UTC',
+  }).format(new Date(`${day}T00:00:00Z`));
+const fullDay = (day: string) =>
+  new Intl.DateTimeFormat('en-NG', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    timeZone: 'UTC',
+  }).format(new Date(`${day}T00:00:00Z`));
 
-function status(review: string, lifecycle: string) {
-  if (lifecycle === 'published') return ['Live', 'chip chip-done'] as const;
-  if (review === 'approved')
-    return ['Approved, not live', 'chip chip-ready'] as const;
-  if (review === 'pending_review')
-    return ['In review', 'chip chip-pending'] as const;
-  if (review === 'changes_required')
-    return ['Changes needed', 'chip chip-pending'] as const;
-  return ['Not approved', 'chip chip-danger'] as const;
+export function NoBusiness() {
+  return (
+    <section className="card grid gap-3" style={{ maxWidth: 620 }}>
+      <h2 style={{ margin: 0 }}>Set up your business</h2>
+      <p className="small-note">
+        Business accounts open once Acticlaim publishes its business terms and
+        payments go live. Funding a campaign moves real money, which is not
+        available in this version.
+      </p>
+      <p className="small-note">
+        Want to run cash back or a prize promotion at launch? Tell us what you
+        sell and where.
+      </p>
+    </section>
+  );
 }
 
 export function BusinessHome() {
-  const profile = useApiRead('sponsor/profile', businessProfile);
-  const tasks = useApiRead(
-    profile.data ? 'work/sponsor/tasks?limit=50' : null,
-    sponsorTaskPage,
+  const [days, setDays] = useState<7 | 30>(7);
+  const overview = useApiRead(
+    `business/overview?days=${days}`,
+    businessOverview,
+    { keep: true },
   );
+  const data = overview.data;
   const missing =
-    profile.error instanceof RequestError && profile.error.status === 404;
+    overview.error instanceof RequestError && overview.error.status === 404;
+  const purchases = data?.purchases;
+  const total = purchases
+    ? purchases.held + purchases.ready + purchases.paid + purchases.voided
+    : 0;
+  const confirmed = data?.series.reduce((sum, d) => sum + d.purchases, 0) ?? 0;
+  const claims = data?.series.reduce((sum, d) => sum + d.claims, 0) ?? 0;
   return (
-    <Page
-      eyebrow="For businesses"
-      title={profile.data?.name ?? 'Your business'}
-      intro="Lock money for real outcomes: confirmed purchases, claimed prizes or accepted work. You only pay for what is verified."
+    <DashShell
+      crumbs={[{ label: 'Business', href: '/business' }, { label: 'Overview' }]}
+      business={data?.business.name}
     >
-      {profile.loading && !profile.data ? (
+      <DashHead
+        title="Overview"
+        intro="Confirmed purchases, prizes and the money behind them."
+        actions={
+          data && (
+            <div className="segmented" role="group" aria-label="Date range">
+              {([7, 30] as const).map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  aria-pressed={days === d}
+                  onClick={() => setDays(d)}
+                >
+                  Last {d} days
+                </button>
+              ))}
+            </div>
+          )
+        }
+      />
+      {overview.loading && !data ? (
         <Loading>Loading your business…</Loading>
       ) : missing ? (
-        <section className="card grid gap-3" style={{ maxWidth: 620 }}>
-          <h2>Set up your business</h2>
-          <p className="small-note">
-            Business accounts open once Acticlaim publishes its business terms
-            and payments go live. Funding a campaign needs real money movement,
-            which is not available in this version.
-          </p>
-          <p className="small-note">
-            Want to run cash back or a prize promotion at launch? Tell us what
-            you sell and where.
-          </p>
-        </section>
-      ) : profile.error ? (
-        <WorkFailure error={profile.error} retry={profile.refresh} />
-      ) : tasks.loading && !tasks.data ? (
-        <Loading>Loading campaigns…</Loading>
-      ) : tasks.error ? (
-        <WorkFailure error={tasks.error} retry={tasks.refresh} />
-      ) : tasks.data?.items.length ? (
-        <ul className="grid-cards">
-          {tasks.data.items.map((task) => {
-            const kind = kinds[task.model] ?? job;
-            const [text, chip] = status(task.reviewState, task.lifecycle);
-            return (
-              <li key={task.id}>
-                <Link
-                  className="card card-link grid gap-2"
-                  href={kind.href(task.id)}
-                >
-                  <div className="row">
-                    <p className="eyebrow" style={{ margin: 0 }}>
-                      {kind.label}
-                    </p>
-                    <span className={chip}>{text}</span>
-                  </div>
-                  <h2 style={{ fontSize: '1.15rem', margin: 0 }}>
-                    {task.title}
-                  </h2>
-                  <p className="small-note">
-                    <span className="amount">{naira(task.budgetKobo)}</span>{' '}
-                    locked · ends {shortDate(task.endsAt)}
-                  </p>
-                  <span
-                    className="row small-note"
-                    style={{ justifyContent: 'flex-start' }}
-                  >
-                    Manage <ArrowRight size={15} aria-hidden />
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        <NoBusiness />
+      ) : overview.error && !data ? (
+        <WorkFailure error={overview.error} retry={overview.refresh} />
       ) : (
-        <section className="card">
-          <h2>No campaigns yet</h2>
-          <p className="small-note">
-            Your funded offers, promotions and jobs will appear here.
-          </p>
-        </section>
+        data &&
+        purchases && (
+          <div
+            className="grid gap-4"
+            style={{
+              opacity: overview.loading ? 0.6 : 1,
+              transition: 'opacity 150ms',
+            }}
+          >
+            <dl className="stat-row" style={{ margin: 0 }}>
+              <div className="stat">
+                <dt>Money locked</dt>
+                <dd>{naira(data.lockedKobo)}</dd>
+              </div>
+              <div className="stat">
+                <dt>Paid to customers</dt>
+                <dd>{naira(data.paidOutKobo)}</dd>
+              </div>
+              <div className="stat">
+                <dt>Live campaigns</dt>
+                <dd>{data.live}</dd>
+              </div>
+              <div className="stat">
+                <dt>Shoppers who came back</dt>
+                <dd>{purchases.returningShoppers}</dd>
+              </div>
+            </dl>
+            <div className="dash-grid">
+              <section className="card" aria-labelledby="activity-heading">
+                <div className="card-head">
+                  <h2 id="activity-heading">Confirmed purchases</h2>
+                  <p>
+                    {confirmed.toLocaleString('en-NG')} in the last {data.days}{' '}
+                    days
+                    {claims
+                      ? ` · ${claims.toLocaleString('en-NG')} prizes claimed`
+                      : ''}
+                  </p>
+                </div>
+                <AreaChart
+                  height={280}
+                  label={`Confirmed purchases per day, last ${data.days} days`}
+                  unit={(v) =>
+                    `${v.toLocaleString('en-NG')} ${v === 1 ? 'purchase' : 'purchases'}`
+                  }
+                  points={data.series.map((d) => ({
+                    label: dayLabel(d.day, data.days > 7),
+                    detail: fullDay(d.day),
+                    value: d.purchases,
+                  }))}
+                />
+              </section>
+              <section className="card" aria-labelledby="status-heading">
+                <div className="card-head">
+                  <h2 id="status-heading">Cash back status</h2>
+                  <p>Every confirmed purchase, all time</p>
+                </div>
+                <StatusBreakdown
+                  total={total}
+                  unit="purchases"
+                  slices={[
+                    {
+                      key: 'paid',
+                      label: 'Paid to shopper',
+                      value: purchases.paid,
+                      color: 'var(--color-series-paid)',
+                    },
+                    {
+                      key: 'ready',
+                      label: 'Ready to release',
+                      value: purchases.ready,
+                      color: 'var(--color-series-ready)',
+                    },
+                    {
+                      key: 'held',
+                      label: 'Held in refund window',
+                      value: purchases.held,
+                      color: 'var(--color-series-held)',
+                    },
+                    {
+                      key: 'voided',
+                      label: 'Voided',
+                      value: purchases.voided,
+                      color: 'var(--color-series-voided)',
+                    },
+                  ]}
+                />
+              </section>
+            </div>
+            <section className="card" aria-labelledby="campaigns-heading">
+              <div className="row" style={{ alignItems: 'flex-start' }}>
+                <div className="card-head">
+                  <h2 id="campaigns-heading">Campaigns</h2>
+                  <p>Offers, promotions and jobs you have funded</p>
+                </div>
+                <Link
+                  className="icon-line small-note"
+                  href="/business/campaigns"
+                  style={{
+                    color: 'var(--color-brand)',
+                    fontWeight: 550,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  View all <ArrowRight size={15} aria-hidden />
+                </Link>
+              </div>
+              <CampaignTable
+                items={data.campaigns.slice(0, 6)}
+                empty="Your funded campaigns will appear here."
+              />
+            </section>
+          </div>
+        )
       )}
-    </Page>
+    </DashShell>
+  );
+}
+
+export function CampaignListPage({
+  model,
+  title,
+  intro,
+}: {
+  model: string;
+  title: string;
+  intro: string;
+}) {
+  const overview = useApiRead('business/overview?days=7', businessOverview);
+  const data = overview.data;
+  const missing =
+    overview.error instanceof RequestError && overview.error.status === 404;
+  return (
+    <DashShell
+      crumbs={[{ label: 'Business', href: '/business' }, { label: title }]}
+      business={data?.business.name}
+    >
+      <DashHead title={title} intro={intro} />
+      {overview.loading && !data ? (
+        <Loading>Loading…</Loading>
+      ) : missing ? (
+        <NoBusiness />
+      ) : overview.error && !data ? (
+        <WorkFailure error={overview.error} retry={overview.refresh} />
+      ) : (
+        data && (
+          <section className="card">
+            <CampaignTable
+              items={data.campaigns.filter((c) => c.model === model)}
+              empty="Nothing here yet. Funded campaigns appear once created."
+            />
+          </section>
+        )
+      )}
+    </DashShell>
   );
 }

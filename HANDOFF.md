@@ -121,4 +121,6 @@ Migration 0017 adds claim-code prize promotions (PROMOTIONS.md). Full check: 197
 
 Frontend redesign and PWA (4 October 2026): new Acticlaim design system (DESIGN.md), app shell with phone tab bar, landing, offers and purchase ticket, prize claim, wallet, proof profile (own and public), business home, till and prize batch manager, manifest, icons, service worker and offline page (WEB.md). The points summary now returns the reward-wallet balance. Verification: full check (197 API, 10 web unit tests, builds), native 16/16, 20/20 browser scenarios with axe and 390px overflow checks; screens were also reviewed from screenshots.
 
+Redesign v2 (5 October 2026) follows the founder's references: light card UI, Geist, pill controls, Atlas-style business dashboard backed by `GET /api/v1/business/overview`, and an Elegostra-style landing with a generated rosette illustration. Verification: full check (198 API tests), native 16/16, 21/21 browser scenarios; screens reviewed from screenshots, which caught a mobile table overflow and a contrast error later fixed.
+
 Next: physical-prize vouchers, business campaign creation forms (blocked on funding), Bachs funding and payouts after confirming its payout API, SMS phone verification (blocks prize claims and referral rewards), and rate limiting on public routes.

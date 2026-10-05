@@ -1,8 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
-import '@fontsource-variable/bricolage-grotesque/opsz.css';
-import '@fontsource/jetbrains-mono/latin-500.css';
-import '@fontsource/jetbrains-mono/latin-700.css';
+import '@fontsource-variable/geist';
+import '@fontsource-variable/geist-mono';
 import './globals.css';
 import { ServiceWorker } from '@/components/shell/service-worker';
 export const metadata: Metadata = {
@@ -15,7 +14,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 export const viewport: Viewport = {
-  themeColor: '#f3f0e8',
+  themeColor: '#f5f6f4',
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',

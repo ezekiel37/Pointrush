@@ -176,3 +176,37 @@ export const releaseResult = z.object({
   confirmationId: z.uuid(),
   cashbackKobo: money,
 });
+
+export const businessCampaign = z.object({
+  id: z.uuid(),
+  title: z.string(),
+  model: z.string(),
+  capacity: z.number().int(),
+  used: z.number().int(),
+  reviewState: z.string(),
+  lifecycle: z.string(),
+  endsAt: date,
+  rewardKobo: money,
+});
+export const businessOverview = z.object({
+  business: z.object({ id: z.uuid(), name: z.string() }),
+  days: z.number().int(),
+  series: z.array(
+    z.object({
+      day: z.string(),
+      purchases: z.number().int(),
+      claims: z.number().int(),
+    }),
+  ),
+  purchases: z.object({
+    held: z.number().int(),
+    ready: z.number().int(),
+    paid: z.number().int(),
+    voided: z.number().int(),
+    returningShoppers: z.number().int(),
+  }),
+  lockedKobo: money,
+  paidOutKobo: money,
+  live: z.number().int(),
+  campaigns: z.array(businessCampaign),
+});

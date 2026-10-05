@@ -38,7 +38,7 @@ export function ProfileCard({ data }: { data: Profile }) {
               <p className="small-note num">@{data.username}</p>
             )}
           </div>
-          <span className="chip chip-ready">{data.tier.name}</span>
+          <span className="chip chip-tier">{data.tier.name}</span>
         </div>
         <ul
           className="flex flex-wrap gap-2"

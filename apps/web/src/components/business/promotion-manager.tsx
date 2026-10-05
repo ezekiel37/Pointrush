@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Download, Printer, TriangleAlert } from 'lucide-react';
 import type { z } from 'zod';
-import { Page } from '@/components/shell/app-shell';
+import { DashHead, DashShell } from './dash-shell';
 import { Button } from '@/components/ui/button';
 import { Feedback, Loading } from '@/components/ui/feedback';
 import { Field } from '@/components/ui/field';
@@ -105,7 +105,17 @@ export function PromotionManager({ id }: { id: string }) {
 
   const data = summary.data;
   return (
-    <Page eyebrow="Prize promotion" title={data?.title ?? 'Promotion'}>
+    <DashShell
+      crumbs={[
+        { label: 'Business', href: '/business' },
+        { label: 'Prize promotions', href: '/business/promotions' },
+        { label: data?.title ?? 'Promotion' },
+      ]}
+    >
+      <DashHead
+        title={data?.title ?? 'Promotion'}
+        intro="Issue printable codes, activate batches and track claims."
+      />
       {summary.loading && !data ? (
         <Loading>Loading promotion…</Loading>
       ) : summary.error && !data ? (
@@ -368,6 +378,6 @@ export function PromotionManager({ id }: { id: string }) {
           </div>
         )
       )}
-    </Page>
+    </DashShell>
   );
 }

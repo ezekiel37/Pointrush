@@ -314,3 +314,73 @@ test('installable: manifest, icons and offline page are served', async ({
   ).toBeVisible();
   await healthy(page);
 });
+
+test('business overview chart reads by keyboard, switches range and fits a phone', async ({
+  page,
+}) => {
+  const ranges: string[] = [];
+  await page.route('**/api/v1/business/overview?*', (route) => {
+    const days = Number(
+      new URL(route.request().url()).searchParams.get('days'),
+    );
+    ranges.push(String(days));
+    return route.fulfill({
+      json: {
+        business: { id: offerId, name: 'Mama Put Kitchen' },
+        days,
+        series: Array.from({ length: days }, (_, i) => ({
+          day: new Date(Date.UTC(2026, 9, 5 - (days - 1 - i)))
+            .toISOString()
+            .slice(0, 10),
+          purchases: i === days - 1 ? 12 : i % 5,
+          claims: 0,
+        })),
+        purchases: {
+          held: 12,
+          ready: 4,
+          paid: 20,
+          voided: 1,
+          returningShoppers: 9,
+        },
+        lockedKobo: '6450000',
+        paidOutKobo: '1500000',
+        live: 1,
+        campaigns: [
+          {
+            id: offerId,
+            title: 'Lunch cash back',
+            model: 'purchase_cashback',
+            capacity: 100,
+            used: 37,
+            reviewState: 'approved',
+            lifecycle: 'published',
+            endsAt: '2026-12-10T18:00:00Z',
+            rewardKobo: '50000',
+          },
+        ],
+      },
+    });
+  });
+  await phone(page);
+  await page.goto('/business');
+  await expect(page.getByText('Mama Put Kitchen')).toBeHidden();
+  await expect(page.getByText('Held in refund window')).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'Lunch cash back' }),
+  ).toBeVisible();
+  await healthy(page);
+  const chart = page.getByRole('group', {
+    name: /Confirmed purchases per day/,
+  });
+  await chart.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(chart.getByRole('status')).toContainText('12 purchases');
+  await page.keyboard.press('ArrowLeft');
+  await expect(chart.getByRole('status')).not.toContainText('12 purchases');
+  await page.getByRole('button', { name: 'Last 30 days' }).click();
+  await expect(page.getByText(/in the last 30 days/)).toBeVisible();
+  // Development mode may request a range twice (strict effects); only the
+  // two ranges are ever fetched, ending with the selected one.
+  expect(new Set(ranges)).toEqual(new Set(['7', '30']));
+  expect(ranges.at(-1)).toBe('30');
+});

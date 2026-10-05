@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import type { z } from 'zod';
-import { Page } from '@/components/shell/app-shell';
+import { DashHead, DashShell } from './dash-shell';
 import { Button } from '@/components/ui/button';
 import { Feedback, Loading } from '@/components/ui/feedback';
 import { Field } from '@/components/ui/field';
@@ -134,7 +134,17 @@ export function CampaignTill({ id }: { id: string }) {
 
   const data = summary.data;
   return (
-    <Page eyebrow="Till" title={data?.title ?? 'Campaign'}>
+    <DashShell
+      crumbs={[
+        { label: 'Business', href: '/business' },
+        { label: 'Cash back', href: '/business/campaigns' },
+        { label: data?.title ?? 'Campaign' },
+      ]}
+    >
+      <DashHead
+        title={data?.title ?? 'Campaign'}
+        intro="Confirm purchases at the till and manage cash back."
+      />
       {summary.loading && !data ? (
         <Loading>Loading campaign…</Loading>
       ) : summary.error && !data ? (
@@ -305,6 +315,6 @@ export function CampaignTill({ id }: { id: string }) {
           </div>
         )
       )}
-    </Page>
+    </DashShell>
   );
 }

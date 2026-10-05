@@ -1,7 +1,20 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { BriefcaseBusiness, Lock, ScanLine, TicketCheck } from 'lucide-react';
+import {
+  ArrowRight,
+  BadgeCheck,
+  CupSoda,
+  GraduationCap,
+  Lock,
+  Scissors,
+  ScanLine,
+  ShieldCheck,
+  Store,
+  TicketCheck,
+  UtensilsCrossed,
+} from 'lucide-react';
 import { Brand } from '@/components/auth/auth-frame';
+import { Spiral } from '@/components/landing/spiral';
 
 export const metadata: Metadata = {
   title: { absolute: 'Acticlaim: cash back, prize codes and paid work' },
@@ -10,22 +23,39 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-const ways = [
-  {
-    icon: ScanLine,
-    title: 'Cash back when you buy',
-    body: 'Get a code, show it at the till, and the business confirms your purchase. Cash back unlocks after the refund window.',
-  },
-  {
-    icon: TicketCheck,
-    title: 'Prizes you can trust',
-    body: 'Scratched a winning code from a promotion? Claim it here. The prize money was locked before the papers were printed.',
-  },
-  {
-    icon: BriefcaseBusiness,
-    title: 'Paid work with proof',
-    body: 'Do work for businesses with the pay locked in advance. Every paid job adds to a record nobody can fake.',
-  },
+// Decorative example curve for illustrations only; never presented as data.
+function ExampleCurve({ height = 70 }: { height?: number }) {
+  return (
+    <svg
+      viewBox="0 0 200 70"
+      height={height}
+      width="100%"
+      aria-hidden
+      preserveAspectRatio="none"
+    >
+      <path
+        d="M0 58 C20 54 30 40 50 42 S80 30 100 34 S130 16 150 20 S180 8 200 6 L200 70 L0 70Z"
+        fill="#0f6e50"
+        fillOpacity="0.1"
+      />
+      <path
+        d="M0 58 C20 54 30 40 50 42 S80 30 100 34 S130 16 150 20 S180 8 200 6"
+        fill="none"
+        stroke="#0f6e50"
+        strokeWidth="2"
+        strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  );
+}
+
+const sectors = [
+  { icon: UtensilsCrossed, label: 'Restaurants' },
+  { icon: Scissors, label: 'Barbers & salons' },
+  { icon: Store, label: 'Kiosks & shops' },
+  { icon: CupSoda, label: 'Drinks brands' },
+  { icon: GraduationCap, label: 'Campus businesses' },
 ];
 
 export default function Home() {
@@ -43,137 +73,351 @@ export default function Home() {
         </nav>
       </header>
       <main id="main-content" className="app-main" style={{ paddingBottom: 0 }}>
-        <section
-          className="hero"
-          style={{
-            gridTemplateColumns:
-              'repeat(auto-fit, minmax(min(100%, 340px), 1fr))',
-            alignItems: 'center',
-          }}
-        >
-          <div className="grid gap-5">
-            <p className="eyebrow">Proof pays</p>
-            <h1>
-              Get paid <mark>back</mark> for what you already do.
-            </h1>
-            <p>
-              Cash back when you buy. Prizes when you scratch. Pay when you
-              work. Every naira is locked by the business before it is promised
-              to you.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link className="button button-accent" href="/offers">
-                Find offers
-              </Link>
-              <Link className="button button-outline" href="/claim">
-                Claim a prize
-              </Link>
-            </div>
+        <section className="lp-hero" aria-labelledby="hero-heading">
+          <Link
+            className="lp-pill"
+            href="/claim"
+            style={{ textDecoration: 'none' }}
+          >
+            <b>New</b> Claim prize codes from scratch-and-win
+            <ArrowRight size={14} aria-hidden />
+          </Link>
+          <h1 id="hero-heading">Get paid back for what you already do.</h1>
+          <p>
+            Cash back when you buy. Prizes when you scratch. Pay when you work.
+            Every naira is locked by the business before it is promised to you.
+          </p>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Link className="button button-primary" href="/offers">
+              Find offers
+            </Link>
+            <Link className="button button-outline" href="/claim">
+              Claim a prize
+            </Link>
           </div>
-          <figure style={{ margin: 0 }}>
-            <div className="ticket" aria-hidden>
-              <div className="ticket-head">
-                <p className="eyebrow">Mama Put Kitchen · Ibadan</p>
-                <h2>Lunch cash back</h2>
-              </div>
-              <div className="ticket-body">
-                <span className="amount amount-xl">₦500</span>
-                <p className="small-note">back on meals from ₦3,000</p>
-              </div>
-              <div className="ticket-perforation" />
-              <div className="ticket-body">
-                <span className="ticket-code">7K4M2-PRDH9</span>
-                <div className="countdown">
-                  <div className="countdown-track">
-                    <div
-                      className="countdown-fill"
-                      style={{ transform: 'scaleX(0.72)' }}
-                    />
-                  </div>
-                  <p className="small-note">Valid for 10:48 more</p>
-                </div>
-              </div>
-            </div>
-            <figcaption
-              className="small-note"
-              style={{ textAlign: 'center', marginTop: '0.75rem' }}
-            >
-              Example ticket. Each code works once, for one person, for 15
-              minutes.
-            </figcaption>
-          </figure>
         </section>
 
-        <section aria-labelledby="how-heading" style={{ marginTop: '1rem' }}>
-          <h2 id="how-heading" className="eyebrow">
-            How it works
-          </h2>
+        <div className="lp-stage" aria-label="Example activity">
+          <div className="lp-orbit" aria-hidden />
+          <div className="lp-orbit lp-orbit-2" aria-hidden />
+          <Spiral className="lp-spiral" />
+          <div className="float float-a">
+            <span className="small-note">Cash back · Mama Put</span>
+            <strong>₦500</strong>
+            <span className="chip chip-pending">Held 3 days</span>
+          </div>
+          <div className="float float-b">
+            <span className="small-note">Prize claimed</span>
+            <strong>₦5,000</strong>
+            <span className="chip chip-done">Paid</span>
+          </div>
+          <div className="float float-c">
+            <span className="small-note">In your wallet</span>
+            <strong>₦7,200</strong>
+          </div>
+          <div className="float float-d" style={{ width: 170 }}>
+            <span className="small-note">Shoppers who came back</span>
+            <strong>+9</strong>
+            <ExampleCurve height={36} />
+          </div>
+        </div>
+
+        <div className="lp-strip" aria-label="Built for">
+          <span className="small-note">Built for</span>
+          {sectors.map(({ icon: Icon, label }) => (
+            <span key={label}>
+              <Icon size={18} aria-hidden /> {label}
+            </span>
+          ))}
+        </div>
+
+        <section className="lp-section" aria-labelledby="earn-heading">
+          <div className="lp-split">
+            <div>
+              <p className="eyebrow">Three ways to earn</p>
+              <h2 id="earn-heading">Real money for real activity.</h2>
+            </div>
+            <p>
+              No tapping, no betting, no follow-for-follow. You earn when a
+              business confirms something real happened: a purchase, a winning
+              code or finished work.
+            </p>
+          </div>
+          <ul className="features">
+            <li className="card">
+              <div className="feature-visual" aria-hidden>
+                <div
+                  className="float"
+                  style={{
+                    position: 'static',
+                    animation: 'none',
+                    transform: 'rotate(-3deg)',
+                    textAlign: 'center',
+                  }}
+                >
+                  <span className="small-note">Show at the till</span>
+                  <strong
+                    className="num"
+                    style={{ fontFamily: 'var(--font-mono)' }}
+                  >
+                    7K4M2-PRDH9
+                  </strong>
+                  <div className="countdown-track" style={{ marginTop: 8 }}>
+                    <div
+                      className="countdown-fill"
+                      style={{ transform: 'scaleX(0.7)' }}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div
+                className="icon-line"
+                style={{ gap: '0.6rem', marginBottom: '0.5rem' }}
+              >
+                <ScanLine size={20} aria-hidden />
+                <h3 style={{ margin: 0 }}>Cash back when you buy</h3>
+              </div>
+              <p className="small-note">
+                Get a code, show it at the till, and the business confirms the
+                purchase. It unlocks after the refund window.
+              </p>
+            </li>
+            <li className="card">
+              <div className="feature-visual" aria-hidden>
+                <div
+                  style={{
+                    width: 190,
+                    padding: '1rem',
+                    borderRadius: 14,
+                    background: 'linear-gradient(135deg,#1baf7a,#0f6e50)',
+                    color: '#fff',
+                    boxShadow: 'var(--shadow-float)',
+                    transform: 'rotate(3deg)',
+                  }}
+                >
+                  <span style={{ fontSize: 12, opacity: 0.85 }}>
+                    Scratch &amp; win
+                  </span>
+                  <div
+                    style={{
+                      marginTop: 10,
+                      padding: '0.5rem',
+                      borderRadius: 8,
+                      background:
+                        'linear-gradient(90deg,#d4f25a 0 55%, #c9ccc9 55%)',
+                      color: '#0e1512',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 12,
+                      fontWeight: 600,
+                    }}
+                  >
+                    AC-7K4M-9X…
+                  </div>
+                </div>
+              </div>
+              <div
+                className="icon-line"
+                style={{ gap: '0.6rem', marginBottom: '0.5rem' }}
+              >
+                <TicketCheck size={20} aria-hidden />
+                <h3 style={{ margin: 0 }}>Prizes you can trust</h3>
+              </div>
+              <p className="small-note">
+                Scratched a winning code? Claim it here. The prize money was
+                locked before the papers were printed.
+              </p>
+            </li>
+            <li className="card">
+              <div className="feature-visual" aria-hidden>
+                <div
+                  className="float"
+                  style={{ position: 'static', animation: 'none', width: 200 }}
+                >
+                  <div className="row">
+                    <strong style={{ fontSize: '0.95rem' }}>Tolu A.</strong>
+                    <span className="chip chip-tier">Bronze</span>
+                  </div>
+                  <span className="small-note">
+                    6 paid jobs · 2 repeat clients
+                  </span>
+                  <span className="badge" style={{ marginTop: 8 }}>
+                    <BadgeCheck size={13} /> Verified record
+                  </span>
+                </div>
+              </div>
+              <div
+                className="icon-line"
+                style={{ gap: '0.6rem', marginBottom: '0.5rem' }}
+              >
+                <BadgeCheck size={20} aria-hidden />
+                <h3 style={{ margin: 0 }}>Paid work with proof</h3>
+              </div>
+              <p className="small-note">
+                Work for businesses with the pay locked in advance. Every paid
+                job adds to a record nobody can fake.
+              </p>
+            </li>
+          </ul>
+        </section>
+
+        <section className="lp-section" aria-labelledby="how-heading">
+          <div className="lp-center">
+            <p className="eyebrow">How it works</p>
+            <h2 id="how-heading">Locked first. Verified once. Paid once.</h2>
+          </div>
           <ol className="steps">
-            <li>
+            <li className="card">
               <h3>A business locks the money</h3>
               <p className="small-note">
                 Before an offer, promotion or job goes live, the full amount is
-                set aside and checked by our reviewers.
+                set aside and our reviewers check it.
               </p>
             </li>
-            <li>
+            <li className="card">
               <h3>You buy, scratch or work</h3>
               <p className="small-note">
                 Show your code at the till, enter a winning code, or deliver the
                 work you agreed to.
               </p>
             </li>
-            <li>
-              <h3>Verified once, paid once</h3>
+            <li className="card">
+              <h3>It is confirmed one time</h3>
               <p className="small-note">
-                Each purchase, code and job is confirmed a single time, then the
-                money moves to your wallet.
+                Each purchase, code and job counts once. Then the money moves to
+                your wallet.
               </p>
             </li>
           </ol>
         </section>
 
-        <ul className="grid-cards" style={{ marginTop: '3rem' }}>
-          {ways.map(({ icon: Icon, title, body }) => (
-            <li key={title} className="card grid gap-2">
-              <Icon size={26} aria-hidden />
-              <h3 style={{ margin: 0 }}>{title}</h3>
-              <p className="small-note">{body}</p>
-            </li>
-          ))}
-        </ul>
-
-        <section className="band grid gap-4" aria-labelledby="business-heading">
-          <p className="eyebrow" style={{ color: 'var(--color-accent)' }}>
-            For businesses
-          </p>
-          <h2
-            id="business-heading"
-            style={{ fontSize: 'clamp(1.8rem, 5vw, 2.8rem)', maxWidth: '18ch' }}
-          >
-            Pay for customers who actually came, not for views.
-          </h2>
-          <p style={{ maxWidth: '58ch' }}>
-            Fund cash back for real purchases, run scratch-and-win with codes we
-            verify, or hire people with pay held safely. See who bought, who
-            claimed and who came back.
-          </p>
-          <div>
-            <Link className="button button-accent" href="/business">
-              Run a campaign
-            </Link>
+        <section className="lp-section" aria-labelledby="business-heading">
+          <div className="lp-split">
+            <div>
+              <p className="eyebrow">For businesses</p>
+              <h2 id="business-heading">
+                Pay for customers who actually came.
+              </h2>
+            </div>
+            <p>
+              Not for views or follows. Fund cash back for confirmed purchases,
+              run scratch-and-win with codes we verify, and hire with pay held
+              safely.
+            </p>
+          </div>
+          <div className="bento">
+            <article className="card wide">
+              <div className="row" style={{ alignItems: 'flex-start' }}>
+                <div className="card-head">
+                  <h3 style={{ margin: 0 }}>
+                    See who bought and who came back
+                  </h3>
+                  <p>Confirmed purchases, by day</p>
+                </div>
+                <span className="chip chip-muted">Example</span>
+              </div>
+              <ExampleCurve height={120} />
+            </article>
+            <article className="card card-dark narrow grid gap-2">
+              <Lock size={22} aria-hidden />
+              <p className="eyebrow" style={{ margin: 0 }}>
+                Backed
+              </p>
+              <h3 style={{ fontSize: '1.4rem', margin: 0 }}>
+                Every naira is locked before launch.
+              </h3>
+              <p className="small-note">
+                Customers trust offers they know are funded.
+              </p>
+            </article>
+            <article className="card narrow grid gap-2">
+              <ShieldCheck size={22} aria-hidden />
+              <h3 style={{ margin: 0 }}>Codes nobody can guess</h3>
+              <p className="small-note">
+                Prize codes have 16 random characters, work once, and lock out
+                repeated guessing.
+              </p>
+              <span
+                className="num"
+                style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}
+              >
+                AC-7K4M-9X2Q-PRDH-3VBN
+              </span>
+            </article>
+            <article className="card wide grid gap-3">
+              <h3 style={{ margin: 0 }}>Refunds handled, fraud blocked</h3>
+              <p className="small-note">
+                Cash back waits through your refund window and can be voided
+                with a reason. Codes expire in 15 minutes and work once per
+                shopper, so a photo of a code is worthless.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <span className="chip chip-pending">Held</span>
+                <span className="chip chip-ready">Ready</span>
+                <span className="chip chip-done">Paid</span>
+                <span className="chip chip-muted">Voided</span>
+              </div>
+            </article>
           </div>
         </section>
 
-        <section aria-labelledby="promise-heading" className="grid gap-3">
-          <h2 id="promise-heading" className="icon-line">
-            <Lock size={22} aria-hidden /> What we promise
-          </h2>
-          <ul className="stack small-note" style={{ maxWidth: '62ch' }}>
-            <li>No betting, no guaranteed income, no pay-to-earn schemes.</li>
-            <li>Points are not cash, and we never call them cash.</li>
-            <li>Your public record never shows where you shop.</li>
-            <li>
+        <section className="band" aria-labelledby="cta-heading">
+          <div className="grid gap-4" style={{ position: 'relative' }}>
+            <h2 id="cta-heading" style={{ margin: 0 }}>
+              Run your first campaign.
+            </h2>
+            <p style={{ margin: 0, maxWidth: '46ch' }}>
+              Cash back, scratch-and-win or paid work. You fund it, we verify
+              every claim, and you see the results.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Link className="button button-accent" href="/business">
+                For businesses
+              </Link>
+              <Link className="button button-outline" href="/help">
+                How it works
+              </Link>
+            </div>
+          </div>
+          <div className="band-cards" aria-hidden>
+            <div className="money-card money-card-lime">
+              <span style={{ fontSize: 13, fontWeight: 600 }}>
+                Prize pool · locked
+              </span>
+              <strong>₦50,000</strong>
+              <span style={{ fontSize: 12 }}>10 prizes of ₦5,000</span>
+            </div>
+            <div className="money-card money-card-green">
+              <span style={{ fontSize: 13, opacity: 0.85 }}>
+                Cash back · locked
+              </span>
+              <strong>₦50,000</strong>
+              <span style={{ fontSize: 12, opacity: 0.85 }}>
+                100 buyers × ₦500
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section
+          className="lp-section"
+          aria-labelledby="promise-heading"
+          style={{ paddingBottom: '3rem' }}
+        >
+          <div className="lp-center">
+            <p className="eyebrow">What we promise</p>
+            <h2 id="promise-heading">Honest by design.</h2>
+          </div>
+          <ul className="features promise-grid">
+            <li className="card small-note">
+              No betting, no guaranteed income, no pay-to-earn schemes.
+            </li>
+            <li className="card small-note">
+              Points are not cash, and we never call them cash.
+            </li>
+            <li className="card small-note">
+              Your public record never shows where you shop.
+            </li>
+            <li className="card small-note">
               Chance-based promotions run only with the business&apos;s state
               permit, checked before launch.
             </li>
@@ -181,10 +425,34 @@ export default function Home() {
         </section>
       </main>
       <footer className="site-footer">
-        <span>© Acticlaim</span>
-        <Link href="/help">Help</Link>
-        <Link href="/login">Sign in</Link>
-        <Link href="/business">For businesses</Link>
+        <div className="card grid gap-3">
+          <h2 style={{ margin: 0 }}>Start with Acticlaim</h2>
+          <p className="small-note">Free for shoppers and workers.</p>
+          <div>
+            <Link className="button button-primary" href="/signup">
+              Create account
+            </Link>
+          </div>
+        </div>
+        <div className="card">
+          <p className="eyebrow">Earn</p>
+          <nav aria-label="Earn">
+            <Link href="/offers">Offers</Link>
+            <Link href="/claim">Prize codes</Link>
+            <Link href="/tasks">Jobs</Link>
+          </nav>
+        </div>
+        <div className="card">
+          <p className="eyebrow">Acticlaim</p>
+          <nav aria-label="Acticlaim">
+            <Link href="/business">For businesses</Link>
+            <Link href="/help">Help</Link>
+            <Link href="/login">Sign in</Link>
+          </nav>
+          <p className="small-note" style={{ marginTop: '1rem' }}>
+            © Acticlaim
+          </p>
+        </div>
       </footer>
     </>
   );

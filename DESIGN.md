@@ -10,26 +10,28 @@ Communicate real opportunities, visible progress and dependable rewards. Playful
 
 Use shadcn/ui with Tailwind and one maintained set of shared primitives for Next.js. Use React Hook Form with Zod for form feedback; NestJS remains authoritative. Use Lucide icons. Do not mix shadcn and Material UI across portals. Material UI remains a viable alternative, but editable shadcn primitives better support the proposed identity. Source ownership includes maintenance and accessibility verification; adopting components does not guarantee accessible finished screens.
 
-## Tokens (Acticlaim, October 2026)
+## Tokens (Acticlaim v2, 5 October 2026)
 
-Superseded the earlier blue palette and Manrope. Runtime owner: `apps/web/src/app/globals.css` (`@theme`). Language: receipts and proof — warm paper, ink, monospaced money and codes, and one electric accent reserved for the single most important action on a screen.
+Direction set from the founder's references (Atlas dashboard, Finpay, Elegostra): light canvas, white cards with soft shadows, pill controls, a sidebar dashboard for businesses, and a centred landing hero with floating product cards. Acticlaim keeps its own signature: the perforated purchase ticket and a green/lime brand. Runtime owner: `apps/web/src/app/globals.css` (`@theme`).
 
 | Role | Token | Value |
 | --- | --- | --- |
-| Canvas / surface / sunken | `--color-canvas` / `--color-surface` / `--color-sunken` | #F3F0E8 / #FFFDF8 / #EBE6DA |
-| Ink (text, primary buttons, focus) | `--color-ink` | #141210 |
-| Muted text | `--color-muted` | #5E584E |
-| Input border / divider | `--color-border` / `--color-divider` | #8A8377 / #E2DCCF |
-| Accent (one key action, current tab) | `--color-accent` | #D7FF3C, ink text |
-| Earned / paid | `--color-success` on `--color-mint` | #136B3E on #E3F5E9 |
-| Pending / held money | `--color-pending` on `--color-pending-surface` | #8A5300 on #FFF3DC |
-| Error | `--color-danger` on `--color-danger-surface` | #A3261F on #FDECEA |
+| Canvas / surface / sunken | `--color-canvas` / `--color-surface` / `--color-sunken` | #F5F6F4 / #FFFFFF / #EEF0EE |
+| Ink / muted text | `--color-ink` / `--color-muted` | #0E1512 / #5D6862 |
+| Lines | `--color-line` / `--color-divider` | #E6E9E7 / #EEF0EE |
+| Non-text marks only | `--color-faint` | #8B9590 (3.1:1; never text) |
+| Brand (key action, links, focus) | `--color-brand` / `--color-brand-deep` / `--color-brand-soft` | #0F6E50 / #0B4D39 / #E8F3EE |
+| Highlight | `--color-lime` | #D4F25A, ink text only |
+| Status chips (text on surface) | success / pending / info / danger | #0E6B4B on #E6F4EE · #8A5300 on #FFF4DE · #1F5FAF on #EAF2FC · #A3261F on #FDECEA |
+| Purchase-state series | `--color-series-*` | paid #1BAF7A · ready #2A78D6 · held #EDA100 · voided #4A3AA7 |
 
-Measured WCAG contrast: body ink 16.4:1; muted on canvas 6.2:1; pending 5.8:1; success 5.8:1; danger 6.4:1; ink on accent 16.3:1; input border 3.7:1 (non-text). Held money always carries a text label and amber colour and never uses the earned style. Light theme only; dark mode needs separately tested tokens.
+Measured: ink on canvas 17.1:1; muted 5.3–5.8:1; white on brand 6.2:1; every chip pair 5.0–7.4:1; ink on lime 14.7:1. The series set passed the dataviz validator (lightness band, chroma, CVD ΔE ≥ 23, normal-vision ΔE 24); paid and held sit below 3:1 on white, so they always appear beside text labels with counts and percentages.
 
-Type: Bricolage Grotesque (variable, self-hosted) for headings; system sans-serif for body; JetBrains Mono for money, codes, labels and counts with tabular numerals.
+Type: Geist (variable) for everything, Geist Mono for codes and aligned columns. Large figures use proportional digits; tables use tabular digits. Buttons are pills; cards use 20px radius and two-layer soft shadows.
 
-Signature element: the ticket — a perforated card with an ink header, large monospaced code, QR and countdown. It is used for purchase codes and echoed on the landing page.
+Charts follow the dataviz skill: single-series area with a 2px line, 10% wash, hairline grid, clean ticks, pointer and arrow-key crosshair with tooltip, and a screen-reader table. A range change keeps the previous chart faded until new data arrives.
+
+Illustration: `components/landing/spiral.tsx` draws a golden-angle leaf rosette in SVG, generated rather than photographed. Landing cards with example numbers are labelled as examples; no customer logos, testimonials or stock portraits are used before real customers exist.
 
 ## Typography, Geometry and Motion
 
@@ -57,7 +59,7 @@ Claim codes should be readable on low-quality print and easy to type on mobile. 
 
 ## Navigation and shells
 
-`AppShell` provides one model: a sticky top bar with Offers, Claim, Jobs, Wallet and Profile on wide screens, and a bottom tab bar on phones, with Business separated in the bar. Auth journeys keep the split story layout with an ink story panel. All screens are verified at 390px for no horizontal overflow and with automated axe checks.
+Shoppers: `AppShell` with a pill navigation bar on wide screens and a bottom tab bar on phones. Businesses: `DashShell` with a grouped sidebar (Operations, Work, Support), breadcrumbs and a Lagos clock; on phones the sidebar becomes a scrolling pill row. Tables become stacked cards below 640px. Every screen is tested at 390px with axe and a horizontal-overflow check.
 
 ## Task journey continuation
 
