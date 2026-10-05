@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Brand } from '@/components/auth/auth-frame';
 import { Spiral } from '@/components/landing/spiral';
+import { jobsEnabled } from '@/lib/features';
 
 export const metadata: Metadata = {
   title: { absolute: 'Acticlaim: cash back, prize codes and paid work' },
@@ -237,7 +238,9 @@ export default function Home() {
                     <span className="chip chip-tier">Bronze</span>
                   </div>
                   <span className="small-note">
-                    6 paid jobs · 2 repeat clients
+                    {jobsEnabled
+                      ? '6 paid jobs · 2 repeat clients'
+                      : '23 purchases · 7 businesses'}
                   </span>
                   <span className="badge" style={{ marginTop: 8 }}>
                     <BadgeCheck size={13} /> Verified record
@@ -249,11 +252,14 @@ export default function Home() {
                 style={{ gap: '0.6rem', marginBottom: '0.5rem' }}
               >
                 <BadgeCheck size={20} aria-hidden />
-                <h3 style={{ margin: 0 }}>Paid work with proof</h3>
+                <h3 style={{ margin: 0 }}>
+                  {jobsEnabled ? 'Paid work with proof' : 'A record you earn'}
+                </h3>
               </div>
               <p className="small-note">
-                Work for businesses with the pay locked in advance. Every paid
-                job adds to a record nobody can fake.
+                {jobsEnabled
+                  ? 'Work for businesses with the pay locked in advance. Every paid job adds to a record nobody can fake.'
+                  : 'Every confirmed purchase adds to a public record nobody can fake: proof you are a real, regular customer.'}
               </p>
             </li>
           </ul>
@@ -380,7 +386,7 @@ export default function Home() {
           <nav aria-label="Earn">
             <Link href="/offers">Offers</Link>
             <Link href="/claim">Prize codes</Link>
-            <Link href="/tasks">Jobs</Link>
+            {jobsEnabled && <Link href="/tasks">Jobs</Link>}
           </nav>
         </div>
         <div className="card">

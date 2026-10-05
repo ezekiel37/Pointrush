@@ -25,6 +25,8 @@ export class SponsorsService {
   constructor(
     private readonly database: { readonly db: FundingDatabase },
     private readonly termsVersion?: string,
+    // Paid small tasks can be switched off; cash back and prizes never are.
+    private readonly jobsEnabled = true,
   ) {}
   currentTermsVersion() {
     return this.termsVersion ?? null;
@@ -107,6 +109,16 @@ export class SponsorsService {
 
   async createTask(authUserId: string, input: unknown) {
     const value = parseSponsorInput(taskInput, input);
+    if (
+      !this.jobsEnabled &&
+      value.model !== 'purchase_cashback' &&
+      value.model !== 'claim_code'
+    )
+      throw new ConflictException({
+        statusCode: 409,
+        message: 'Jobs are not available yet',
+        reason: 'jobs_unavailable',
+      });
     const requestHash = createHash('sha256')
       .update(
         JSON.stringify(value, (_key, item: unknown) =>

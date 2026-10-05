@@ -32,6 +32,7 @@ export class AppModule {
     sponsorTermsVersion?: string,
     payments?: PaymentProvider,
     sms?: { provider?: SmsProvider; config?: PhoneConfig },
+    features: { jobs: boolean } = { jobs: true },
   ): DynamicModule {
     const imports: DynamicModule['imports'] = [
       DatabaseModule.forRoot(database),
@@ -67,7 +68,7 @@ export class AppModule {
           provide: SponsorsService,
           inject: [DatabaseService],
           useFactory: (database: DatabaseService) =>
-            new SponsorsService(database, sponsorTermsVersion),
+            new SponsorsService(database, sponsorTermsVersion, features.jobs),
         },
         {
           provide: APP_GUARD,

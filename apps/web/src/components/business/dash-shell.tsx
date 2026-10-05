@@ -19,6 +19,7 @@ import {
   UsersRound,
 } from 'lucide-react';
 import { z } from 'zod';
+import { jobsEnabled } from '@/lib/features';
 import { Brand } from '@/components/auth/auth-frame';
 import { useApiRead } from '@/lib/use-api-read';
 import { NotificationBell } from '@/components/shell/notification-bell';
@@ -38,10 +39,16 @@ const groups = [
       { href: '/business/staff', label: 'Staff', icon: UsersRound },
     ],
   },
-  {
-    title: 'Work',
-    links: [{ href: '/sponsor/tasks', label: 'Jobs', icon: BriefcaseBusiness }],
-  },
+  ...(jobsEnabled
+    ? [
+        {
+          title: 'Work',
+          links: [
+            { href: '/sponsor/tasks', label: 'Jobs', icon: BriefcaseBusiness },
+          ],
+        },
+      ]
+    : []),
   {
     title: 'Support',
     links: [{ href: '/help', label: 'Help', icon: CircleHelp }],

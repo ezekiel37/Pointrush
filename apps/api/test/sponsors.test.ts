@@ -283,3 +283,15 @@ test('database rejects a task referencing another allocation or an unfunded allo
       .values({ ...stored!, id: randomUUID(), requestId: randomUUID() }),
   );
 });
+
+test('with jobs switched off, paid tasks cannot be created and no money is locked', async () => {
+  const sponsor = await fundedSponsor();
+  const launch = new SponsorsService({ db }, 'test-v1', false);
+  await assert.rejects(launch.createTask(sponsor.id, taskInput()), (error) => {
+    const response = (
+      error as { getResponse: () => { reason?: string } }
+    ).getResponse();
+    return response.reason === 'jobs_unavailable';
+  });
+  assert.equal(await fundingBalance(db, sponsor.available), 5000000n);
+});

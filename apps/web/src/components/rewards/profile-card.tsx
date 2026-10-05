@@ -1,6 +1,7 @@
 import { BadgeCheck, BriefcaseBusiness, Phone } from 'lucide-react';
 import type { z } from 'zod';
 import type { profile } from '@/lib/rewards';
+import { jobsEnabled } from '@/lib/features';
 
 type Profile = z.infer<typeof profile>;
 const shortMonth = (value: string) =>
@@ -59,18 +60,22 @@ export function ProfileCard({ data }: { data: Profile }) {
         </p>
       </header>
       <dl className="stat-row" style={{ margin: 0 }}>
-        <div className="stat">
-          <dt>Paid jobs</dt>
-          <dd className="amount" style={{ fontSize: '1.8rem' }}>
-            {data.stats.jobsCompleted}
-          </dd>
-        </div>
-        <div className="stat">
-          <dt>Repeat clients</dt>
-          <dd className="amount" style={{ fontSize: '1.8rem' }}>
-            {data.stats.repeatClients}
-          </dd>
-        </div>
+        {jobsEnabled && (
+          <>
+            <div className="stat">
+              <dt>Paid jobs</dt>
+              <dd className="amount" style={{ fontSize: '1.8rem' }}>
+                {data.stats.jobsCompleted}
+              </dd>
+            </div>
+            <div className="stat">
+              <dt>Repeat clients</dt>
+              <dd className="amount" style={{ fontSize: '1.8rem' }}>
+                {data.stats.repeatClients}
+              </dd>
+            </div>
+          </>
+        )}
         <div className="stat">
           <dt>Businesses</dt>
           <dd className="amount" style={{ fontSize: '1.8rem' }}>
@@ -84,40 +89,42 @@ export function ProfileCard({ data }: { data: Profile }) {
           </dd>
         </div>
       </dl>
-      <section aria-labelledby="work-heading">
-        <h3 id="work-heading">Paid work</h3>
-        {data.work.length ? (
-          <ol className="stack">
-            {data.work.map((item, index) => (
-              <li key={`${item.completedAt}-${index}`} className="card row">
-                <div style={{ minWidth: 0 }}>
-                  <p
-                    className="truncate"
-                    style={{ margin: 0, fontWeight: 600 }}
+      {(jobsEnabled || data.work.length > 0) && (
+        <section aria-labelledby="work-heading">
+          <h3 id="work-heading">Paid work</h3>
+          {data.work.length ? (
+            <ol className="stack">
+              {data.work.map((item, index) => (
+                <li key={`${item.completedAt}-${index}`} className="card row">
+                  <div style={{ minWidth: 0 }}>
+                    <p
+                      className="truncate"
+                      style={{ margin: 0, fontWeight: 600 }}
+                    >
+                      {item.title}
+                    </p>
+                    <p
+                      className="small-note icon-line"
+                      style={{ maxWidth: '100%' }}
+                    >
+                      <BriefcaseBusiness size={13} aria-hidden />
+                      <span className="truncate">{item.businessName}</span>
+                    </p>
+                  </div>
+                  <span
+                    className="small-note num"
+                    style={{ whiteSpace: 'nowrap' }}
                   >
-                    {item.title}
-                  </p>
-                  <p
-                    className="small-note icon-line"
-                    style={{ maxWidth: '100%' }}
-                  >
-                    <BriefcaseBusiness size={13} aria-hidden />
-                    <span className="truncate">{item.businessName}</span>
-                  </p>
-                </div>
-                <span
-                  className="small-note num"
-                  style={{ whiteSpace: 'nowrap' }}
-                >
-                  {shortMonth(item.completedAt)}
-                </span>
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <p className="small-note">No paid jobs recorded yet.</p>
-        )}
-      </section>
+                    {shortMonth(item.completedAt)}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="small-note">No paid jobs recorded yet.</p>
+          )}
+        </section>
+      )}
     </article>
   );
 }

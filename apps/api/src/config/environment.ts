@@ -18,6 +18,8 @@ export interface AuthEnvironment {
 
 const schema = z.object({
   SPONSOR_TERMS_VERSION: z.string().trim().min(1).max(80).optional(),
+  // Paid small tasks ("jobs"). Off for launch; cash back and prize codes only.
+  FEATURE_JOBS: z.enum(['on', 'off']).default('off'),
   // Only the signing test provider exists until the Bachs adapter is built.
   PAYMENTS_PROVIDER: z.enum(['test', 'bachs']).optional(),
   PAYMENTS_WEBHOOK_SECRET: z
@@ -93,6 +95,7 @@ export interface SmsEnvironment {
 
 export interface Environment {
   sponsorTermsVersion?: string;
+  jobsEnabled?: boolean;
   payments?: PaymentsEnvironment;
   sms?: SmsEnvironment;
   nodeEnv: 'development' | 'test' | 'production';
@@ -105,6 +108,7 @@ export interface Environment {
 export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
   const {
     SPONSOR_TERMS_VERSION,
+    FEATURE_JOBS,
     PAYMENTS_PROVIDER,
     PAYMENTS_WEBHOOK_SECRET,
     BACHS_API_KEY,
@@ -197,6 +201,7 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
     };
   }
   return {
+    jobsEnabled: FEATURE_JOBS === 'on',
     ...(SPONSOR_TERMS_VERSION
       ? { sponsorTermsVersion: SPONSOR_TERMS_VERSION }
       : {}),

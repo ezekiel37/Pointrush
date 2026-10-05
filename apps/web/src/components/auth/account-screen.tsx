@@ -170,12 +170,11 @@ export function AccountScreen() {
                   <p className="eyebrow">What comes next</p>
                   <h2>You’re ready for the next step.</h2>
                   <p>
-                    Browse published tasks, read the requirements and track the
-                    work you have joined. Rewards require approval. Redemption
-                    is not available yet.
+                    Find cash back offers near you, or claim a prize code from a
+                    pack. What you earn goes to your wallet.
                   </p>
-                  <Link className="text-link" href="/tasks">
-                    Browse tasks
+                  <Link className="text-link" href="/offers">
+                    See offers
                   </Link>
                 </section>
                 <section className="account-panel">

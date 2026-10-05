@@ -23,7 +23,7 @@ export default defineConfig({
     },
     {
       command:
-        'NEXT_PUBLIC_API_ORIGIN=http://localhost:8081 npm run dev -- --port 3100',
+        'NEXT_PUBLIC_API_ORIGIN=http://localhost:8081 NEXT_PUBLIC_FEATURE_JOBS=on npm run dev -- --port 3100',
       url: 'http://localhost:3100/login',
       timeout: 90000,
     },

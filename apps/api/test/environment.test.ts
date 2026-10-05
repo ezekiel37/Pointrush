@@ -129,6 +129,7 @@ test('worker requires only delivery and database settings, independently from AP
 
 test('development defaults are explicit and deny cross-origin access', () => {
   assert.deepEqual(readEnvironment({}), {
+    jobsEnabled: false,
     nodeEnv: 'development',
     port: 8080,
     corsOrigins: [],
@@ -142,7 +143,12 @@ test('accepts Cloud Run port and deduplicates explicit origins', () => {
       PORT: '9090',
       CORS_ORIGINS: 'https://example.com, https://example.com',
     }),
-    { nodeEnv: 'test', port: 9090, corsOrigins: ['https://example.com'] },
+    {
+      jobsEnabled: false,
+      nodeEnv: 'test',
+      port: 9090,
+      corsOrigins: ['https://example.com'],
+    },
   );
 });
 
@@ -323,4 +329,13 @@ test('Bachs needs a key, secret and return origin, with live keys only in produc
       }),
     /PAYMENTS_PROVIDER is not bachs/,
   );
+});
+
+test('paid small tasks (jobs) are off unless switched on', () => {
+  assert.equal(readEnvironment(apiConfig).jobsEnabled, false);
+  assert.equal(
+    readEnvironment({ ...apiConfig, FEATURE_JOBS: 'on' }).jobsEnabled,
+    true,
+  );
+  assert.throws(() => readEnvironment({ ...apiConfig, FEATURE_JOBS: 'yes' }));
 });

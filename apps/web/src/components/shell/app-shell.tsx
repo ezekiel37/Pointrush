@@ -12,14 +12,17 @@ import {
 } from 'lucide-react';
 import { Brand } from '@/components/auth/auth-frame';
 import { NotificationBell } from './notification-bell';
+import { jobsEnabled } from '@/lib/features';
 
 const tabs = [
   { href: '/offers', label: 'Offers', icon: Tag },
   { href: '/claim', label: 'Claim', icon: TicketCheck },
-  { href: '/tasks', label: 'Jobs', icon: BriefcaseBusiness },
+  ...(jobsEnabled
+    ? [{ href: '/tasks', label: 'Jobs', icon: BriefcaseBusiness }]
+    : []),
   { href: '/wallet', label: 'Wallet', icon: Wallet },
   { href: '/profile', label: 'Profile', icon: UserRound },
-] as const;
+];
 
 function active(pathname: string, href: string) {
   if (href === '/tasks')
