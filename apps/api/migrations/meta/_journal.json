@@ -148,6 +148,13 @@
       "when": 1791186661933,
       "tag": "0020_campaign_returns",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1791187107226,
+      "tag": "0021_notification_reads",
+      "breakpoints": true
     }
   ]
 }

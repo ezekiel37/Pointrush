@@ -233,3 +233,18 @@ export const withdrawal = z.object({
   state: z.enum(['held', 'sent', 'paid', 'failed']),
 });
 export const withdrawalPage = page(withdrawal);
+
+export const notificationFeed = z.object({
+  items: z.array(
+    z.object({
+      id: z.string(),
+      kind: z.string(),
+      at: date,
+      unread: z.boolean(),
+      title: z.string(),
+      body: z.string(),
+      href: z.string().regex(/^\/[a-z0-9/_-]*$/i),
+    }),
+  ),
+  unread: z.number().int(),
+});

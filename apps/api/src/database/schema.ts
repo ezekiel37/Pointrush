@@ -165,3 +165,4 @@ export {
   phoneChallenges,
   phoneChallengeAttempts,
 } from '../phone/phone.schema.js';
+export { notificationReads } from '../notifications/notification.schema.js';

@@ -573,3 +573,43 @@ test('phone verification sends a code, explains a wrong one and returns to the n
     '/claim',
   );
 });
+
+test('the bell counts unread updates and opening them marks them read', async ({
+  page,
+}) => {
+  await phone(page);
+  let seen = 0;
+  const feed = () => ({
+    items: [
+      {
+        id: 'cashback_ready:1',
+        kind: 'cashback_ready',
+        at: '2026-10-05T12:00:00Z',
+        unread: seen === 0,
+        title: '₦500 cash back is ready',
+        body: 'From Mama Put Kitchen. Move it to your wallet.',
+        href: '/wallet',
+      },
+    ],
+    unread: seen === 0 ? 1 : 0,
+  });
+  await page.route('**/api/v1/notifications', (route) =>
+    route.fulfill({ json: feed() }),
+  );
+  await page.route('**/api/v1/notifications/seen', (route) => {
+    seen++;
+    return route.fulfill({ json: { unread: 0 } });
+  });
+  await page.route('**/api/v1/work/tasks?*', (route) =>
+    route.fulfill({ json: { items: [], nextCursor: null } }),
+  );
+  await page.goto('/offers');
+  await page.getByRole('link', { name: 'Notifications, 1 unread' }).click();
+  await expect(page.getByText('₦500 cash back is ready')).toBeVisible();
+  await healthy(page);
+  await expect.poll(() => seen).toBe(1);
+  await page.goto('/offers');
+  await expect(
+    page.getByRole('link', { name: 'Notifications, none unread' }),
+  ).toBeVisible();
+});

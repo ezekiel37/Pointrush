@@ -11,6 +11,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { Brand } from '@/components/auth/auth-frame';
+import { NotificationBell } from './notification-bell';
 
 const tabs = [
   { href: '/offers', label: 'Offers', icon: Tag },
@@ -46,14 +47,17 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           ))}
         </nav>
-        <Link
-          href="/business"
-          className="button button-outline"
-          aria-current={pathname.startsWith('/business') ? 'page' : undefined}
-        >
-          <Store size={17} aria-hidden />
-          <span>Business</span>
-        </Link>
+        <div className="app-bar-end">
+          <NotificationBell />
+          <Link
+            href="/business"
+            className="button button-outline"
+            aria-current={pathname.startsWith('/business') ? 'page' : undefined}
+          >
+            <Store size={17} aria-hidden />
+            <span>Business</span>
+          </Link>
+        </div>
       </header>
       {children}
       <nav className="tabbar" aria-label="Main">

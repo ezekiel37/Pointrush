@@ -1359,6 +1359,70 @@
     color: var(--color-ink);
     white-space: normal;
   }
+  /* Notifications: a bell in the top bars and a plain feed. */
+  .app-bar-end {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .bell {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 999px;
+    border: 1px solid var(--color-line);
+    background: var(--color-surface);
+    color: var(--color-ink);
+  }
+  .bell:hover {
+    border-color: var(--color-faint);
+  }
+  .bell-count {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    min-width: 19px;
+    height: 19px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--color-brand);
+    color: #ffffff;
+    font-size: 0.7rem;
+    font-weight: 650;
+    line-height: 19px;
+    text-align: center;
+  }
+  .notice {
+    display: grid;
+    grid-template-columns: 10px minmax(0, 1fr);
+    gap: 0.85rem;
+    color: inherit;
+    text-decoration: none;
+  }
+  .notice:hover {
+    border-color: var(--color-faint);
+  }
+  .notice > span:last-child {
+    display: grid;
+    gap: 0.2rem;
+  }
+  .notice-dot {
+    width: 8px;
+    height: 8px;
+    margin-top: 0.45rem;
+    border-radius: 999px;
+  }
+  .notice-unread .notice-dot {
+    background: var(--color-brand);
+  }
+  .notice-title {
+    font-weight: 600;
+  }
+  .notice-body {
+    color: var(--color-ink-soft, var(--color-muted));
+  }
   .confirm-strip {
     display: grid;
     gap: 0.75rem;

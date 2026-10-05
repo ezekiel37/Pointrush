@@ -9,6 +9,8 @@ import { ProfilesController } from '../points/profiles.controller.js';
 import { ProfilesService } from '../points/profiles.service.js';
 import { PromotionsController } from '../promotions/promotions.controller.js';
 import { PromotionsService } from '../promotions/promotions.service.js';
+import { NotificationsController } from '../notifications/notifications.controller.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 
 @Module({
   controllers: [
@@ -16,8 +18,14 @@ import { PromotionsService } from '../promotions/promotions.service.js';
     PointsController,
     ProfilesController,
     PromotionsController,
+    NotificationsController,
   ],
   providers: [
+    {
+      provide: NotificationsService,
+      inject: [DatabaseService],
+      useFactory: (db: DatabaseService) => new NotificationsService(db.db),
+    },
     {
       provide: CampaignsService,
       inject: [DatabaseService],

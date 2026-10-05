@@ -13,6 +13,7 @@ import {
   TicketCheck,
 } from 'lucide-react';
 import { Brand } from '@/components/auth/auth-frame';
+import { NotificationBell } from '@/components/shell/notification-bell';
 
 const groups = [
   {
@@ -144,7 +145,10 @@ export function DashShell({
               </span>
             ))}
           </nav>
-          <LagosClock />
+          <div className="app-bar-end">
+            <LagosClock />
+            <NotificationBell />
+          </div>
         </header>
         <nav className="dash-tabs" aria-label="Business sections">
           {flat.map(({ href, label, ...rest }) => (
