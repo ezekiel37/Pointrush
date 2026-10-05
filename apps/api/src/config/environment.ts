@@ -20,6 +20,9 @@ const schema = z.object({
   SPONSOR_TERMS_VERSION: z.string().trim().min(1).max(80).optional(),
   // Paid small tasks ("jobs"). Off for launch; cash back and prize codes only.
   FEATURE_JOBS: z.enum(['on', 'off']).default('off'),
+  // "pilot": a public test version that must use Bachs sandbox keys, so no
+  // real money can move. "live": real money with sk_live_ keys.
+  RELEASE_STAGE: z.enum(['pilot', 'live']).default('live'),
   // Only the signing test provider exists until the Bachs adapter is built.
   PAYMENTS_PROVIDER: z.enum(['test', 'bachs']).optional(),
   PAYMENTS_WEBHOOK_SECRET: z
@@ -96,6 +99,7 @@ export interface SmsEnvironment {
 export interface Environment {
   sponsorTermsVersion?: string;
   jobsEnabled?: boolean;
+  releaseStage?: 'pilot' | 'live';
   payments?: PaymentsEnvironment;
   sms?: SmsEnvironment;
   nodeEnv: 'development' | 'test' | 'production';
@@ -109,6 +113,7 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
   const {
     SPONSOR_TERMS_VERSION,
     FEATURE_JOBS,
+    RELEASE_STAGE,
     PAYMENTS_PROVIDER,
     PAYMENTS_WEBHOOK_SECRET,
     BACHS_API_KEY,
@@ -149,10 +154,12 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
       'PAYMENTS_RETURN_ORIGIN',
       NODE_ENV === 'production',
     );
-    // Real money only with a live key, and live keys only in production.
-    if ((NODE_ENV === 'production') !== BACHS_API_KEY.startsWith('sk_live_'))
+    // Real money only with a live key, and live keys only in a live
+    // production release. A pilot runs in production mode on sandbox keys.
+    const live = NODE_ENV === 'production' && RELEASE_STAGE === 'live';
+    if (live !== BACHS_API_KEY.startsWith('sk_live_'))
       throw new Error(
-        'Use a sk_live_ Bachs key in production and a sk_sandbox_ key elsewhere',
+        'Use a sk_live_ Bachs key only for a live production release and a sk_sandbox_ key otherwise',
       );
   } else if (BACHS_API_KEY) {
     throw new Error('BACHS_API_KEY is set but PAYMENTS_PROVIDER is not bachs');
@@ -202,6 +209,7 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
   }
   return {
     jobsEnabled: FEATURE_JOBS === 'on',
+    releaseStage: RELEASE_STAGE,
     ...(SPONSOR_TERMS_VERSION
       ? { sponsorTermsVersion: SPONSOR_TERMS_VERSION }
       : {}),

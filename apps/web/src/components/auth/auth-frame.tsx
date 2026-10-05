@@ -33,7 +33,7 @@ export function AuthFrame({
         <div className="story-body">
           <p className="eyebrow">Proof pays</p>
           <h2>
-            Buy. Work.
+            Buy. Scratch.
             <br />
             Get paid
             <br />
@@ -41,7 +41,7 @@ export function AuthFrame({
           </h2>
           <p className="story-copy">
             Businesses lock the money before you act. Cash back for real
-            purchases, prizes for real codes, pay for real work.
+            purchases, prizes for real codes.
           </p>
           <ol className="journey" aria-label={journeyLabel}>
             {journeyLabels.map((label, i) => (

@@ -17,9 +17,9 @@ import { Spiral } from '@/components/landing/spiral';
 import { jobsEnabled } from '@/lib/features';
 
 export const metadata: Metadata = {
-  title: { absolute: 'Acticlaim: cash back, prize codes and paid work' },
+  title: { absolute: 'Acticlaim: cash back and prize codes' },
   description:
-    'Get money back when you buy, claim prizes you scratch and get paid for work. Businesses lock every naira before it is promised.',
+    'Get money back when you buy and claim prizes you scratch. Businesses lock every naira before it is promised.',
   robots: { index: true, follow: true },
 };
 
@@ -84,8 +84,8 @@ export default function Home() {
           </Link>
           <h1 id="hero-heading">Get paid back for what you already do.</h1>
           <p>
-            Cash back when you buy. Prizes when you scratch. Pay when you work.
-            Every naira is locked by the business before it is promised to you.
+            Cash back when you buy. Prizes when you scratch. Every naira is
+            locked by the business before it is promised to you.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             <Link className="button button-primary" href="/offers">
@@ -313,8 +313,8 @@ export default function Home() {
               Run your first campaign.
             </h2>
             <p style={{ margin: 0, maxWidth: '46ch' }}>
-              Cash back, scratch-and-win or paid work. You fund it, we verify
-              every claim, and you see the results.
+              Cash back or scratch-and-win. You fund it, we verify every claim,
+              and you see the results.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link className="button button-accent" href="/business">

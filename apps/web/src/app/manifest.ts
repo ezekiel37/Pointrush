@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'Acticlaim',
     short_name: 'Acticlaim',
     description:
-      'Cash back for real purchases, prize codes and paid work, backed by money businesses lock first.',
+      'Cash back for real purchases and prize codes, backed by money businesses lock first.',
     id: '/',
     start_url: '/offers',
     scope: '/',
