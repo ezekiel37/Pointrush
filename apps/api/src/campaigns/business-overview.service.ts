@@ -85,6 +85,10 @@ export class BusinessOverviewService {
           with owned as (${owned})
           select o.id, o.title, o.model, o.capacity, o.review_state, o.lifecycle,
             o.ends_at, o.reward_kobo::text as reward_kobo,
+            case when o.review_state in ('changes_required', 'rejected') then
+              (select r.reason from task_reviews r where r.task_id = o.id
+                order by r.created_at desc limit 1)
+            end as review_note,
             case
               when o.model = 'purchase_cashback' then (select count(*) from purchase_confirmations p
                 where p.task_id = o.id and not exists (select 1 from purchase_voids v where v.confirmation_id = p.id))
@@ -102,6 +106,7 @@ export class BusinessOverviewService {
         lifecycle: String(r.lifecycle),
         endsAt: new Date(String(r.ends_at)).toISOString(),
         rewardKobo: kobo(r.reward_kobo),
+        reviewNote: r.review_note == null ? null : String(r.review_note),
       }));
 
       return {

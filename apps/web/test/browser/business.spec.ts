@@ -195,3 +195,78 @@ test('an approved campaign goes live from its list', async ({ page }) => {
   await expect(page.getByText('Live', { exact: true })).toBeVisible();
   expect(published).toBe(1);
 });
+
+test('a reviewer approves only after every check, and the decision is recorded once', async ({
+  page,
+}) => {
+  const task = {
+    id: businessId,
+    sponsorName: 'Mama Put Kitchen',
+    title: '₦500 back on lunch',
+    instructions: 'Buy any meal.',
+    proofRequirements: 'Purchase confirmed by the business at the till.',
+    rejectionCriteria: 'Refunded or cancelled orders.',
+    model: 'purchase_cashback',
+    capacity: 40,
+    rewardKobo: '50000',
+    budgetKobo: '2000000',
+    startsAt: '2099-10-06T09:00:00Z',
+    endsAt: '2099-11-06T09:00:00Z',
+    termsVersion: 1,
+    termsHash: 'a'.repeat(64),
+    campaignTerms: {
+      minSpendKobo: '300000',
+      holdHours: 72,
+      placeName: 'Mama Put Kitchen',
+      placeAddress: '12 Campus Road, Ibadan',
+    },
+    promotionTerms: null,
+  };
+  let decided = false;
+  await page.route('**/api/v1/admin/reviews/tasks?*', (route) =>
+    route.fulfill({
+      json: { items: decided ? [] : [task], nextCursor: null },
+    }),
+  );
+  await page.route(`**/api/v1/admin/reviews/tasks/${businessId}`, (route) =>
+    route.fulfill({ json: task }),
+  );
+  const bodies: Record<string, unknown>[] = [];
+  await page.route(
+    `**/api/v1/admin/reviews/tasks/${businessId}/decision`,
+    (route) => {
+      bodies.push(route.request().postDataJSON());
+      decided = true;
+      return route.fulfill({ json: { id: businessId } });
+    },
+  );
+  await page.goto('/review/campaigns');
+  await page.getByRole('link', { name: '₦500 back on lunch' }).click();
+  await expect(page.getByText('12 Campus Road, Ibadan')).toBeVisible();
+  await expect(page.getByText('₦500 × 40 = ₦20,000 locked')).toBeVisible();
+  await healthy(page);
+  await expect(
+    page.getByRole('button', { name: 'Approve campaign' }),
+  ).toBeDisabled();
+  for (const box of await page.getByRole('checkbox').all()) await box.check();
+  await page.getByLabel('What you checked').fill('Address and terms checked.');
+  await page.getByRole('button', { name: 'Approve campaign' }).click();
+  await page.waitForURL('**/review/campaigns?decided=1');
+  await expect(page.getByText('Nothing waiting for review.')).toBeVisible();
+  expect(bodies).toHaveLength(1);
+  expect(bodies[0]).toMatchObject({
+    decision: 'approved',
+    termsVersion: 1,
+    reason: 'Address and terms checked.',
+  });
+});
+
+test('without reviewer access the queue explains how to get it', async ({
+  page,
+}) => {
+  await page.route('**/api/v1/admin/reviews/tasks?*', (route) =>
+    route.fulfill({ status: 403, json: { statusCode: 403 } }),
+  );
+  await page.goto('/review/campaigns');
+  await expect(page.getByText(/recent authenticator check/)).toBeVisible();
+});

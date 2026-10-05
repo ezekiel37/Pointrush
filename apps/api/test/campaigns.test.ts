@@ -386,6 +386,15 @@ test('business overview counts only its own activity by Lagos day and state', as
   );
   assert.equal(view.campaigns.length, 1);
   assert.equal(view.campaigns[0]?.used, 2);
+  assert.equal(view.campaigns[0]?.reviewNote, null);
+  const sent = await fixture.draft(merchant);
+  await sent.decide('changes_required', 'Add the full street address.');
+  const notes = (await overviews.overview(merchant.user, { days: '7' }))
+    .campaigns;
+  assert.equal(
+    notes.find((c) => c.id === sent.id)?.reviewNote,
+    'Add the full street address.',
+  );
   assert.equal(view.live, 1);
   assert.equal(
     (await overviews.overview(merchant.user, { days: '30' })).series.length,

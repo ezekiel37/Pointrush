@@ -1351,6 +1351,37 @@
   .preset-row.two {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .preset-row.three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .table .sub.review-note {
+    margin-top: 0.25rem;
+    color: var(--color-ink);
+    white-space: normal;
+  }
+  .terms-list {
+    display: grid;
+    margin: 0;
+  }
+  .terms-list > div {
+    display: grid;
+    grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr);
+    gap: 1rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--color-divider);
+  }
+  .terms-list > div:last-child {
+    border-bottom: 0;
+  }
+  .terms-list dt {
+    color: var(--color-muted);
+    font-size: 0.88rem;
+  }
+  .terms-list dd {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
   .timeline {
     counter-reset: step;
     display: grid;
@@ -1967,6 +1998,10 @@
 }
 /* Phones: each table row becomes a compact card. */
 @media (max-width: 640px) {
+  .terms-list > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.2rem;
+  }
   .table thead {
     display: none;
   }

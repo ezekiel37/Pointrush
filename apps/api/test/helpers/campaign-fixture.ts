@@ -145,6 +145,49 @@ export async function campaignFixture() {
     };
   }
 
+  // Funds and creates a cash back campaign that has not been reviewed yet.
+  async function draft(merchant?: Identity, capacity = 1, cashback = '50000') {
+    const owner = merchant ?? (await business());
+    await fund(owner.account, BigInt(cashback) * BigInt(capacity));
+    const start = new Date(Date.now() + 3600000);
+    const created = await sponsors.createTask(owner.user, {
+      requestId: randomUUID(),
+      title: 'Draft cash back',
+      instructions: 'Buy any meal and show your Acticlaim code at the counter.',
+      proofRequirements: 'Purchase confirmed by the business at the till.',
+      rejectionCriteria: 'Refunded or cancelled orders.',
+      model: 'purchase_cashback',
+      capacity,
+      rewardKobo: cashback,
+      startsAt: start.toISOString(),
+      endsAt: new Date(start.getTime() + 2 * 86400000).toISOString(),
+      campaignTerms,
+    });
+    const [row] = await db
+      .select()
+      .from(s.sponsorTasks)
+      .where(eq(s.sponsorTasks.id, created.id));
+    const decide = (
+      decision: 'approved' | 'changes_required' | 'rejected',
+      reason: string,
+    ) =>
+      new TaskReviewService(db).decide(reviewer, {
+        taskId: row!.id,
+        requestId: randomUUID(),
+        termsVersion: row!.termsVersion,
+        termsHash: row!.requestHash,
+        decision,
+        reason,
+        checklist: { ...taskReviewChecklist },
+      });
+    return {
+      merchant: owner,
+      id: created.id,
+      allocation: created.allocationAccountId,
+      decide,
+    };
+  }
+
   // Funds, reviews and publishes a live claim-code prize promotion.
   async function promotion(
     prizes = 3,
@@ -212,5 +255,6 @@ export async function campaignFixture() {
     fund,
     business,
     campaign,
+    draft,
   };
 }

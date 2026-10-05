@@ -2,8 +2,8 @@ import Link from 'next/link';
 export function ReviewAccess() {
   return (
     <p className="small-note">
-      Appeal review requires an active appointment and a recent authenticator
-      check.{' '}
+      Reviewing requires an active reviewer appointment and a recent
+      authenticator check.{' '}
       <Link
         className="text-link"
         href="/two-factor"

@@ -71,6 +71,11 @@ export function CampaignTable({
                 <td>
                   <Link href={kind.href(c.id)}>{c.title}</Link>
                   <span className="sub">{kind.label}</span>
+                  {c.reviewNote && (
+                    <span className="sub review-note">
+                      Reviewer: {c.reviewNote}
+                    </span>
+                  )}
                 </td>
                 <td>{naira(c.rewardKobo)}</td>
                 <td>

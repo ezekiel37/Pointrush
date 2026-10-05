@@ -187,6 +187,7 @@ export const businessCampaign = z.object({
   lifecycle: z.string(),
   endsAt: date,
   rewardKobo: money,
+  reviewNote: z.string().nullable().optional(),
 });
 export const businessOverview = z.object({
   business: z.object({ id: z.uuid(), name: z.string() }),
