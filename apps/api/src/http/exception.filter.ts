@@ -44,9 +44,10 @@ export class ApiExceptionFilter implements ExceptionFilter {
             : details && 'message' in details
               ? details.message
               : 'Request failed';
-    // A stable machine-readable reason lets clients explain conflicts precisely.
+    // A stable machine-readable reason lets clients explain conflicts and
+    // unavailable features precisely.
     const reason =
-      status === 409 &&
+      (status === 409 || status === 503) &&
       details &&
       typeof details === 'object' &&
       'reason' in details &&

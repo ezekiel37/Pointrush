@@ -866,7 +866,10 @@ test('native simultaneous claims of one winning code pay exactly one person, who
     )!;
     const withdrawals = await Promise.allSettled(
       [database.db, other.db].map((db) =>
-        new PaymentsService(db).requestWithdrawal(winner.user, {
+        new PaymentsService(
+          db,
+          new TestPaymentProvider('native-webhook-secret-long-enough-0000'),
+        ).requestWithdrawal(winner.user, {
           id: randomUUID(),
           amountKobo: '60000',
         }),

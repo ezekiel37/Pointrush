@@ -247,6 +247,8 @@ export class PaymentsService {
   }
 
   async requestWithdrawal(user: string, input: unknown) {
+    // Without a provider a hold could never be paid out or returned.
+    this.requireProvider();
     const value = parse(withdrawalInput, input);
     return actorTransaction(this.db, user, async (tx, actor) => {
       const [existing] = await tx

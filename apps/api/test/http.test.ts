@@ -1,7 +1,14 @@
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Post,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { IsInt, Min } from 'class-validator';
@@ -28,6 +35,19 @@ class ProbeController {
   @Get('failure')
   failure(): never {
     throw new Error('secret-provider-token');
+  }
+
+  @Get('unavailable')
+  unavailable(): never {
+    throw new ServiceUnavailableException({
+      message: 'Not yet',
+      reason: 'feature_unavailable',
+    });
+  }
+
+  @Get('invalid')
+  invalid(): never {
+    throw new BadRequestException({ message: 'Bad', reason: 'internal_hint' });
   }
 }
 
@@ -176,6 +196,17 @@ test('unexpected errors hide sensitive details and retain request identifier', a
     message: 'Internal server error',
     requestId: response.headers['x-request-id'],
   });
+});
+
+test('stable reasons are exposed only for conflicts and unavailable features', async () => {
+  const unavailable = await request(server)
+    .get('/api/v1/probe/unavailable')
+    .expect(503);
+  assert.equal(unavailable.body.reason, 'feature_unavailable');
+  const invalid = await request(server)
+    .get('/api/v1/probe/invalid')
+    .expect(400);
+  assert.equal(invalid.body.reason, undefined);
 });
 
 test('unknown endpoints do not expose stack traces', async () => {

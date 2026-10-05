@@ -109,6 +109,16 @@ test('payments are unavailable without a configured provider', async () => {
     ),
     'payments_unavailable',
   );
+  const person = await identity();
+  assert.equal(
+    await reason(
+      none.requestWithdrawal(person.user, {
+        id: randomUUID(),
+        amountKobo: '50000',
+      }),
+    ),
+    'payments_unavailable',
+  );
 });
 
 test('business funding credits only a verified, matching, first-seen confirmation', async () => {

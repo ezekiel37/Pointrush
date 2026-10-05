@@ -378,6 +378,12 @@ test('business overview counts only its own activity by Lagos day and state', as
   );
   assert.equal(view.lockedKobo, '100000');
   assert.equal(view.paidOutKobo, '50000');
+  assert.equal(view.availableKobo, '0');
+  await fixture.fund(merchant.account, 25000n);
+  assert.equal(
+    (await overviews.overview(merchant.user, { days: '7' })).availableKobo,
+    '25000',
+  );
   assert.equal(view.campaigns.length, 1);
   assert.equal(view.campaigns[0]?.used, 2);
   assert.equal(view.live, 1);

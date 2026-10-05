@@ -71,6 +71,9 @@ export class BusinessOverviewService {
         await tx.execute(sql`
           with owned as (${owned})
           select
+            coalesce((select sum(case when f.destination_id = a.id then f.amount_kobo else -f.amount_kobo end)
+              from funding_accounts a join funding_transfers f on f.source_id = a.id or f.destination_id = a.id
+              where a.owner_id = ${actor} and a.bucket = 'available'), 0)::text as available,
             coalesce((select sum(case when f.destination_id = o.allocation_account_id then f.amount_kobo else -f.amount_kobo end)
               from owned o join funding_transfers f on f.source_id = o.allocation_account_id or f.destination_id = o.allocation_account_id), 0)::text as locked,
             coalesce((select sum(f.amount_kobo) from owned o join funding_transfers f on f.source_id = o.allocation_account_id
@@ -112,6 +115,7 @@ export class BusinessOverviewService {
           voided: int(states?.voided),
           returningShoppers: int(states?.returning),
         },
+        availableKobo: kobo(money?.available),
         lockedKobo: kobo(money?.locked),
         paidOutKobo: kobo(money?.paid_out),
         live: campaigns.filter(
