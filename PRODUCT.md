@@ -58,7 +58,7 @@ Jobs are the existing capped-fixed task flow: locked funds, proof, sponsor decis
 
 ## Payments
 
-Business funding and shopper payouts will use Bachs. Its payout coverage, recipient verification and fund-holding terms must be confirmed from its documentation before integration. Until then funding is confirmed internally in tests only, and no real money moves.
+Business funding and shopper payouts will use Bachs. Its payout coverage, recipient verification and fund-holding terms must be confirmed from its documentation before integration. The provider-agnostic foundation (verified funding, held withdrawals, one-time settlement) exists; see PAYMENTS.md. No real money moves until the Bachs adapter, payout destinations and reconciliation are in place.
 
 ## Success test for the pilot
 
