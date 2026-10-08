@@ -172,6 +172,14 @@ node dist/reviews/reviewer-provisioning-cli.js grant --grant-id $(cat /proc/sys/
 ```
 
 4. On the site, turn on two-factor from your account page. Reviewer pages need it.
+5. **Job appeals** need their own permission. In Supabase's **SQL editor**, run (with your account ID in both places):
+
+   ```sql
+   insert into appeal_reviewer_grants (account_id, granted_by, reason, expires_at)
+   values ('YOUR-ACCOUNT-ID', 'YOUR-ACCOUNT-ID', 'Founder', now() + interval '30 days');
+   ```
+
+   Renew it the same way before it expires. Appeals are decided under **Review → Appeals**; a business can never decide appeals on its own jobs.
 
 Reviewer access lasts at most 30 days. To renew, run the CLI's `revoke` and then `grant` again. Also appoint a second trusted reviewer the same way: campaigns of ₦1,000,000 or more and unfreezing an account need two different people.
 
