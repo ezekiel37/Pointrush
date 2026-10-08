@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { signupSchema } from '@/lib/forms';
@@ -11,6 +11,7 @@ import { Field } from '@/components/ui/field';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Feedback } from '@/components/ui/feedback';
 import { PASSWORD_MIN_LENGTH } from '@pointrush/contracts';
+import { SIGNUP_EMAIL_KEY } from '@/components/landing/email-capture';
 export function SignupForm() {
   const [sent, setSent] = useState(false);
   const submit = useSubmit();
@@ -18,12 +19,23 @@ export function SignupForm() {
     register,
     handleSubmit,
     resetField,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(signupSchema),
     mode: 'onBlur',
     defaultValues: { name: '', email: '', password: '', confirmation: '' },
   });
+  // Prefill from the landing page's email box, then forget it.
+  useEffect(() => {
+    try {
+      const email = sessionStorage.getItem(SIGNUP_EMAIL_KEY);
+      sessionStorage.removeItem(SIGNUP_EMAIL_KEY);
+      if (email) setValue('email', email);
+    } catch {
+      // Storage can be blocked; the form simply starts empty.
+    }
+  }, [setValue]);
   if (sent)
     return (
       <div className="success-panel">

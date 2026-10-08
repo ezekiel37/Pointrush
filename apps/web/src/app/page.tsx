@@ -1,28 +1,33 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import '@fontsource/instrument-serif/latin-400.css';
+import '@fontsource/instrument-serif/latin-400-italic.css';
 import {
+  ArrowDownRight,
   ArrowRight,
   BadgeCheck,
+  Code2,
   CupSoda,
   GraduationCap,
   Lock,
   Pill,
-  Plus,
+  Play,
+  Rocket,
   Scissors,
-  Shirt,
   ScanLine,
+  Shirt,
   Store,
   TicketCheck,
   UtensilsCrossed,
 } from 'lucide-react';
 import { Brand } from '@/components/auth/auth-frame';
-import { Spiral } from '@/components/landing/spiral';
+import { EmailCapture } from '@/components/landing/email-capture';
 import { jobsEnabled } from '@/lib/features';
 
 export const metadata: Metadata = {
-  title: { absolute: 'Acticlaim: cash back and prize codes' },
+  title: { absolute: 'Acticlaim: cash back, prize codes and paid tasks' },
   description:
-    'Get money back when you buy and claim prizes you scratch. Businesses lock every naira before it is promised.',
+    'Get money back when you buy, claim prize codes where every code wins, and get paid for tasks. Businesses lock every naira before it is promised.',
   robots: { index: true, follow: true },
 };
 
@@ -54,14 +59,42 @@ function ExampleCurve({ height = 70 }: { height?: number }) {
 }
 
 const sectors = [
-  { icon: UtensilsCrossed, label: 'Restaurants & food spots' },
-  { icon: Scissors, label: 'Barbers & salons' },
-  { icon: Store, label: 'Shops & supermarkets' },
+  { icon: UtensilsCrossed, label: 'Restaurants' },
+  { icon: Scissors, label: 'Salons & barbers' },
+  { icon: Store, label: 'Supermarkets' },
   { icon: Pill, label: 'Pharmacies' },
-  { icon: Shirt, label: 'Fashion & boutiques' },
-  { icon: CupSoda, label: 'Drinks & consumer brands' },
+  { icon: Shirt, label: 'Fashion' },
+  { icon: CupSoda, label: 'Drinks & FMCG brands' },
   { icon: GraduationCap, label: 'Campus businesses' },
-  { icon: Plus, label: 'Any business that sells in person' },
+  ...(jobsEnabled ? [{ icon: Rocket, label: 'Startups & apps' }] : []),
+];
+
+const audiences = [
+  {
+    icon: Store,
+    who: 'Shops, restaurants & salons',
+    title: 'Turn first visits into regulars.',
+    body: 'Offer cash back on real purchases. Your staff confirm each sale at the till, so you only pay for customers who actually bought.',
+    cta: 'Start a cash back offer',
+  },
+  {
+    icon: TicketCheck,
+    who: 'Brands',
+    title: 'Every pack can win.',
+    body: 'Print prize codes on packs, cards or receipts. You fund the prizes upfront, every code wins, and we check every claim.',
+    cta: 'Create prize codes',
+  },
+  ...(jobsEnabled
+    ? [
+        {
+          icon: Code2,
+          who: 'Startups & software companies',
+          title: 'Real people, real feedback.',
+          body: 'Pay people to test your app, try your product or finish a task. The pay is locked first, and you only pay for approved work.',
+          cta: 'Post a paid task',
+        },
+      ]
+    : []),
 ];
 
 export default function Home() {
@@ -69,8 +102,14 @@ export default function Home() {
     <>
       <header className="app-bar">
         <Brand />
+        <nav className="lp-nav hide-narrow" aria-label="Main">
+          <Link href="/offers">Offers</Link>
+          <Link href="/claim">Prize codes</Link>
+          {jobsEnabled && <Link href="/tasks">Tasks</Link>}
+          <Link href="/business">For businesses</Link>
+        </nav>
         <nav className="flex items-center gap-2" aria-label="Account">
-          <Link className="button button-ghost hide-narrow" href="/login">
+          <Link className="button button-outline hide-narrow" href="/login">
             Sign in
           </Link>
           <Link className="button button-primary" href="/signup">
@@ -79,70 +118,176 @@ export default function Home() {
         </nav>
       </header>
       <main id="main-content" className="app-main" style={{ paddingBottom: 0 }}>
-        <section className="lp-hero" aria-labelledby="hero-heading">
-          <Link
-            className="lp-pill"
-            href="/claim"
-            style={{ textDecoration: 'none' }}
+        <section className="lp-hero3" aria-labelledby="hero-heading">
+          <div className="lp-hero3-copy">
+            <Link className="lp-kicker" href="/help">
+              <span className="lp-kicker-line" aria-hidden />
+              <span className="lp-kicker-dot" aria-hidden>
+                <ArrowRight size={14} />
+              </span>
+              Free to join. <b>Paid to your bank.</b>
+            </Link>
+            <h1 id="hero-heading">
+              <span className="lp-h-light">Get paid back</span>
+              <span className="lp-h-bold">for what you</span>
+              <span className="lp-h-serif">already do.</span>
+            </h1>
+            <p>
+              Cash back when you buy, prize codes where every code wins
+              {jobsEnabled ? ', and paid tasks from real businesses' : ''}.
+              Every naira is locked by the business before it is promised to
+              you.
+            </p>
+            <div className="lp-actions">
+              <Link className="button button-primary lp-cta" href="/signup">
+                Start earning
+              </Link>
+              <Link className="lp-demo" href="/help">
+                <span aria-hidden>
+                  <Play size={12} fill="currentColor" />
+                </span>
+                See how it works
+              </Link>
+            </div>
+            <dl className="lp-stats">
+              <div>
+                <dt>Funded upfront</dt>
+                <dd>100%</dd>
+              </div>
+              <div>
+                <dt>To join</dt>
+                <dd>₦0</dd>
+              </div>
+              <div>
+                <dt>Prize codes that win</dt>
+                <dd>All</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div
+            className="lp-visual"
+            role="img"
+            aria-label="Example of the Acticlaim app: a wallet with cash back, a prize and a paid task"
           >
-            <b>New</b> Claim prize codes from scratch-and-win
-            <ArrowRight size={14} aria-hidden />
-          </Link>
-          <h1 id="hero-heading">Get paid back for what you already do.</h1>
-          <p>
-            Cash back when you buy. Prizes when you scratch.
-            {jobsEnabled && ' Pay when you complete a task.'} Every naira is
-            locked by the business before it is promised to you.
-          </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Link className="button button-primary" href="/offers">
-              Find offers
-            </Link>
-            <Link className="button button-outline" href="/claim">
-              Claim a prize
-            </Link>
+            <div className="lp-arc" aria-hidden />
+            <svg className="lp-burst" viewBox="0 0 100 100" aria-hidden>
+              {Array.from({ length: 36 }, (_, i) => (
+                <line
+                  key={i}
+                  x1="50"
+                  y1="50"
+                  x2={50 + 48 * Math.cos((i * Math.PI) / 18)}
+                  y2={50 + 48 * Math.sin((i * Math.PI) / 18)}
+                />
+              ))}
+            </svg>
+            <svg
+              className="lp-wires"
+              viewBox="0 0 400 420"
+              preserveAspectRatio="none"
+              aria-hidden
+            >
+              <path d="M70 120 C 110 120, 110 170, 150 170" />
+              <path d="M330 300 C 290 300, 290 250, 250 250" />
+              <path d="M60 330 C 100 330, 120 300, 150 300" />
+            </svg>
+
+            <div className="lp-phone" aria-hidden>
+              <div className="lp-phone-notch" />
+              <div className="lp-phone-screen">
+                <span className="lp-phone-hello">Good evening, Tolu</span>
+                <div className="lp-phone-balance">
+                  <span>Wallet</span>
+                  <strong>₦7,200</strong>
+                  <span className="lp-phone-pill">Withdraw</span>
+                </div>
+                <span className="lp-phone-label">Recent</span>
+                <ul className="lp-phone-list">
+                  <li>
+                    <span className="lp-ico lp-ico-green">
+                      <ScanLine size={14} />
+                    </span>
+                    <span>
+                      Cash back
+                      <small>Mama Put, Yaba</small>
+                    </span>
+                    <b>+₦500</b>
+                  </li>
+                  <li>
+                    <span className="lp-ico lp-ico-lime">
+                      <TicketCheck size={14} />
+                    </span>
+                    <span>
+                      Prize code
+                      <small>Every code wins</small>
+                    </span>
+                    <b>+₦5,000</b>
+                  </li>
+                  {jobsEnabled && (
+                    <li>
+                      <span className="lp-ico lp-ico-blue">
+                        <Code2 size={14} />
+                      </span>
+                      <span>
+                        Paid task
+                        <small>Test a new app</small>
+                      </span>
+                      <b>+₦2,000</b>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            </div>
+
+            <div className="lp-tag lp-tag-yellow" aria-hidden>
+              <span className="lp-bars">
+                <i style={{ height: '40%' }} />
+                <i style={{ height: '70%' }} />
+                <i style={{ height: '55%' }} />
+                <i style={{ height: '95%' }} />
+              </span>
+              <span>
+                <small>Shoppers who came back</small>
+                <strong>+9</strong>
+              </span>
+            </div>
+            <div className="lp-tag lp-tag-green" aria-hidden>
+              <small>Prize claimed</small>
+              <strong>₦5,000</strong>
+              <span className="lp-tag-chip">Paid</span>
+            </div>
+            <div className="lp-tag lp-tag-pink" aria-hidden>
+              <Lock size={13} /> Funded before launch
+            </div>
+            <span className="lp-orb" aria-hidden>
+              <ArrowDownRight size={30} />
+            </span>
+            <span className="lp-example">Example</span>
           </div>
         </section>
 
-        <div className="lp-stage" aria-label="Example activity">
-          <div className="lp-orbit" aria-hidden />
-          <div className="lp-orbit lp-orbit-2" aria-hidden />
-          <Spiral className="lp-spiral" />
-          <div className="float float-a">
-            <span className="small-note">Cash back · Mama Put</span>
-            <strong>₦500</strong>
-            <span className="chip chip-pending">Held 3 days</span>
+        <div className="lp-marquee" aria-label="Built for">
+          <div className="lp-marquee-track">
+            {[0, 1].map((copy) => (
+              <ul key={copy} aria-hidden={copy === 1 || undefined}>
+                {sectors.map(({ icon: Icon, label }) => (
+                  <li key={label}>
+                    <Icon size={20} aria-hidden /> {label}
+                  </li>
+                ))}
+              </ul>
+            ))}
           </div>
-          <div className="float float-b">
-            <span className="small-note">Prize claimed</span>
-            <strong>₦5,000</strong>
-            <span className="chip chip-done">Paid</span>
-          </div>
-          <div className="float float-c">
-            <span className="small-note">In your wallet</span>
-            <strong>₦7,200</strong>
-          </div>
-          <div className="float float-d" style={{ width: 170 }}>
-            <span className="small-note">Shoppers who came back</span>
-            <strong>+9</strong>
-            <ExampleCurve height={36} />
-          </div>
-        </div>
-
-        <div className="lp-strip" aria-label="Built for">
-          <span className="small-note">Built for</span>
-          {sectors.map(({ icon: Icon, label }) => (
-            <span key={label}>
-              <Icon size={18} aria-hidden /> {label}
-            </span>
-          ))}
         </div>
 
         <section className="lp-section" aria-labelledby="earn-heading">
           <div className="lp-split">
             <div>
               <p className="eyebrow">Three ways to earn</p>
-              <h2 id="earn-heading">Real money for real activity.</h2>
+              <h2 id="earn-heading">
+                Real money for <em className="lp-serif">real activity.</em>
+              </h2>
             </div>
             <p>
               No tapping, no betting, no follow-for-follow. The business locks
@@ -203,7 +348,7 @@ export default function Home() {
                   }}
                 >
                   <span style={{ fontSize: 12, opacity: 0.85 }}>
-                    Scratch &amp; win
+                    Every code wins
                   </span>
                   <div
                     style={{
@@ -230,8 +375,8 @@ export default function Home() {
                 <h3 style={{ margin: 0 }}>Prizes you can trust</h3>
               </div>
               <p className="small-note">
-                Scratched a winning code? Claim it here. The prize money was
-                locked before the papers were printed.
+                Found a code on a pack or card? Claim it here. Every code wins,
+                and the prize money was locked before the codes were printed.
               </p>
             </li>
             <li className="card">
@@ -277,16 +422,32 @@ export default function Home() {
             <div>
               <p className="eyebrow">For businesses</p>
               <h2 id="business-heading">
-                Pay for customers who actually came.
+                Pay for results, <em className="lp-serif">not for views.</em>
               </h2>
             </div>
             <p>
-              Not for views or follows. Fund cash back for confirmed purchases,
-              run scratch-and-win with codes we verify, and hire with pay held
-              safely.
+              No ads, no follows. You lock the money first, and it is only paid
+              out when something real happens.
             </p>
           </div>
-          <div className="bento">
+          <ul className="features">
+            {audiences.map(({ icon: Icon, who, title, body, cta }) => (
+              <li key={who} className="card lp-audience">
+                <span className="lp-audience-icon" aria-hidden>
+                  <Icon size={20} />
+                </span>
+                <p className="eyebrow" style={{ margin: 0 }}>
+                  {who}
+                </p>
+                <h3>{title}</h3>
+                <p className="small-note">{body}</p>
+                <Link className="text-link" href="/business">
+                  {cta} <ArrowRight size={14} aria-hidden />
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="bento" style={{ marginTop: '1rem' }}>
             <article className="card wide">
               <div className="row" style={{ alignItems: 'flex-start' }}>
                 <div className="card-head">
@@ -317,22 +478,18 @@ export default function Home() {
         <section className="band" aria-labelledby="cta-heading">
           <div className="grid gap-4" style={{ position: 'relative' }}>
             <h2 id="cta-heading" style={{ margin: 0 }}>
-              Run your first campaign.
+              Run your first campaign <em className="lp-serif">this week.</em>
             </h2>
             <p style={{ margin: 0, maxWidth: '46ch' }}>
               {jobsEnabled
-                ? 'Cash back, scratch-and-win or paid tasks.'
-                : 'Cash back or scratch-and-win.'}{' '}
+                ? 'Cash back, prize codes or paid tasks.'
+                : 'Cash back or prize codes.'}{' '}
               You fund it, we verify every claim, and you see the results.
             </p>
-            <div className="flex flex-wrap gap-3">
-              <Link className="button button-accent" href="/business">
-                For businesses
-              </Link>
-              <Link className="button button-outline" href="/help">
-                How it works
-              </Link>
-            </div>
+            <EmailCapture />
+            <Link className="lp-band-link" href="/help">
+              How it works <ArrowRight size={14} aria-hidden />
+            </Link>
           </div>
           <div className="band-cards" aria-hidden>
             <div className="money-card money-card-lime">
@@ -361,7 +518,9 @@ export default function Home() {
         >
           <div className="lp-center">
             <p className="eyebrow">What we promise</p>
-            <h2 id="promise-heading">Honest by design.</h2>
+            <h2 id="promise-heading">
+              Honest <em className="lp-serif">by design.</em>
+            </h2>
           </div>
           <ul className="features promise-grid">
             <li className="card small-note">
@@ -374,40 +533,46 @@ export default function Home() {
               Your public record never shows where you shop.
             </li>
             <li className="card small-note">
-              Chance-based promotions run only with the business&apos;s state
-              permit, checked before launch.
+              Every prize code wins. No draws, no lottery, no luck needed.
             </li>
           </ul>
         </section>
       </main>
-      <footer className="site-footer">
-        <div className="card grid gap-3">
-          <h2 style={{ margin: 0 }}>Start with Acticlaim</h2>
-          <p className="small-note">Free for shoppers and workers.</p>
-          <div>
-            <Link className="button button-primary" href="/signup">
-              Create account
-            </Link>
+      <footer className="lp-footer">
+        <div className="lp-footer-top">
+          <div className="lp-footer-brand">
+            <Brand />
+            <p className="small-note">
+              Cash back, prize codes{jobsEnabled ? ' and paid tasks' : ''},
+              funded upfront by real businesses.
+            </p>
           </div>
-        </div>
-        <div className="card">
-          <p className="eyebrow">Earn</p>
           <nav aria-label="Earn">
-            <Link href="/offers">Offers</Link>
-            <Link href="/claim">Prize codes</Link>
-            {jobsEnabled && <Link href="/tasks">Jobs</Link>}
+            <p className="lp-footer-head">Earn</p>
+            <Link href="/offers">Cash back offers</Link>
+            <Link href="/claim">Claim a prize code</Link>
+            {jobsEnabled && <Link href="/tasks">Paid tasks</Link>}
+            <Link href="/signup">Create account</Link>
           </nav>
-        </div>
-        <div className="card">
-          <p className="eyebrow">Acticlaim</p>
+          <nav aria-label="Businesses">
+            <p className="lp-footer-head">Businesses</p>
+            <Link href="/business">Run a campaign</Link>
+            <Link href="/business">Prize codes for brands</Link>
+            {jobsEnabled && <Link href="/sponsor/tasks">Post a task</Link>}
+            <Link href="/terms/business">Business terms</Link>
+          </nav>
           <nav aria-label="Acticlaim">
-            <Link href="/business">For businesses</Link>
+            <p className="lp-footer-head">Acticlaim</p>
+            <Link href="/help">How it works</Link>
             <Link href="/help">Help</Link>
             <Link href="/login">Sign in</Link>
           </nav>
-          <p className="small-note" style={{ marginTop: '1rem' }}>
-            © Acticlaim
-          </p>
+        </div>
+        <div className="lp-footer-bottom">
+          <span>
+            © {new Date().getFullYear()} Acticlaim. All rights reserved.
+          </span>
+          <span>Made in Nigeria</span>
         </div>
       </footer>
     </>
