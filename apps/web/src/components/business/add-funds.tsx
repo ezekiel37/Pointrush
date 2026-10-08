@@ -149,7 +149,7 @@ export function AddFunds() {
                 <Button
                   variant="accent"
                   type="submit"
-                  disabled={busy}
+                  loading={busy}
                   className="full-width"
                 >
                   {busy

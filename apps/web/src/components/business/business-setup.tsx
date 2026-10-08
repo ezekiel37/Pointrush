@@ -130,7 +130,7 @@ export function BusinessSetup() {
                 </span>
               </label>
               {error && <Feedback error>{error}</Feedback>}
-              <Button variant="accent" type="submit" disabled={busy}>
+              <Button variant="accent" type="submit" loading={busy}>
                 {busy ? 'Creating your business…' : 'Create business'}
               </Button>
             </form>

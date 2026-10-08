@@ -259,7 +259,7 @@ export function PromotionManager({ id }: { id: string }) {
                   }
                   disabled={busy}
                 />
-                <Button type="submit" disabled={busy}>
+                <Button type="submit" loading={busy}>
                   {busy ? 'Issuing…' : 'Issue codes'}
                 </Button>
               </form>
@@ -294,7 +294,7 @@ export function PromotionManager({ id }: { id: string }) {
                           {batch.state === 'issued' && (
                             <Button
                               type="button"
-                              disabled={busy}
+                              loading={busy}
                               onClick={() =>
                                 void run(async () => {
                                   await apiRequest(
@@ -358,7 +358,8 @@ export function PromotionManager({ id }: { id: string }) {
                             <div className="flex flex-wrap gap-3">
                               <Button
                                 type="submit"
-                                disabled={busy || !revoking.reason.trim()}
+                                disabled={!revoking.reason.trim()}
+                                loading={busy}
                               >
                                 Cancel this batch
                               </Button>

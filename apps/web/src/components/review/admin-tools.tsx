@@ -171,7 +171,7 @@ export function AccountTools() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
           />
-          <Button type="submit" disabled={busy}>
+          <Button type="submit" loading={busy}>
             {busy && !found ? 'Looking up…' : 'Find account'}
           </Button>
         </form>
@@ -218,7 +218,7 @@ export function AccountTools() {
                 {found.accessState === 'active' ? (
                   <Button
                     type="button"
-                    disabled={busy}
+                    loading={busy}
                     onClick={() => void change('suspended')}
                   >
                     Freeze account
@@ -227,7 +227,7 @@ export function AccountTools() {
                   <Button
                     type="button"
                     variant="accent"
-                    disabled={busy}
+                    loading={busy}
                     onClick={() => void change('active')}
                   >
                     Unfreeze account
@@ -252,7 +252,7 @@ export function AccountTools() {
                     <Button
                       type="button"
                       variant="accent"
-                      disabled={busy}
+                      loading={busy}
                       onClick={() => void unlock()}
                     >
                       Yes, I checked: unlock
@@ -270,7 +270,7 @@ export function AccountTools() {
                     type="button"
                     variant="outline"
                     style={{ justifySelf: 'start' }}
-                    disabled={busy}
+                    loading={busy}
                     onClick={() => setUnlocking(true)}
                   >
                     Unlock withdrawals
@@ -391,6 +391,7 @@ export function PaymentReviews() {
                       type="button"
                       variant="outline"
                       disabled={busy !== null}
+                      loading={busy === e.id}
                       onClick={() => void save(e.id)}
                       style={{ justifySelf: 'start' }}
                     >

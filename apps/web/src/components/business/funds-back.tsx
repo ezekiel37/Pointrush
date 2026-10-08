@@ -108,6 +108,7 @@ export function FundsBack({
                   type="button"
                   variant="outline"
                   disabled={busy !== null}
+                  loading={busy === c.id}
                   onClick={() =>
                     kind === 'cancel' ? setConfirming(c.id) : void give(c.id)
                   }
@@ -130,6 +131,7 @@ export function FundsBack({
                   <Button
                     type="button"
                     disabled={busy !== null}
+                    loading={busy === c.id}
                     onClick={() => void give(c.id)}
                   >
                     {busy === c.id ? 'Cancelling…' : 'Yes, cancel it'}

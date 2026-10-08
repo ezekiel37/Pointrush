@@ -362,7 +362,8 @@ export function CampaignReview({ id }: { id: string }) {
               <Button
                 type="submit"
                 variant={decision === 'approved' ? 'accent' : 'default'}
-                disabled={busy || (decision === 'approved' && !allChecked)}
+                disabled={decision === 'approved' && !allChecked}
+                loading={busy}
               >
                 {busy
                   ? 'Recording…'

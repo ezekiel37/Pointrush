@@ -103,7 +103,7 @@ export function DecisionPanel({
               <h3>Confirm: {prepared.label}</h3>
               <p>{prepared.consequence}</p>
               <p className="work-prose">{prepared.reason}</p>
-              <Button disabled={submit.busy} onClick={() => void confirm()}>
+              <Button loading={submit.busy} onClick={() => void confirm()}>
                 {submit.busy
                   ? 'Recording decision…'
                   : uncertain
@@ -113,7 +113,7 @@ export function DecisionPanel({
               {!uncertain && (
                 <Button
                   variant="outline"
-                  disabled={submit.busy}
+                  loading={submit.busy}
                   onClick={() => setPrepared(null)}
                 >
                   Back to editing

@@ -30,5 +30,5 @@ export const createAccountSchema = z.strictObject({
 export const renameAccountSchema = z.strictObject({ username: usernameSchema });
 export const accountIdSchema = z.uuid();
 
-export const PASSWORD_MIN_LENGTH = 15;
+export const PASSWORD_MIN_LENGTH = 10;
 export const PASSWORD_MAX_LENGTH = 128;

@@ -111,7 +111,7 @@ export function VoidDispute({
           </div>
           {error && <Feedback error>{error}</Feedback>}
           <div className="row" style={{ justifyContent: 'flex-start' }}>
-            <Button type="submit" variant="accent" disabled={busy}>
+            <Button type="submit" variant="accent" loading={busy}>
               {busy ? 'Sending…' : 'Send dispute'}
             </Button>
             <Button

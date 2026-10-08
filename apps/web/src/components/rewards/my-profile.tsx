@@ -84,7 +84,8 @@ export function MyProfile() {
                 <Button
                   variant={data.public ? 'outline' : 'accent'}
                   type="button"
-                  disabled={busy || !data.username}
+                  disabled={!data.username}
+                  loading={busy}
                   onClick={() => void setVisibility(!data.public)}
                 >
                   {data.public ? (

@@ -76,7 +76,7 @@ export function LoginForm() {
           <Link href="/forgot-password">Forgot password?</Link>
         </div>
         {submit.error && <Feedback error>{submit.error}</Feedback>}
-        <Button className="full-width" type="submit" disabled={submit.busy}>
+        <Button className="full-width" type="submit" loading={submit.busy}>
           {submit.busy ? 'Signing in…' : 'Sign in'}
           <ArrowRight size={18} aria-hidden />
         </Button>

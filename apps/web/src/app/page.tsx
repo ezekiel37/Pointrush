@@ -6,7 +6,10 @@ import {
   CupSoda,
   GraduationCap,
   Lock,
+  Pill,
+  Plus,
   Scissors,
+  Shirt,
   ScanLine,
   Store,
   TicketCheck,
@@ -51,11 +54,14 @@ function ExampleCurve({ height = 70 }: { height?: number }) {
 }
 
 const sectors = [
-  { icon: UtensilsCrossed, label: 'Restaurants' },
+  { icon: UtensilsCrossed, label: 'Restaurants & food spots' },
   { icon: Scissors, label: 'Barbers & salons' },
-  { icon: Store, label: 'Kiosks & shops' },
-  { icon: CupSoda, label: 'Drinks brands' },
+  { icon: Store, label: 'Shops & supermarkets' },
+  { icon: Pill, label: 'Pharmacies' },
+  { icon: Shirt, label: 'Fashion & boutiques' },
+  { icon: CupSoda, label: 'Drinks & consumer brands' },
   { icon: GraduationCap, label: 'Campus businesses' },
+  { icon: Plus, label: 'Any business that sells in person' },
 ];
 
 export default function Home() {

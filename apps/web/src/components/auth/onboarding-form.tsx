@@ -88,7 +88,8 @@ export function OnboardingForm({
       <Button
         className="full-width"
         type="submit"
-        disabled={submit.busy || blocked}
+        disabled={blocked}
+        loading={submit.busy}
       >
         {submit.busy ? 'Saving profile…' : 'Complete setup'}
       </Button>

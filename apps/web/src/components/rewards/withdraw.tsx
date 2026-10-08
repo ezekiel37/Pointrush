@@ -161,7 +161,7 @@ export function WithdrawPanel({
         />
         {error && <Feedback error>{error}</Feedback>}
         <div className="row" style={{ justifyContent: 'flex-start' }}>
-          <Button variant="accent" type="submit" disabled={busy}>
+          <Button variant="accent" type="submit" loading={busy}>
             {busy
               ? 'Withdrawing…'
               : kobo

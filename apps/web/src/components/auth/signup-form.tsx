@@ -10,6 +10,7 @@ import { Form } from '@/components/ui/form';
 import { Field } from '@/components/ui/field';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Feedback } from '@/components/ui/feedback';
+import { PASSWORD_MIN_LENGTH } from '@pointrush/contracts';
 export function SignupForm() {
   const [sent, setSent] = useState(false);
   const submit = useSubmit();
@@ -21,7 +22,7 @@ export function SignupForm() {
   } = useForm({
     resolver: zodResolver(signupSchema),
     mode: 'onBlur',
-    defaultValues: { name: '', email: '', password: '' },
+    defaultValues: { name: '', email: '', password: '', confirmation: '' },
   });
   if (sent)
     return (
@@ -50,15 +51,18 @@ export function SignupForm() {
       <Form
         noValidate
         aria-busy={submit.busy}
-        onSubmit={handleSubmit((values) =>
+        onSubmit={handleSubmit(({ name, email, password }) =>
           submit.run(async () => {
             requireSuccess(
               await authClient().signUp.email({
-                ...values,
+                name,
+                email,
+                password,
                 callbackURL: `${window.location.origin}/login?verified=1`,
               }),
             );
             resetField('password');
+            resetField('confirmation');
             setSent(true);
           }),
         )}
@@ -88,14 +92,23 @@ export function SignupForm() {
           label="Password"
           type="password"
           autoComplete="new-password"
-          minLength={15}
+          minLength={PASSWORD_MIN_LENGTH}
           maxLength={128}
-          hint="15–128 characters. A memorable passphrase works well."
+          hint="10–128 characters. A memorable passphrase works well."
           error={errors.password?.message}
           {...register('password')}
         />
+        <Field
+          id="confirmation"
+          label="Confirm password"
+          type="password"
+          autoComplete="new-password"
+          maxLength={128}
+          error={errors.confirmation?.message}
+          {...register('confirmation')}
+        />
         {submit.error && <Feedback error>{submit.error}</Feedback>}
-        <Button className="full-width" type="submit" disabled={submit.busy}>
+        <Button className="full-width" type="submit" loading={submit.busy}>
           {submit.busy ? 'Creating account…' : 'Create account'}
         </Button>
       </Form>

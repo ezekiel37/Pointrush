@@ -202,7 +202,7 @@ export function OfferDetail({ id }: { id: string }) {
                 <Button
                   variant="accent"
                   onClick={() => void getCode()}
-                  disabled={busy}
+                  loading={busy}
                 >
                   {busy ? 'Getting your code…' : 'Get my code'}
                 </Button>

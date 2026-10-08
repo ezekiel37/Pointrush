@@ -72,7 +72,7 @@ export function EvidenceForm({
           {expanded ? 'Reduce writing area' : 'Expand writing area'}
         </Button>
       </div>
-      <Button type="submit" disabled={busy}>
+      <Button type="submit" loading={busy}>
         {busy ? 'Sending…' : locked ? 'Retry same submission' : label}
       </Button>
     </Form>

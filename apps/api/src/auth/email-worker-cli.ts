@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { readEmailWorkerEnvironment } from '../config/email-worker.environment.js';
 import { DatabaseService } from '../database/database.service.js';
+import { safeErrorSummary } from '../database/safe-error.js';
 import { createResendPayloadSender } from './auth.email.js';
 import { EmailWorker } from './email-worker.js';
 
@@ -36,9 +37,9 @@ try {
     JSON.stringify({ event: 'auth_email_batch', outcomes }) + '\n',
   );
   if (outcomes.dead || outcomes.stale) process.exitCode = 1;
-} catch {
+} catch (error) {
   process.stderr.write(
-    'Authentication email worker failed. Check configuration and database availability.\n',
+    `Authentication email worker failed. Check configuration and database availability. Cause: ${safeErrorSummary(error)}\n`,
   );
   process.exitCode = 1;
 } finally {

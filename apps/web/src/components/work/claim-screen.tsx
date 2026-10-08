@@ -139,7 +139,8 @@ export function ClaimScreen({ id }: { id: string }) {
       )}
       <Button
         variant="outline"
-        disabled={submit.busy || read.loading}
+        disabled={read.loading}
+        loading={submit.busy}
         onClick={read.refresh}
       >
         Check latest status
@@ -185,7 +186,7 @@ export function ClaimScreen({ id }: { id: string }) {
                   correction, or {read.data.task.workTerms.appealHours} hours
                   for an appeal. Acknowledging does not mean you agree with it.
                 </p>
-                <Button disabled={submit.busy} onClick={() => void send()}>
+                <Button loading={submit.busy} onClick={() => void send()}>
                   Acknowledge decision and start response window
                 </Button>
               </section>

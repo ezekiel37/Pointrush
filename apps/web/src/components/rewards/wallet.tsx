@@ -260,6 +260,7 @@ export function Wallet() {
                               variant="accent"
                               type="button"
                               disabled={busy !== null}
+                              loading={busy === item.id}
                               onClick={() => void release(item.id)}
                             >
                               {busy === item.id ? 'Moving…' : 'Move to wallet'}

@@ -131,7 +131,7 @@ export function StaffManager() {
                         <Button
                           type="button"
                           variant="outline"
-                          disabled={busy}
+                          loading={busy}
                           onClick={() => setConfirming(m.id)}
                         >
                           Remove
@@ -170,7 +170,7 @@ export function StaffManager() {
                         >
                           <Button
                             type="button"
-                            disabled={busy}
+                            loading={busy}
                             onClick={() => void remove(m.id)}
                           >
                             Yes, remove
@@ -218,7 +218,7 @@ export function StaffManager() {
               hint="They find it on their profile. They accept under Staff, then see your tills there."
             />
             {error && <Feedback error>{error}</Feedback>}
-            <Button variant="accent" type="submit" disabled={busy}>
+            <Button variant="accent" type="submit" loading={busy}>
               {busy ? 'Inviting…' : 'Invite to staff'}
             </Button>
           </form>

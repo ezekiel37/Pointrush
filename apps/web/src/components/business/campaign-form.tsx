@@ -463,7 +463,8 @@ export function CampaignForm({ model }: { model: Model }) {
             <Button
               variant="accent"
               type="submit"
-              disabled={busy || short !== null}
+              disabled={short !== null}
+              loading={busy}
               className="full-width"
             >
               {busy

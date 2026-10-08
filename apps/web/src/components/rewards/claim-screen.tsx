@@ -142,7 +142,7 @@ export function PrizeClaimScreen() {
                 )}
               </Feedback>
             )}
-            <Button variant="accent" type="submit" disabled={busy}>
+            <Button variant="accent" type="submit" loading={busy}>
               {busy ? 'Checking code…' : 'Claim prize'}
             </Button>
           </form>

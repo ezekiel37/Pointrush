@@ -118,7 +118,7 @@ export function AccountScreen() {
       >
         {errorPanel}
         <OnboardingForm onSaved={refresh} blocked={Boolean(error)} />
-        <Button variant="ghost" onClick={signOut} disabled={logout.busy}>
+        <Button variant="ghost" onClick={signOut} loading={logout.busy}>
           Sign out
         </Button>
         {logout.error && <Feedback error>{logout.error}</Feedback>}
@@ -131,7 +131,7 @@ export function AccountScreen() {
         <Brand />
         <nav aria-label="Account navigation">
           <Link href="/help">Help</Link>
-          <Button variant="ghost" disabled={logout.busy} onClick={signOut}>
+          <Button variant="ghost" loading={logout.busy} onClick={signOut}>
             <LogOut size={18} aria-hidden />
             {logout.busy ? 'Signing out…' : 'Sign out'}
           </Button>

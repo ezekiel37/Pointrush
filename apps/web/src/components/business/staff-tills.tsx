@@ -74,6 +74,7 @@ export function StaffTills() {
                   type="button"
                   variant="accent"
                   disabled={busy !== null}
+                  loading={busy === invite.id}
                   onClick={() => void accept(invite.id)}
                 >
                   {busy === invite.id ? 'Accepting…' : 'Accept'}

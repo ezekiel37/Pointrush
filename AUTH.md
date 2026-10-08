@@ -11,7 +11,7 @@ Status: authentication is now mounted only when the complete production configur
 - `GET /api/v1/accounts/me` returns onboarding status and minimal account identity/access state derived solely from the session. Restricted accounts can read their own status without gaining other permissions. See [the response contract](ACCOUNTS.md#private-account-status).
 - Nest routes require a verified session by default; only health routes are explicitly public. Mutating Nest requests additionally require an exact trusted Origin header, including non-browser clients. Authentication library routes retain their own origin checks. A session grants no sponsor/admin role: future business controllers must require their specific account and role permissions.
 - Email verification is required before password login. Neither signup nor verification automatically creates a session.
-- Passwords use Better Auth's default scrypt implementation, with a 15–128 character policy. No custom hashing or password/token logging.
+- Passwords use Better Auth's default scrypt implementation, with a 10–128 character policy. No custom hashing or password/token logging.
 - Password reset identifiers are stored hashed; successful resets revoke existing sessions. Cookie caching is disabled, so revoked sessions are checked against the database.
 - Explicit origin allowlists; no wildcards. HTTPS is required except loopback development. Cookies are host-only, HTTP-only, SameSite=Lax and Secure on HTTPS. Cross-subdomain cookies and account linking are not enabled.
 - Resend messages use plain text and never interpolate display names into HTML. Provider failures become a generic delivery error without leaking addresses or links. No console email fallback exists.

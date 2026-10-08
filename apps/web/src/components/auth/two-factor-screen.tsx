@@ -108,7 +108,7 @@ export function TwoFactorScreen() {
             hint="We need this before creating a new authenticator setup."
           />
           {submit.error && <Feedback error>{submit.error}</Feedback>}
-          <Button className="full-width" type="submit" disabled={submit.busy}>
+          <Button className="full-width" type="submit" loading={submit.busy}>
             {submit.busy ? 'Preparing setup…' : 'Continue'}
             <ArrowRight size={18} aria-hidden />
           </Button>
@@ -184,7 +184,7 @@ export function TwoFactorScreen() {
         variant="ghost"
         type="button"
         onClick={() => setBackup((value) => !value)}
-        disabled={submit.busy}
+        loading={submit.busy}
       >
         {backup ? 'Use authenticator code' : 'Use a backup code'}
       </Button>
@@ -247,7 +247,7 @@ function VerificationForm({
       {(validationError || error) && (
         <Feedback error>{validationError || error}</Feedback>
       )}
-      <Button className="full-width" type="submit" disabled={busy}>
+      <Button className="full-width" type="submit" loading={busy}>
         {busy ? 'Checking code…' : 'Verify code'}
         <ArrowRight size={18} aria-hidden />
       </Button>

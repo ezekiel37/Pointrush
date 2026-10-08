@@ -182,7 +182,7 @@ export function VerifyPhone() {
               hint="We send a 6-digit code by text. Receiving it is free."
             />
             {error && <Feedback error>{error}</Feedback>}
-            <Button variant="accent" type="submit" disabled={busy}>
+            <Button variant="accent" type="submit" loading={busy}>
               {busy ? 'Sending code…' : 'Send code'}
             </Button>
           </form>
@@ -206,14 +206,15 @@ export function VerifyPhone() {
               }}
             />
             {error && <Feedback error>{error}</Feedback>}
-            <Button variant="accent" type="submit" disabled={busy}>
+            <Button variant="accent" type="submit" loading={busy}>
               {busy ? 'Checking…' : 'Verify'}
             </Button>
             <div className="row" style={{ justifyContent: 'flex-start' }}>
               <Button
                 type="button"
                 variant="ghost"
-                disabled={busy || wait > 0}
+                disabled={wait > 0}
+                loading={busy}
                 onClick={() => void send()}
               >
                 {wait > 0 ? `Send again in ${wait}s` : 'Send a new code'}
@@ -221,7 +222,7 @@ export function VerifyPhone() {
               <Button
                 type="button"
                 variant="ghost"
-                disabled={busy}
+                loading={busy}
                 onClick={() => {
                   setSent(null);
                   setError('');

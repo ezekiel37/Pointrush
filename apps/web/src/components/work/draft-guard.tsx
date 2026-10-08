@@ -58,7 +58,7 @@ export function DraftGuard({
         Keep writing
       </Button>
       <Button
-        disabled={busy}
+        loading={busy}
         onClick={() => {
           onDiscard();
           router.push(leave);

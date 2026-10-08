@@ -38,3 +38,16 @@ test('password confirmation must match exactly, including spaces', () => {
     true,
   );
 });
+test('signup requires the password to be typed twice', () => {
+  const value = {
+    name: 'Person',
+    email: 'person@example.test',
+    password: 'ten chars!',
+    confirmation: 'ten chars?',
+  };
+  assert.equal(signupSchema.safeParse(value).success, false);
+  assert.equal(
+    signupSchema.safeParse({ ...value, confirmation: value.password }).success,
+    true,
+  );
+});

@@ -163,7 +163,7 @@ export function BankAccount({
       />
       {error && <Feedback error>{error}</Feedback>}
       <div className="row" style={{ justifyContent: 'flex-start' }}>
-        <Button variant="accent" type="submit" disabled={busy}>
+        <Button variant="accent" type="submit" loading={busy}>
           {busy ? 'Checking with the bank…' : 'Check and save'}
         </Button>
         {account && (

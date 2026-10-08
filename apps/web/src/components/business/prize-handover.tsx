@@ -88,7 +88,7 @@ export function PrizeHandover({
       />
       {done && <Feedback>{done}</Feedback>}
       {error && <Feedback error>{error}</Feedback>}
-      <Button variant="accent" type="submit" disabled={busy}>
+      <Button variant="accent" type="submit" loading={busy}>
         {busy ? 'Checking voucher…' : 'Confirm handover'}
       </Button>
     </form>

@@ -113,7 +113,8 @@ export function TaskDetail({ id }: { id: string }) {
                   </span>
                 </label>
                 <Button
-                  disabled={!accepted || submit.busy}
+                  disabled={!accepted}
+                  loading={submit.busy}
                   onClick={() => void join()}
                 >
                   {submit.busy ? 'Confirming your place…' : 'Join task'}

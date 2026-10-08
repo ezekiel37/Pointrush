@@ -88,7 +88,7 @@ export function WithdrawalLock({
           <Button
             type="button"
             variant="danger"
-            disabled={busy}
+            loading={busy}
             onClick={() => void lock()}
           >
             {busy ? 'Locking…' : 'Yes, lock withdrawals'}
@@ -96,7 +96,7 @@ export function WithdrawalLock({
           <Button
             type="button"
             variant="ghost"
-            disabled={busy}
+            loading={busy}
             onClick={() => setConfirming(false)}
           >
             Cancel

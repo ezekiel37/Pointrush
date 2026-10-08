@@ -11,6 +11,7 @@ import { Form } from '@/components/ui/form';
 import { Field } from '@/components/ui/field';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Feedback } from '@/components/ui/feedback';
+import { PASSWORD_MIN_LENGTH } from '@pointrush/contracts';
 export function ResetForm() {
   const query = useSearchParams();
   const [token, setToken] = useState<string | null>(() => {
@@ -84,9 +85,9 @@ export function ResetForm() {
           label="New password"
           type="password"
           autoComplete="new-password"
-          minLength={15}
+          minLength={PASSWORD_MIN_LENGTH}
           maxLength={128}
-          hint="15–128 characters. Choose one you do not use elsewhere."
+          hint="10–128 characters. Choose one you do not use elsewhere."
           error={errors.password?.message}
           {...register('password')}
         />
@@ -100,7 +101,7 @@ export function ResetForm() {
           {...register('confirmation')}
         />
         {submit.error && <Feedback error>{submit.error}</Feedback>}
-        <Button className="full-width" type="submit" disabled={submit.busy}>
+        <Button className="full-width" type="submit" loading={submit.busy}>
           {submit.busy ? 'Updating password…' : 'Update password'}
         </Button>
       </Form>

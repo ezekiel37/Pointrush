@@ -223,7 +223,7 @@ export function CampaignTill({ id }: { id: string }) {
                     until {shortDate(done.releaseAt)}.
                   </Feedback>
                 )}
-                <Button variant="accent" type="submit" disabled={busy}>
+                <Button variant="accent" type="submit" loading={busy}>
                   <CheckCircle2 size={18} aria-hidden />
                   {busy ? 'Confirming…' : 'Confirm purchase'}
                 </Button>
@@ -290,7 +290,8 @@ export function CampaignTill({ id }: { id: string }) {
                               <div className="flex flex-wrap gap-3">
                                 <Button
                                   type="submit"
-                                  disabled={busy || !voiding.reason.trim()}
+                                  disabled={!voiding.reason.trim()}
+                                  loading={busy}
                                 >
                                   Void cash back
                                 </Button>

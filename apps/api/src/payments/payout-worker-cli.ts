@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { readEnvironment } from '../config/environment.js';
 import { DatabaseService } from '../database/database.service.js';
+import { safeErrorSummary } from '../database/safe-error.js';
 import { paymentProvider } from './payments.module.js';
 import { PaymentsService } from './payments.service.js';
 
@@ -23,9 +24,9 @@ try {
   );
   // Deferred payouts (provider down, balance short) need a person to look.
   if (result.deferred) process.exitCode = 2;
-} catch {
+} catch (error) {
   process.stderr.write(
-    'Payout worker failed. Check configuration and database availability.\n',
+    `Payout worker failed. Check configuration and database availability. Cause: ${safeErrorSummary(error)}\n`,
   );
   process.exitCode = 1;
 } finally {

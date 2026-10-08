@@ -26,8 +26,10 @@ test('signup, verification, onboarding, signout and recovery use the real API', 
   await page.getByLabel('Display name', { exact: true }).fill('Ezekiel');
   await page.getByLabel('Email address').fill(email);
   await page.getByLabel('Password', { exact: true }).fill(password);
+  await page.getByLabel('Confirm password', { exact: true }).fill(password);
   await page
     .getByRole('button', { name: 'Show password', exact: true })
+    .first()
     .click();
   await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute(
     'type',

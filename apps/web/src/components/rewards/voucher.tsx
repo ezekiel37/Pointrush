@@ -120,7 +120,7 @@ export function Voucher({
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={busy}
+                  loading={busy}
                   onClick={() => void cashOut()}
                 >
                   {busy ? 'Paying…' : `Take ${naira(claim.prizeKobo)} instead`}

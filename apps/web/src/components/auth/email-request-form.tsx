@@ -70,7 +70,7 @@ export function EmailRequestForm({ kind }: { kind: 'reset' | 'verify' }) {
             {...register('email')}
           />
           {submit.error && <Feedback error>{submit.error}</Feedback>}
-          <Button className="full-width" type="submit" disabled={submit.busy}>
+          <Button className="full-width" type="submit" loading={submit.busy}>
             {submit.busy
               ? 'Requesting email…'
               : kind === 'reset'
