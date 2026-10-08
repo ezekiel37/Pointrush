@@ -15,8 +15,8 @@ const questions = [
     'Request a new verification or password reset email. For password resets, keep the link tab open until you finish; reloading after the token is removed requires reopening the original email link.',
   ],
   [
-    'Do I earn points for signing up?',
-    'No. Creating an account does not award points or guarantee earnings. You can browse published tasks and reserve a place. Rewards depend on approved work; you can submit text proof, respond to correction requests and appeal rejections from My tasks. File uploads and reward redemption are still being built.',
+    'How do I earn?',
+    'Get cash back on purchases a business confirms at its till, claim prize codes, or complete paid tasks. You can submit text proof, respond to correction requests and appeal rejections from My tasks.',
   ],
   [
     'What does New reputation mean?',

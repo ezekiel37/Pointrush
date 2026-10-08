@@ -127,9 +127,6 @@ export function SignupForm() {
       <p className="form-switch">
         Already have an account? <Link href="/login">Sign in</Link>
       </p>
-      <p className="small-note">
-        Creating an account does not award points or guarantee earnings.
-      </p>
     </>
   );
 }
