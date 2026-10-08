@@ -16,7 +16,6 @@ import {
   Scissors,
   ScanLine,
   Shirt,
-  Smartphone,
   Store,
   TicketCheck,
   UtensilsCrossed,
@@ -266,34 +265,39 @@ export default function Home() {
         >
           <div className="lp-split">
             <div>
-              <p className="eyebrow">How cash back works</p>
+              <p className="eyebrow">How it works</p>
               <h2 id="steps-heading">
                 Three steps. <em className="lp-serif">No catch.</em>
               </h2>
             </div>
             <p>
               The reward is already paid in by the business, so the only thing
-              between you and it is a real purchase.
+              between you and it is something real: a purchase, a prize code or
+              finished work.
             </p>
           </div>
           <ol className="lp-steps">
             <li>
               <span className="lp-step-icon" aria-hidden>
-                <Smartphone size={26} strokeWidth={1.75} />
+                <Store size={26} strokeWidth={1.75} />
               </span>
-              <h3>Get a code</h3>
+              <h3>Pick an offer</h3>
               <p>
-                Pick an offer from a business near you. Your code appears on
-                your phone.
+                Cash back from a business near you, a prize code from a pack
+                {jobsEnabled ? ', or a paid task' : ''}.
               </p>
             </li>
             <li>
               <span className="lp-step-icon" aria-hidden>
-                <ScanLine size={26} strokeWidth={1.75} />
+                <BadgeCheck size={26} strokeWidth={1.75} />
               </span>
-              <h3>Show it at the till</h3>
+              <h3>Do the real thing</h3>
               <p>
-                Buy as usual. Staff scan your code and confirm the purchase.
+                Buy as usual
+                {jobsEnabled
+                  ? ', claim your code or finish the task'
+                  : ' or claim your code'}
+                . It is checked before you are paid.
               </p>
             </li>
             <li>
@@ -302,8 +306,7 @@ export default function Home() {
               </span>
               <h3>Get paid</h3>
               <p>
-                After the refund window it moves to your wallet. Withdraw to any
-                Nigerian bank.
+                The money moves to your wallet. Withdraw to any Nigerian bank.
               </p>
             </li>
           </ol>
