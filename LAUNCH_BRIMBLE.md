@@ -1,16 +1,16 @@
 # Deploying Acticlaim on Brimble, step by step
 
-A low-cost alternative to LAUNCH.md (Google Cloud), with no prepayment:
+A low-cost alternative to LAUNCH.md (Google Cloud), with no prepayment. The server and the website both run on Brimble (Vercel's free plan does not allow commercial use):
 
 | Part                    | Where                                        | Cost                                         |
 | ----------------------- | -------------------------------------------- | -------------------------------------------- |
 | Server + scheduled jobs | Brimble (7-day Developer trial, then Hacker) | $0 for the trial week, then about $7 a month |
-| Website                 | Vercel                                       | Free                                         |
+| Website                 | Brimble (a second app in the same project)   | About $2–4 a month                           |
 | Database                | Supabase                                     | Free (no backups, pauses after a week idle)  |
 | Email                   | Resend                                       | Free up to 3,000 a month                     |
 | Domain and DNS          | Cloudflare                                   | About $10 a year                             |
 
-The examples use `acticlaim.com`; replace it with your domain everywhere. Never put a key or password in Git or in a chat. Each secret goes only into Brimble's or Vercel's environment variable settings.
+The examples use `acticlaim.com`; replace it with your domain everywhere. Never put a key or password in Git or in a chat. Each secret goes only into Brimble's environment variable settings.
 
 Brimble's screens may name things slightly differently from these steps. If a step does not match what you see, describe the screen to Claude (without keys).
 
@@ -19,10 +19,9 @@ Brimble's screens may name things slightly differently from these steps. If a st
 1. **Cloudflare**: buy the domain, or move it there.
 2. **Supabase**: create a project named `acticlaim-test` in **Central EU (Frankfurt)** and save the database password.
 3. **Brimble**: start the 7-day Developer trial. Check whether it charges automatically on day 7. Either way, switch to **Hacker** before the trial ends.
-4. **Vercel**: sign up with the GitHub account that owns `ezekiel37/Pointrush`.
-5. **Resend**: add your domain, copy the DNS records it shows into Cloudflare, and create an API key.
-6. **Bachs**: in the sandbox, copy the API key (`sk_sandbox_…`). The webhook comes in step 6.
-7. **SMS (Termii or Africa's Talking)**: request a sender ID now. Until Claude connects it, phone verification shows "not available yet", so withdrawals and prize claims wait.
+4. **Resend**: add your domain, copy the DNS records it shows into Cloudflare, and create an API key.
+5. **Bachs**: in the sandbox, copy the API key (`sk_sandbox_…`). The webhook comes in step 6.
+6. **SMS (Termii or Africa's Talking)**: request a sender ID now. Until Claude connects it, phone verification shows "not available yet", so withdrawals and prize claims wait.
 
 ## 2. Database details (Supabase)
 
@@ -95,18 +94,22 @@ Then:
 
 If verification emails never arrive, check the Resend key and domain. With a wrong key the emails job shows `"dead"` and drops those emails; people can ask for a new one from the sign-in page.
 
-## 8. The website (Vercel)
+## 8. The website (Brimble)
 
-1. **Add New → Project** and import `Pointrush`.
-2. **Root Directory**: `apps/web`. **Framework**: Next.js.
-3. **Install Command**: `cd ../.. && npm ci`.
-4. **Build Command**: `cd ../.. && npm run build --workspace @pointrush/contracts && npm run build --workspace @pointrush/web`.
-5. **Node.js version**: 24.x (Settings → General).
-6. **Environment variables**:
+1. In the same Brimble project, add a **second app** from the same repository and branch (`develop`).
+2. Choose **Docker** with the Dockerfile `apps/web/Dockerfile`, again building from the **repository root**.
+3. **Region: Germany**, the smallest size, one instance. **Port**: 3000. **Health check path**: `/login`.
+4. **Environment variables** (the website reads these while it is being built):
    - `NEXT_PUBLIC_API_ORIGIN` = `https://api.acticlaim.com`
    - `NEXT_PUBLIC_FEATURE_JOBS` = `off`
-7. **Production branch**: `develop` (Settings → Git). Deploy.
-8. **Settings → Domains**: add `acticlaim.com` and put the record Vercel shows into Cloudflare, with the cloud icon grey.
+
+   If the build stops with "NEXT_PUBLIC_API_ORIGIN must be set when building", Brimble is not passing variables to the build; tell Claude.
+
+5. Deploy.
+6. **Domains**: add `acticlaim.com` (and `www.acticlaim.com` if you want it) to this app, and put the records Brimble shows into Cloudflare, with the cloud icon grey.
+7. Open `https://acticlaim.com`. The home page should load, and **Sign in** should reach the server without an error.
+
+Changing `NEXT_PUBLIC_API_ORIGIN` later needs a new build (redeploy), not just a restart.
 
 ## 9. Make yourself the first reviewer
 
@@ -154,7 +157,7 @@ The phone steps wait for the SMS connection.
 
 ## Updating later
 
-1. Push to `develop`. Vercel redeploys the website by itself; on Brimble, redeploy the server (or turn on automatic deploys from `develop`).
+1. Push to `develop`, then redeploy both apps on Brimble (or turn on automatic deploys from `develop`).
 2. Run the **migrate** cron job again (**Run now**) before using new features.
 
 ## Switching from sandbox to live keys

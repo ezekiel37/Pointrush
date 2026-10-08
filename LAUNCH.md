@@ -133,6 +133,8 @@ Emails go out every minute and payouts every 5 minutes. If verification emails n
 
 ## 10. The website (Vercel)
 
+Vercel's free (Hobby) plan is for non-commercial use only; a business needs Pro ($20 a month). The alternative is to run the website from its Docker image (`apps/web/Dockerfile`, built with `--build-arg NEXT_PUBLIC_API_ORIGIN=https://api.acticlaim.com`) on Cloud Run, the same way as the server.
+
 1. **Add New → Project** and import `Pointrush`.
 2. Set **Root Directory** to `apps/web` and **Framework** to Next.js.
 3. Set **Install Command** to `cd ../.. && npm ci`.

@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import type { NextConfig } from 'next';
 const security = [
   { key: 'Referrer-Policy', value: 'no-referrer' },
@@ -9,7 +10,17 @@ const security = [
     value: 'camera=(self), microphone=(), geolocation=()',
   },
 ];
+// The website Docker image (apps/web/Dockerfile) builds a self-contained
+// server. The repository root is traced so the shared contracts package is
+// included.
+const standalone = process.env.NEXT_OUTPUT === 'standalone';
 const config: NextConfig = {
+  ...(standalone
+    ? {
+        output: 'standalone' as const,
+        outputFileTracingRoot: fileURLToPath(new URL('../..', import.meta.url)),
+      }
+    : {}),
   poweredByHeader: false,
   transpilePackages: ['@pointrush/contracts'],
   async headers() {
