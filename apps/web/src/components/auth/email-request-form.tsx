@@ -10,6 +10,7 @@ import { Form } from '@/components/ui/form';
 import { Field } from '@/components/ui/field';
 import { Button } from '@/components/ui/button';
 import { Feedback } from '@/components/ui/feedback';
+import { Celebrate } from '@/components/ui/celebrate';
 export function EmailRequestForm({ kind }: { kind: 'reset' | 'verify' }) {
   const [sent, setSent] = useState(false);
   const submit = useSubmit();
@@ -26,6 +27,7 @@ export function EmailRequestForm({ kind }: { kind: 'reset' | 'verify' }) {
     <>
       {sent ? (
         <div className="success-panel">
+          <Celebrate kind="mail" />
           <Feedback>
             If this address is eligible, an email is on its way. Check your
             inbox and spam folder.

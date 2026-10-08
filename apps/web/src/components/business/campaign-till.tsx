@@ -14,6 +14,7 @@ import { RequestError } from '@/lib/auth-client';
 import { campaignSummary, confirmation, voidResult } from '@/lib/rewards';
 import { useApiRead } from '@/lib/use-api-read';
 import { CodeScanner } from './code-scanner';
+import { Celebrate } from '@/components/ui/celebrate';
 
 type Confirmed = z.infer<typeof confirmation>;
 const stateLabel = {
@@ -216,6 +217,7 @@ export function CampaignTill({ id }: { id: string }) {
                   disabled={busy}
                 />
                 {error && <Feedback error>{error}</Feedback>}
+                {done && <Celebrate key={done.id} size={64} />}
                 {done && (
                   <Feedback>
                     <strong>Purchase confirmed.</strong>{' '}

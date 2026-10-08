@@ -1,10 +1,10 @@
 'use client';
 import Link from 'next/link';
+import { Celebrate, Confetti } from '@/components/ui/celebrate';
 import { Voucher, voucherLabel } from './voucher';
 import { useSearchParams } from 'next/navigation';
 import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { PartyPopper } from 'lucide-react';
 import { Page } from '@/components/shell/app-shell';
 import { Button } from '@/components/ui/button';
 import { Feedback, Loading } from '@/components/ui/feedback';
@@ -96,7 +96,8 @@ export function PrizeClaimScreen() {
           </div>
         ) : won ? (
           <section className="prize" aria-live="polite">
-            <PartyPopper aria-hidden size={28} />
+            <Confetti />
+            <Celebrate />
             <p className="eyebrow" style={{ marginTop: '0.75rem' }}>
               {won.businessName} · {won.title}
             </p>

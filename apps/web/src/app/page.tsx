@@ -259,8 +259,57 @@ export default function Home() {
         </div>
 
         <section
+          className="lp-section lp-reveal"
+          aria-labelledby="steps-heading"
+        >
+          <div className="lp-split">
+            <div>
+              <p className="eyebrow">How cash back works</p>
+              <h2 id="steps-heading">
+                Three steps. <em className="lp-serif">No catch.</em>
+              </h2>
+            </div>
+            <p>
+              The reward is already paid in by the business, so the only thing
+              between you and it is a real purchase.
+            </p>
+          </div>
+          <ol className="lp-steps">
+            <li>
+              <span className="lp-step-num" aria-hidden>
+                1
+              </span>
+              <h3>Get a code</h3>
+              <p>
+                Pick an offer from a business near you. Your code appears on
+                your phone.
+              </p>
+            </li>
+            <li>
+              <span className="lp-step-num" aria-hidden>
+                2
+              </span>
+              <h3>Show it at the till</h3>
+              <p>
+                Buy as usual. Staff scan your code and confirm the purchase.
+              </p>
+            </li>
+            <li>
+              <span className="lp-step-num" aria-hidden>
+                3
+              </span>
+              <h3>Get paid</h3>
+              <p>
+                After the refund window it moves to your wallet. Withdraw to any
+                Nigerian bank.
+              </p>
+            </li>
+          </ol>
+        </section>
+
+        <section
           id="earn"
-          className="lp-section"
+          className="lp-section lp-reveal"
           aria-labelledby="earn-heading"
         >
           <div className="lp-split">
@@ -400,7 +449,7 @@ export default function Home() {
 
         <section
           id="businesses"
-          className="lp-section"
+          className="lp-section lp-reveal"
           aria-labelledby="business-heading"
         >
           <div className="lp-split">
@@ -434,7 +483,7 @@ export default function Home() {
           </ul>
         </section>
 
-        <section className="band" aria-labelledby="cta-heading">
+        <section className="band lp-reveal" aria-labelledby="cta-heading">
           <div className="grid gap-4" style={{ position: 'relative' }}>
             <h2 id="cta-heading" style={{ margin: 0 }}>
               Run your first campaign <em className="lp-serif">this week.</em>

@@ -10,6 +10,7 @@ import { Form } from '@/components/ui/form';
 import { Field } from '@/components/ui/field';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Feedback } from '@/components/ui/feedback';
+import { Celebrate } from '@/components/ui/celebrate';
 import { PASSWORD_MIN_LENGTH } from '@pointrush/contracts';
 import { SIGNUP_EMAIL_KEY } from '@/components/landing/email-capture';
 export function SignupForm() {
@@ -39,6 +40,7 @@ export function SignupForm() {
   if (sent)
     return (
       <div className="success-panel">
+        <Celebrate kind="mail" />
         <Feedback>
           Check your inbox for a verification link. If you already have an
           account, sign in or reset your password.
