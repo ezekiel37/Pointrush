@@ -84,7 +84,8 @@ export default function Home() {
           </Link>
           <h1 id="hero-heading">Get paid back for what you already do.</h1>
           <p>
-            Cash back when you buy. Prizes when you scratch. Every naira is
+            Cash back when you buy. Prizes when you scratch.
+            {jobsEnabled && ' Pay when you complete a task.'} Every naira is
             locked by the business before it is promised to you.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
@@ -313,8 +314,10 @@ export default function Home() {
               Run your first campaign.
             </h2>
             <p style={{ margin: 0, maxWidth: '46ch' }}>
-              Cash back or scratch-and-win. You fund it, we verify every claim,
-              and you see the results.
+              {jobsEnabled
+                ? 'Cash back, scratch-and-win or paid tasks.'
+                : 'Cash back or scratch-and-win.'}{' '}
+              You fund it, we verify every claim, and you see the results.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link className="button button-accent" href="/business">

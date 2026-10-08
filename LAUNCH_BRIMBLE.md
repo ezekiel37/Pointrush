@@ -41,7 +41,7 @@ Brimble's screens may name things slightly differently from these steps. If a st
 | Name                        | Value                                                                                       |
 | --------------------------- | ------------------------------------------------------------------------------------------- |
 | `NODE_ENV`                  | `production`                                                                                |
-| `FEATURE_JOBS`              | `off`                                                                                       |
+| `FEATURE_JOBS`              | `on`                                                                                        |
 | `DATABASE_URL`              | The Supabase session pooler string                                                          |
 | `MIGRATION_DATABASE_URL`    | The same string                                                                             |
 | `DATABASE_CA_CERT`          | The certificate text. If the box takes only one line, join the lines with `\n` between them |
@@ -101,7 +101,7 @@ If verification emails never arrive, check the Resend key and domain. With a wro
 3. **Region: Germany**, the smallest size, one instance. **Port**: 3000. **Health check path**: `/login`.
 4. **Environment variables** (the website reads these while it is being built):
    - `NEXT_PUBLIC_API_ORIGIN` = `https://api.acticlaim.com`
-   - `NEXT_PUBLIC_FEATURE_JOBS` = `off`
+   - `NEXT_PUBLIC_FEATURE_JOBS` = `on`
 
    If the build stops with "NEXT_PUBLIC_API_ORIGIN must be set when building", Brimble is not passing variables to the build; tell Claude.
 

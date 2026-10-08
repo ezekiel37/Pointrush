@@ -1,6 +1,6 @@
 # Deploying Acticlaim, step by step
 
-Launch scope: cash back offers, prize codes and vouchers, wallet, profiles and reviewer tools. Paid small tasks (jobs) are switched off. Start on Bachs sandbox keys and switch to live keys later (step 12).
+Launch scope: cash back offers, prize codes and vouchers, wallet, profiles and reviewer tools. Paid small tasks (jobs) are on; set `FEATURE_JOBS` and `NEXT_PUBLIC_FEATURE_JOBS` to `off` to hide them (both apps need a redeploy). Start on Bachs sandbox keys and switch to live keys later (step 12).
 
 The examples use `acticlaim.com`; replace it with your domain everywhere. Never put a key or password in Git or in a chat. Each secret goes into Google Secret Manager or Vercel only.
 
@@ -78,7 +78,7 @@ The last line ends in "completed successfully". Run it again after every update 
 ## 7. Start the server
 
 ```bash
-export ENV_VARS="NODE_ENV=production,FEATURE_JOBS=off,DATABASE_POOL_MAX=3,CORS_ORIGINS=https://acticlaim.com,AUTH_BASE_URL=https://api.acticlaim.com,AUTH_TRUSTED_ORIGINS=https://acticlaim.com,EMAIL_FROM=accounts@mail.acticlaim.com,PAYMENTS_PROVIDER=bachs,PAYMENTS_RETURN_ORIGIN=https://acticlaim.com,SPONSOR_TERMS_VERSION=2026-10"
+export ENV_VARS="NODE_ENV=production,FEATURE_JOBS=on,DATABASE_POOL_MAX=3,CORS_ORIGINS=https://acticlaim.com,AUTH_BASE_URL=https://api.acticlaim.com,AUTH_TRUSTED_ORIGINS=https://acticlaim.com,EMAIL_FROM=accounts@mail.acticlaim.com,PAYMENTS_PROVIDER=bachs,PAYMENTS_RETURN_ORIGIN=https://acticlaim.com,SPONSOR_TERMS_VERSION=2026-10"
 export SECRETS="DATABASE_URL=database-url:latest,DATABASE_CA_CERT=database-ca:latest,AUTH_SECRET=auth-secret:latest,AUTH_EMAIL_ENCRYPTION_KEY=email-key:latest,BACHS_API_KEY=bachs-key:latest,PAYMENTS_WEBHOOK_SECRET=bachs-webhook:latest"
 ```
 
@@ -142,7 +142,7 @@ Vercel's free (Hobby) plan is for non-commercial use only; a business needs Pro 
 5. Set **Node.js version** to 24.x (Settings → General).
 6. Add these environment variables:
    - `NEXT_PUBLIC_API_ORIGIN` = `https://api.acticlaim.com`
-   - `NEXT_PUBLIC_FEATURE_JOBS` = `off`
+   - `NEXT_PUBLIC_FEATURE_JOBS` = `on`
 7. Set the production branch to `develop` (Settings → Git), then deploy.
 8. **Settings → Domains**: add `acticlaim.com` and put the record Vercel shows into Cloudflare, again with the cloud icon grey.
 
