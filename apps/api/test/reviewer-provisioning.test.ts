@@ -84,6 +84,14 @@ test('grant is bounded, reviewer-bound and exactly retryable', async () => {
   const created = await service.grant(operatorId, input);
   assert.equal(created.id, id);
   assert.equal((await service.grant(operatorId, input)).id, id);
+  // A reviewer can also decide job appeals, for the same period, once.
+  const appeals = await db
+    .select()
+    .from(schema.appealReviewerGrants)
+    .where(eq(schema.appealReviewerGrants.accountId, reviewerId));
+  assert.equal(appeals.length, 1);
+  assert.equal(appeals[0]!.expiresAt.getTime(), expiresAt.getTime());
+  assert.equal(appeals[0]!.grantedBy, operatorId);
   await assert.rejects(
     service.grant(operatorId, { ...input, reason: 'Changed operation' }),
     /already bound/,
@@ -162,6 +170,13 @@ test('revoke is immutable and exactly retryable', async () => {
     reason: 'Appointment ended',
   });
   assert.equal(revoked.revocationReason, 'Appointment ended');
+  // Appeal permission ends with it.
+  const appeals = await db
+    .select()
+    .from(schema.appealReviewerGrants)
+    .where(eq(schema.appealReviewerGrants.accountId, operatorId));
+  assert.ok(appeals.length > 0);
+  assert.ok(appeals.every((a) => a.revokedAt !== null));
   assert.equal(
     (
       await service.revoke(operatorId, {

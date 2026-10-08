@@ -152,6 +152,24 @@ export class ReviewerProvisioningService {
         })
         .returning();
       if (!created) fail('Reviewer grant was not created');
+      // A reviewer also decides job appeals, for the same period.
+      const [appeals] = await tx
+        .select({ id: schema.appealReviewerGrants.id })
+        .from(schema.appealReviewerGrants)
+        .where(
+          and(
+            eq(schema.appealReviewerGrants.accountId, value.reviewerId),
+            isNull(schema.appealReviewerGrants.revokedAt),
+            sql`${schema.appealReviewerGrants.expiresAt} > clock_timestamp()`,
+          ),
+        );
+      if (!appeals)
+        await tx.insert(schema.appealReviewerGrants).values({
+          accountId: value.reviewerId,
+          grantedBy: operator.id,
+          reason: value.reason,
+          expiresAt: value.expiresAt,
+        });
       return created;
     });
   }
@@ -239,6 +257,16 @@ export class ReviewerProvisioningService {
         .where(eq(schema.taskReviewerGrants.id, value.grantId))
         .returning();
       if (!revoked) fail('Reviewer grant was not revoked');
+      // Appeal permission ends with review permission.
+      await tx
+        .update(schema.appealReviewerGrants)
+        .set({ revokedAt: sql`clock_timestamp()` })
+        .where(
+          and(
+            eq(schema.appealReviewerGrants.accountId, grant.reviewerId),
+            isNull(schema.appealReviewerGrants.revokedAt),
+          ),
+        );
       return revoked;
     });
   }

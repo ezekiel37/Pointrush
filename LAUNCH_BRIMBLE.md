@@ -140,14 +140,7 @@ This needs a computer with Node.js 24 and Git. Use your own computer, or Google 
    On a Mac, use `shasum -a 256` instead of `sha256sum`, `uuidgen` for the grant ID, and `date -u -v+29d +%Y-%m-%dT%H:%M:%SZ` for the date.
 
 4. On the site, turn on two-factor from your account page. Reviewer pages need it.
-5. **Job appeals** need their own permission. In Supabase's **SQL editor**, run (with your account ID in both places):
-
-   ```sql
-   insert into appeal_reviewer_grants (account_id, granted_by, reason, expires_at)
-   values ('YOUR-ACCOUNT-ID', 'YOUR-ACCOUNT-ID', 'Founder', now() + interval '30 days');
-   ```
-
-   Renew it the same way before it expires. Appeals are decided under **Review → Appeals**; a business can never decide appeals on its own jobs.
+5. The same command also lets you decide **job appeals** (Review → Appeals) for the same 30 days, and `revoke` removes both. A business can never decide appeals on its own jobs.
 
 Reviewer access lasts at most 30 days; to renew, run the CLI's `revoke` and then `grant` again. Appoint a second trusted reviewer the same way: campaigns of ₦1,000,000 or more and unfreezing an account need two different people.
 
