@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useState } from 'react';
 import {
   Building2,
@@ -15,8 +16,10 @@ type Topic = {
   id: string;
   label: string;
   icon: LucideIcon;
-  questions: [string, string][];
+  questions: Answer[];
 };
+type Answer =
+  [string, string] | [string, string, { href: string; label: string }[]];
 
 // Answers describe how the product works today; keep them in step with it.
 const topics: Topic[] = [
@@ -40,10 +43,15 @@ const topics: Topic[] = [
       [
         'I did not get the confirmation email.',
         'Check your spam folder. If you try to sign in before confirming, the sign-in page offers a new link. Links last 1 hour, and you can ask for a new one about once a minute.',
+        [{ href: '/verify-email', label: 'Send a new confirmation link' }],
       ],
       [
         'My link has expired. What should I do?',
-        'Request a new one: sign in and press "Send a new link", or use "Resend confirmation" below. Password reset links last 30 minutes.',
+        'Request a new one. Confirmation links last 1 hour and password reset links 30 minutes.',
+        [
+          { href: '/verify-email', label: 'New confirmation link' },
+          { href: '/forgot-password', label: 'New password reset link' },
+        ],
       ],
     ],
   },
@@ -181,13 +189,22 @@ export function HelpCenter() {
         ))}
       </nav>
       <section className="help-answers" aria-label={topic.label}>
-        {topic.questions.map(([question, answer], i) => (
+        {topic.questions.map(([question, answer, links], i) => (
           <details key={`${topic.id}-${question}`} open={i === 0}>
             <summary>
               <span>{question}</span>
               <Plus className="help-toggle" size={18} aria-hidden />
             </summary>
             <p>{answer}</p>
+            {links && (
+              <p className="help-answer-links">
+                {links.map((link) => (
+                  <Link key={link.href} className="text-link" href={link.href}>
+                    {link.label}
+                  </Link>
+                ))}
+              </p>
+            )}
           </details>
         ))}
       </section>

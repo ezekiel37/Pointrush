@@ -27,21 +27,11 @@ export default function Page() {
           </p>
         </div>
         <HelpCenter />
-        <div className="help-links">
-          <Link className="text-link" href="/verify-email">
-            Resend confirmation
-          </Link>
-          <Link className="text-link" href="/forgot-password">
-            Reset password
-          </Link>
-          <Link className="text-link" href="/terms">
-            Terms
-          </Link>
-          <Link className="text-link" href="/privacy">
-            Privacy
-          </Link>
-        </div>
       </main>
+      <footer className="help-footer">
+        © {new Date().getFullYear()} Acticlaim ·{' '}
+        <Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link>
+      </footer>
     </div>
   );
 }
