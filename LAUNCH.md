@@ -12,7 +12,7 @@ Run every command in **Google Cloud Shell** (the `>_` button at the top of conso
 2. **Supabase**: create a project named `acticlaim-test`, in a European region (London or Frankfurt), and save the database password.
 3. **Google Cloud**: create a project, add billing, and set a budget alert (Billing → Budgets, for example $20 a month).
 4. **Vercel**: sign up with the GitHub account that owns `ezekiel37/Pointrush`.
-5. **Resend**: add your domain and copy the DNS records it shows into Cloudflare. Create an API key (sending access).
+5. **Resend**: add the sending subdomain `mail.acticlaim.com` (Resend recommends a subdomain so the main domain's reputation is protected), copy the DNS records it shows into Cloudflare with the cloud icon grey, and wait for Verified. Create an API key (sending access).
 6. **Bachs**: in the sandbox, copy the API key (`sk_sandbox_…`).
 7. **SMS (Termii or Africa's Talking)**: request a sender ID now, because approval takes days. The connection to it is not built yet, so tell Claude which one you chose. Until then, phone verification shows "not available yet", so nobody can withdraw or claim prizes.
 
@@ -78,7 +78,7 @@ The last line ends in "completed successfully". Run it again after every update 
 ## 7. Start the server
 
 ```bash
-export ENV_VARS="NODE_ENV=production,FEATURE_JOBS=off,DATABASE_POOL_MAX=3,CORS_ORIGINS=https://acticlaim.com,AUTH_BASE_URL=https://api.acticlaim.com,AUTH_TRUSTED_ORIGINS=https://acticlaim.com,EMAIL_FROM=accounts@acticlaim.com,PAYMENTS_PROVIDER=bachs,PAYMENTS_RETURN_ORIGIN=https://acticlaim.com,SPONSOR_TERMS_VERSION=2026-10"
+export ENV_VARS="NODE_ENV=production,FEATURE_JOBS=off,DATABASE_POOL_MAX=3,CORS_ORIGINS=https://acticlaim.com,AUTH_BASE_URL=https://api.acticlaim.com,AUTH_TRUSTED_ORIGINS=https://acticlaim.com,EMAIL_FROM=accounts@mail.acticlaim.com,PAYMENTS_PROVIDER=bachs,PAYMENTS_RETURN_ORIGIN=https://acticlaim.com,SPONSOR_TERMS_VERSION=2026-10"
 export SECRETS="DATABASE_URL=database-url:latest,DATABASE_CA_CERT=database-ca:latest,AUTH_SECRET=auth-secret:latest,AUTH_EMAIL_ENCRYPTION_KEY=email-key:latest,BACHS_API_KEY=bachs-key:latest,PAYMENTS_WEBHOOK_SECRET=bachs-webhook:latest"
 ```
 

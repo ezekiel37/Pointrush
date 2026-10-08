@@ -19,7 +19,7 @@ Brimble's screens may name things slightly differently from these steps. If a st
 1. **Cloudflare**: buy the domain, or move it there.
 2. **Supabase**: create a project named `acticlaim-test` in **Central EU (Frankfurt)** and save the database password.
 3. **Brimble**: start the 7-day Developer trial. Check whether it charges automatically on day 7. Either way, switch to **Hacker** before the trial ends.
-4. **Resend**: add your domain, copy the DNS records it shows into Cloudflare, and create an API key.
+4. **Resend**: add the sending subdomain `mail.acticlaim.com` (Resend recommends a subdomain so the main domain's reputation is protected), copy the DNS records it shows into Cloudflare with the cloud icon grey, wait for Verified, and create an API key.
 5. **Bachs**: in the sandbox, copy the API key (`sk_sandbox_…`). The webhook comes in step 6.
 6. **SMS (Termii or Africa's Talking)**: request a sender ID now. Until Claude connects it, phone verification shows "not available yet", so withdrawals and prize claims wait.
 
@@ -51,7 +51,7 @@ Brimble's screens may name things slightly differently from these steps. If a st
 | `AUTH_TRUSTED_ORIGINS`      | `https://acticlaim.com`                                                                     |
 | `AUTH_SECRET`               | A random 48-character string (a password manager can generate one)                          |
 | `AUTH_EMAIL_ENCRYPTION_KEY` | Exactly 64 characters using only `0-9` and `a-f` (see below)                                |
-| `EMAIL_FROM`                | `accounts@acticlaim.com`                                                                    |
+| `EMAIL_FROM`                | `accounts@mail.acticlaim.com` (shown to people as "Acticlaim")                              |
 | `RESEND_API_KEY`            | The Resend key                                                                              |
 | `PAYMENTS_PROVIDER`         | `bachs`                                                                                     |
 | `BACHS_API_KEY`             | `sk_sandbox_…`                                                                              |
