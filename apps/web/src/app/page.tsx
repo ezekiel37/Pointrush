@@ -16,9 +16,11 @@ import {
   Scissors,
   ScanLine,
   Shirt,
+  Smartphone,
   Store,
   TicketCheck,
   UtensilsCrossed,
+  Wallet,
 } from 'lucide-react';
 import { Brand } from '@/components/auth/auth-frame';
 import { EmailCapture } from '@/components/landing/email-capture';
@@ -276,8 +278,8 @@ export default function Home() {
           </div>
           <ol className="lp-steps">
             <li>
-              <span className="lp-step-num" aria-hidden>
-                1
+              <span className="lp-step-icon" aria-hidden>
+                <Smartphone size={26} strokeWidth={1.75} />
               </span>
               <h3>Get a code</h3>
               <p>
@@ -286,8 +288,8 @@ export default function Home() {
               </p>
             </li>
             <li>
-              <span className="lp-step-num" aria-hidden>
-                2
+              <span className="lp-step-icon" aria-hidden>
+                <ScanLine size={26} strokeWidth={1.75} />
               </span>
               <h3>Show it at the till</h3>
               <p>
@@ -295,8 +297,8 @@ export default function Home() {
               </p>
             </li>
             <li>
-              <span className="lp-step-num" aria-hidden>
-                3
+              <span className="lp-step-icon" aria-hidden>
+                <Wallet size={26} strokeWidth={1.75} />
               </span>
               <h3>Get paid</h3>
               <p>

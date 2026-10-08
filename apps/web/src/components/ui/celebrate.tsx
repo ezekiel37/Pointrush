@@ -73,8 +73,8 @@ export function Celebrate({
   );
 }
 
-const confetti = Array.from({ length: 18 }, (_, i) => ({
-  left: `${(i * 37) % 100}%`,
+const confetti = Array.from({ length: 8 }, (_, i) => ({
+  left: `${8 + ((i * 41) % 84)}%`,
   delay: `${(i % 6) * 0.12}s`,
   color: burst[i % burst.length],
   turn: `${(i % 2 ? 1 : -1) * (180 + i * 20)}deg`,

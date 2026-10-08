@@ -991,11 +991,11 @@
 
   /* Money and figures: proportional sans; pending is labelled, never "earned". */
   .amount {
-    font-weight: 650;
-    letter-spacing: -0.03em;
+    font-weight: 600;
+    letter-spacing: -0.02em;
   }
   .amount-xl {
-    font-size: clamp(2.2rem, 8vw, 3.2rem);
+    font-size: clamp(1.8rem, 6vw, 2.4rem);
     line-height: 1;
   }
   .amount-pending {
@@ -1183,32 +1183,71 @@
   .confetti i {
     position: absolute;
     top: -12px;
-    width: 8px;
-    height: 12px;
+    width: 6px;
+    height: 9px;
     border-radius: 2px;
     opacity: 0;
-    animation: cel-fall 1.6s ease-in both;
+    animation: cel-fall 1.3s ease-in both;
   }
   .prize {
     position: relative;
     overflow: hidden;
-    text-align: center;
-    padding: 2rem 1.25rem;
+    display: grid;
+    gap: 1.1rem;
+    padding: 1.5rem;
     background:
       radial-gradient(
-        120% 90% at 50% 0,
-        color-mix(in srgb, var(--color-lime) 60%, transparent),
-        transparent 65%
+        90% 60% at 0 0,
+        color-mix(in srgb, var(--color-lime) 28%, transparent),
+        transparent 70%
       ),
       var(--color-surface);
     border: 1px solid var(--color-line);
-    border-radius: 1.5rem;
-    box-shadow: var(--shadow-float);
+    border-radius: 1.25rem;
+    box-shadow: var(--shadow-card);
   }
-  .prize .amount-xl {
-    display: block;
-    margin: 0.5rem 0;
-    animation: rise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  .prize-head {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+  }
+  .prize-head .celebrate {
+    margin: 0;
+    flex: none;
+  }
+  .prize-head h2 {
+    margin: 0;
+    font-size: 1.25rem;
+  }
+  .prize-head p {
+    margin: 0.15rem 0 0;
+    color: var(--color-muted);
+  }
+  .prize-receipt {
+    display: grid;
+    margin: 0;
+    border-top: 1px solid var(--color-line);
+  }
+  .prize-receipt div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid var(--color-line);
+  }
+  .prize-receipt dt {
+    color: var(--color-muted);
+  }
+  .prize-receipt dd {
+    margin: 0;
+    text-align: right;
+    font-weight: 500;
+  }
+  .prize-receipt .amount {
+    font-size: 1.15rem;
+  }
+  .prize > .small-note {
+    margin: 0;
   }
 
   /* Landing */
@@ -1474,15 +1513,40 @@
     align-content: start;
     gap: 0.4rem;
   }
-  .lp-step-num {
-    font-family: 'Instrument Serif', Georgia, serif;
-    font-size: clamp(5rem, 10vw, 7.5rem);
-    line-height: 0.85;
-    color: transparent;
-    -webkit-text-stroke: 1.5px var(--color-brand-text);
-    background: linear-gradient(180deg, rgb(212 242 90 / 0.9), transparent 75%);
-    -webkit-background-clip: text;
-    background-clip: text;
+  .lp-steps li {
+    position: relative;
+  }
+  .lp-step-icon {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 20px;
+    background: var(--color-lime);
+    color: var(--color-on-lime);
+    box-shadow: 0 0 0 6px var(--color-canvas);
+  }
+  .lp-steps li:nth-child(2) .lp-step-icon {
+    background: var(--color-brand);
+    color: var(--color-on-fill);
+  }
+  .lp-steps li:nth-child(3) .lp-step-icon {
+    background: var(--color-ink-fill);
+    color: var(--color-on-fill);
+  }
+  /* Dashed path joining the icons, on wide screens only. */
+  @media (min-width: 800px) {
+    .lp-steps li:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 32px;
+      left: 80px;
+      right: -1.5rem;
+      border-top: 2px dashed var(--color-border);
+      opacity: 0.6;
+    }
   }
   .lp-steps h3 {
     margin: 0.5rem 0 0;
@@ -2748,7 +2812,7 @@
   }
   100% {
     opacity: 0;
-    transform: translateY(320px) rotate(var(--turn));
+    transform: translateY(160px) rotate(var(--turn));
   }
 }
 @keyframes lp-in {

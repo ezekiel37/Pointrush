@@ -97,13 +97,40 @@ export function PrizeClaimScreen() {
         ) : won ? (
           <section className="prize" aria-live="polite">
             <Confetti />
-            <Celebrate />
-            <p className="eyebrow" style={{ marginTop: '0.75rem' }}>
-              {won.businessName} · {won.title}
+            <div className="prize-head">
+              <Celebrate size={56} />
+              <div>
+                <h2>Prize claimed</h2>
+                <p>The money is in your Acticlaim wallet.</p>
+              </div>
+            </div>
+            <dl className="prize-receipt">
+              <div>
+                <dt>Prize</dt>
+                <dd className="amount">{naira(won.prizeKobo)}</dd>
+              </div>
+              <div>
+                <dt>From</dt>
+                <dd>{won.businessName}</dd>
+              </div>
+              <div>
+                <dt>Promotion</dt>
+                <dd>{won.title}</dd>
+              </div>
+              <div>
+                <dt>Claimed</dt>
+                <dd>{shortDate(won.claimedAt)}</dd>
+              </div>
+              <div>
+                <dt>Reference</dt>
+                <dd className="mono">{won.id.slice(0, 8).toUpperCase()}</dd>
+              </div>
+            </dl>
+            <p className="small-note">
+              This code is now used and cannot be claimed again. To withdraw,
+              verify your phone and add a bank account in your own name.
             </p>
-            <span className="amount amount-xl">{naira(won.prizeKobo)}</span>
-            <p>Added to your wallet. This code is now used.</p>
-            <div className="flex flex-wrap justify-center gap-3">
+            <div className="flex flex-wrap gap-3">
               <Button asChild>
                 <Link href="/wallet">Open wallet</Link>
               </Button>
