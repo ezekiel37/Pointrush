@@ -1141,6 +1141,18 @@
   }
 
   /* Prize reveal after a confirmed claim. */
+  .verify-prompt {
+    display: grid;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-radius: var(--radius-field);
+    background: var(--color-pending-surface);
+  }
+  .verify-prompt p {
+    margin: 0;
+    color: var(--color-ink);
+    overflow-wrap: anywhere;
+  }
   /* Wallet */
   .eye-toggle {
     display: grid;

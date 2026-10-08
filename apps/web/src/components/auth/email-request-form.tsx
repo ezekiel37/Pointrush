@@ -29,12 +29,14 @@ export function EmailRequestForm({ kind }: { kind: 'reset' | 'verify' }) {
         <div className="success-panel">
           <Celebrate kind="mail" />
           <Feedback>
-            If this address is eligible, an email is on its way. Check your
-            inbox and spam folder.
+            {kind === 'reset'
+              ? 'If an account uses this address, a reset link is on its way. Check your inbox and spam folder.'
+              : 'If this address has an account that still needs confirming, a new link is on its way. Check your inbox and spam folder.'}
           </Feedback>
           <p>
-            Wait at least a minute before requesting another. Delivery can take
-            a few minutes.
+            {kind === 'reset'
+              ? 'Wait at least a minute before requesting another. Delivery can take a few minutes.'
+              : 'Already confirmed? You can sign in now; no email is sent. Otherwise, wait at least a minute before requesting another.'}
           </p>
           <Button variant="outline" onClick={() => setSent(false)}>
             Use another address or request again

@@ -43,6 +43,34 @@ test('signup, verification, onboarding, signout and recovery use the real API', 
       exact: false,
     }),
   ).toBeVisible();
+  // Signing in before confirming offers a new link, only after the password
+  // is accepted, and a new email is actually queued.
+  await page.goto('/login');
+  await page.getByLabel('Email address').fill(email);
+  await page.getByLabel('Password', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page.getByText('Confirm your email first.')).toBeVisible();
+  const before = (
+    await (
+      await request.get(
+        `http://localhost:8081/__test/mail?email=${encodeURIComponent(email)}`,
+      )
+    ).json()
+  ).length;
+  await page.getByRole('button', { name: 'Send a new link' }).click();
+  await expect(page.getByText('New link sent.')).toBeVisible();
+  await expect
+    .poll(
+      async () =>
+        (
+          await (
+            await request.get(
+              `http://localhost:8081/__test/mail?email=${encodeURIComponent(email)}`,
+            )
+          ).json()
+        ).length,
+    )
+    .toBe(before + 1);
   await page.goto(await mail(request, email, 'verify-email'));
   await expect(page).toHaveURL(/\/login\?verified=1/);
   await page.getByLabel('Email address').fill(email);
@@ -67,10 +95,8 @@ test('signup, verification, onboarding, signout and recovery use the real API', 
   await page.getByLabel('Email address').fill(email);
   await page.getByRole('button', { name: 'Send reset link' }).click();
   await expect(
-    page
-      .getByRole('status')
-      .filter({ hasText: /If this address|Your password/ }),
-  ).toContainText('If this address is eligible');
+    page.getByRole('status').filter({ hasText: /If an account|Your password/ }),
+  ).toContainText('If an account uses this address');
   await page.goto(await mail(request, email, 'reset-password'));
   await expect(page.getByLabel('New password', { exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\/reset-password$/);
@@ -81,9 +107,7 @@ test('signup, verification, onboarding, signout and recovery use the real API', 
     .fill(newPassword);
   await page.getByRole('button', { name: 'Update password' }).click();
   await expect(
-    page
-      .getByRole('status')
-      .filter({ hasText: /If this address|Your password/ }),
+    page.getByRole('status').filter({ hasText: /If an account|Your password/ }),
   ).toContainText('Your password has been changed');
   await page.getByRole('link', { name: 'Back to sign in' }).click();
   await page.getByLabel('Email address').fill(email);
