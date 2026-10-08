@@ -81,21 +81,18 @@ In the Bachs sandbox dashboard:
 
 If Bachs still says the URL cannot be reached while the health address works, tell Claude: the webhook address may need to answer Bachs's test differently.
 
-## 7. Database setup and scheduled jobs (Brimble cron jobs)
+## 7. Emails and payouts (no cron needed)
 
-Create three cron jobs on the server project:
+The server sends queued emails every 10 seconds and hands withdrawals to Bachs every minute by itself. Do not create Brimble cron jobs; if you created one, delete it (an extra run is harmless, but it is not needed).
 
-| Name    | Command                                            | Schedule                        |
-| ------- | -------------------------------------------------- | ------------------------------- |
-| emails  | `node apps/api/dist/auth/email-worker-cli.js`      | `* * * * *` (every minute)      |
-| payouts | `node apps/api/dist/payments/payout-worker-cli.js` | `*/5 * * * *` (every 5 minutes) |
+Check it in the server's normal logs:
 
-Then:
+- After a sign-up, a line `auth_email_batch` with `"accepted"` means the email went to Resend.
+- `"dead"` means Resend refused it: check `RESEND_API_KEY` and that `mail.acticlaim.com` is Verified in Resend.
+- `email_sending_off` at startup means `RESEND_API_KEY` is missing.
+- `payout_batch` appears only when a withdrawal was handed over (`"deferred"` above 0 needs a look, for example a low Bachs balance).
 
-1. The database is set up by the server's pre-start command; its log shows `Database migrations completed.`
-2. Check that **emails** and **payouts** run, and that their history shows `auth_email_batch` and `payout_batch`.
-
-If verification emails never arrive, check the Resend key and domain. With a wrong key the emails job shows `"dead"` and drops those emails; people can ask for a new one from the sign-in page.
+To run them as separate scheduled jobs instead, set `INLINE_WORKERS=off` and schedule `node apps/api/dist/auth/email-worker-cli.js` and `node apps/api/dist/payments/payout-worker-cli.js`.
 
 ## 8. The website (Brimble)
 
@@ -162,8 +159,8 @@ The phone steps wait for the SMS connection.
 ## Updating later
 
 1. Push to `develop`, then redeploy both apps on Brimble (or turn on automatic deploys from `develop`).
-2. Run the **migrate** cron job again (**Run now**) before using new features.
+2. The database updates itself on start (pre-start command); check the log shows `Database migrations completed.`
 
 ## Switching from sandbox to live keys
 
-The same rule as LAUNCH.md, step 12: a database that ran on sandbox keys must never run on live keys. Create a new Supabase project (`acticlaim-live`), then on Brimble change `DATABASE_URL`, `MIGRATION_DATABASE_URL`, `DATABASE_CA_CERT`, `BACHS_API_KEY` (`sk_live_…`) and `PAYMENTS_WEBHOOK_SECRET` (live webhook). Redeploy, run **migrate**, appoint reviewers again, and tell testers to sign up again. Before real money, also upgrade Supabase for daily backups.
+The same rule as LAUNCH.md, step 12: a database that ran on sandbox keys must never run on live keys. Create a new Supabase project (`acticlaim-live`), then on Brimble change `DATABASE_URL`, `MIGRATION_DATABASE_URL`, `DATABASE_CA_CERT`, `BACHS_API_KEY` (`sk_live_…`) and `PAYMENTS_WEBHOOK_SECRET` (live webhook). Redeploy, appoint reviewers again, and tell testers to sign up again. Before real money, also upgrade Supabase for daily backups.

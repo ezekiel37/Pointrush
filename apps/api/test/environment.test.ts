@@ -13,16 +13,21 @@ const apiConfig = {
   AUTH_EMAIL_ENCRYPTION_KEY: 'ab'.repeat(32),
 };
 
-test('production API queues mail without delivery credentials and preserves the secret', () => {
+test('production API preserves the secret and keeps the delivery key out of auth', () => {
   const secret = ` ${apiConfig.AUTH_SECRET} `;
   const config = readEnvironment({ ...apiConfig, AUTH_SECRET: secret });
   assert.equal(config.auth?.secret, secret);
   assert.equal(config.auth?.emailFrom, apiConfig.EMAIL_FROM);
-  assert.ok(!('resendApiKey' in config.auth!));
-  assert.deepEqual(
-    readEnvironment({ ...apiConfig, RESEND_API_KEY: 'ignored' }),
-    readEnvironment(apiConfig),
+  assert.equal(config.inlineWorkers, true);
+  assert.equal(config.resendApiKey, undefined);
+  const sending = readEnvironment({ ...apiConfig, RESEND_API_KEY: ' re_x ' });
+  assert.equal(sending.resendApiKey, 're_x');
+  assert.ok(!('resendApiKey' in sending.auth!));
+  assert.equal(
+    readEnvironment({ ...apiConfig, INLINE_WORKERS: 'off' }).inlineWorkers,
+    false,
   );
+  assert.throws(() => readEnvironment({ ...apiConfig, INLINE_WORKERS: 'yes' }));
 });
 
 test('local auth accepts loopback HTTP only outside production', () => {
@@ -130,6 +135,7 @@ test('worker requires only delivery and database settings, independently from AP
 test('development defaults are explicit and deny cross-origin access', () => {
   assert.deepEqual(readEnvironment({}), {
     jobsEnabled: true,
+    inlineWorkers: true,
     nodeEnv: 'development',
     port: 8080,
     corsOrigins: [],
@@ -145,6 +151,7 @@ test('accepts Cloud Run port and deduplicates explicit origins', () => {
     }),
     {
       jobsEnabled: true,
+      inlineWorkers: true,
       nodeEnv: 'test',
       port: 9090,
       corsOrigins: ['https://example.com'],

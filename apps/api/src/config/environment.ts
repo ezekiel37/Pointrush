@@ -20,6 +20,10 @@ const schema = z.object({
   SPONSOR_TERMS_VERSION: z.string().trim().min(1).max(80).optional(),
   // Paid small tasks ("jobs"); "off" hides them.
   FEATURE_JOBS: z.enum(['on', 'off']).default('on'),
+  // Send queued emails and payouts from the server itself; "off" leaves them
+  // to external scheduled jobs (the worker CLIs).
+  INLINE_WORKERS: z.enum(['on', 'off']).default('on'),
+  RESEND_API_KEY: z.string().trim().min(1).optional(),
   // Only the signing test provider exists until the Bachs adapter is built.
   PAYMENTS_PROVIDER: z.enum(['test', 'bachs']).optional(),
   PAYMENTS_WEBHOOK_SECRET: z
@@ -96,6 +100,8 @@ export interface SmsEnvironment {
 export interface Environment {
   sponsorTermsVersion?: string;
   jobsEnabled?: boolean;
+  inlineWorkers?: boolean;
+  resendApiKey?: string;
   payments?: PaymentsEnvironment;
   sms?: SmsEnvironment;
   nodeEnv: 'development' | 'test' | 'production';
@@ -109,6 +115,8 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
   const {
     SPONSOR_TERMS_VERSION,
     FEATURE_JOBS,
+    INLINE_WORKERS,
+    RESEND_API_KEY,
     PAYMENTS_PROVIDER,
     PAYMENTS_WEBHOOK_SECRET,
     BACHS_API_KEY,
@@ -202,6 +210,8 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
   }
   return {
     jobsEnabled: FEATURE_JOBS === 'on',
+    inlineWorkers: INLINE_WORKERS === 'on',
+    ...(RESEND_API_KEY ? { resendApiKey: RESEND_API_KEY } : {}),
     ...(SPONSOR_TERMS_VERSION
       ? { sponsorTermsVersion: SPONSOR_TERMS_VERSION }
       : {}),

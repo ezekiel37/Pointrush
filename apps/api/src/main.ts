@@ -9,15 +9,18 @@ import { AuthService } from './auth/auth.service.js';
 import { paymentProvider } from './payments/payments.module.js';
 import { smsProvider } from './phone/phone.module.js';
 import { safeErrorSummary } from './database/safe-error.js';
+import { DatabaseService } from './database/database.service.js';
+import { inlineWorkerTasks, PeriodicRunner } from './workers/inline-workers.js';
 
 async function bootstrap(): Promise<void> {
   const config = readEnvironment(process.env);
+  const payments = paymentProvider(config.payments);
   const app = await NestFactory.create<NestExpressApplication>(
     AppModule.forRoot(
       config.database,
       config.auth,
       config.sponsorTermsVersion,
-      paymentProvider(config.payments),
+      payments,
       {
         provider: smsProvider(config.sms),
         ...(config.sms ? { config: config.sms } : {}),
@@ -44,6 +47,35 @@ async function bootstrap(): Promise<void> {
         message: 'Payments use the Bachs sandbox: no real money moves.',
       }) + '\n',
     );
+  if (config.inlineWorkers !== false && config.database) {
+    const db = app.get(DatabaseService).db;
+    const runner = new PeriodicRunner(
+      inlineWorkerTasks({
+        db,
+        ...(config.auth && config.resendApiKey
+          ? {
+              email: {
+                resendApiKey: config.resendApiKey,
+                encryptionKey: config.auth.emailEncryptionKey,
+              },
+            }
+          : {}),
+        ...(payments ? { payments } : {}),
+      }),
+    );
+    if (config.auth && !config.resendApiKey)
+      process.stdout.write(
+        JSON.stringify({
+          level: 'warn',
+          event: 'email_sending_off',
+          message: 'RESEND_API_KEY is not set: queued emails are not sent.',
+        }) + '\n',
+      );
+    runner.start();
+    // Stop scheduling on shutdown. An interrupted send is retried after its
+    // lease expires, with the same provider idempotency key.
+    process.once('SIGTERM', () => void runner.stop());
+  }
   app.enableShutdownHooks();
   await app.listen(config.port, '0.0.0.0');
 }
