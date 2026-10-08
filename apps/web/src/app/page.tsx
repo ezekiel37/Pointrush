@@ -539,6 +539,7 @@ export default function Home() {
             <a href="#earn">How you earn</a>
             <a href="#businesses">For businesses</a>
             <Link href="/help">Help</Link>
+            <a href="mailto:support@acticlaim.com">Contact us</a>
           </nav>
           <nav aria-label="Legal">
             <p className="lp-footer-head">Legal</p>

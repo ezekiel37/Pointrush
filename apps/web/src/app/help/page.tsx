@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Mail } from 'lucide-react';
 import { Brand } from '@/components/auth/auth-frame';
 import { HelpCenter } from '@/components/help/help-center';
 export const metadata = {
@@ -27,6 +28,23 @@ export default function Page() {
           </p>
         </div>
         <HelpCenter />
+        <section className="help-contact" aria-labelledby="contact-heading">
+          <span className="help-contact-icon" aria-hidden>
+            <Mail size={22} />
+          </span>
+          <div>
+            <h2 id="contact-heading">Still need help?</h2>
+            <p>
+              A person reads every message. Never send your password or a code.
+            </p>
+          </div>
+          <a
+            className="button button-primary"
+            href="mailto:support@acticlaim.com"
+          >
+            support@acticlaim.com
+          </a>
+        </section>
       </main>
       <footer className="help-footer">
         © {new Date().getFullYear()} Acticlaim ·{' '}

@@ -2900,6 +2900,43 @@
   .help-answer-links .text-link {
     padding: 0.25rem 0;
   }
+  .help-contact {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 1rem 1.25rem;
+    margin-top: 1.5rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: 1.25rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    box-shadow: var(--shadow-card);
+  }
+  .help-contact h2 {
+    margin: 0 0 0.2rem;
+    font-size: 1.1rem;
+  }
+  .help-contact p {
+    margin: 0;
+    color: var(--color-muted);
+  }
+  .help-contact-icon {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: var(--color-lime);
+    color: var(--color-on-lime);
+  }
+  @media (max-width: 640px) {
+    .help-contact {
+      grid-template-columns: auto 1fr;
+    }
+    .help-contact .button {
+      grid-column: 1 / -1;
+    }
+  }
   .help-footer {
     padding: 0 1rem 2.5rem;
     text-align: center;

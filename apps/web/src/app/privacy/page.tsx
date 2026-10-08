@@ -109,8 +109,9 @@ export default function Page() {
       <h2>Changes and contact</h2>
       <p>
         We will post changes here and tell you about important ones. To use your
-        rights or ask a question, see <Link href="/help">Help</Link>. Our terms
-        are in the <Link href="/terms">terms of service</Link>.
+        rights or ask a question, email{' '}
+        <a href="mailto:support@acticlaim.com">support@acticlaim.com</a>. Our
+        terms are in the <Link href="/terms">terms of service</Link>.
       </p>
     </main>
   );

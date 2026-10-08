@@ -133,8 +133,10 @@ export default function Page() {
 
       <h2>13. Contact</h2>
       <p>
-        Questions or complaints: see <Link href="/help">Help</Link>. How we use
-        your data is in the <Link href="/privacy">privacy policy</Link>.
+        Questions or complaints: email{' '}
+        <a href="mailto:support@acticlaim.com">support@acticlaim.com</a> or see{' '}
+        <Link href="/help">Help</Link>. How we use your data is in the{' '}
+        <Link href="/privacy">privacy policy</Link>.
       </p>
     </main>
   );
