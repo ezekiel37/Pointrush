@@ -1,55 +1,47 @@
 import Link from 'next/link';
 import { Brand } from '@/components/auth/auth-frame';
-export const metadata = { title: 'Account help' };
-const questions = [
-  [
-    'Why do I need to verify my email?',
-    'It confirms that you can access the address used for your account. Email verification does not verify your legal identity or award a public identity badge.',
-  ],
-  [
-    'Where is my verification or reset email?',
-    'Check your spam folder and confirm the address you entered. Wait at least a minute before requesting another email. Requests are limited per address and across the platform. An accepted request does not guarantee inbox delivery.',
-  ],
-  [
-    'My link has expired. What should I do?',
-    'Request a new verification or password reset email. For password resets, keep the link tab open until you finish; reloading after the token is removed requires reopening the original email link.',
-  ],
-  [
-    'How do I earn?',
-    'Get cash back on purchases a business confirms at its till, claim prize codes, or complete paid tasks. You can submit text proof, respond to correction requests and appeal rejections from My tasks.',
-  ],
-  [
-    'What does New reputation mean?',
-    'It means you have not yet built a history of eligible activity here. It does not mean your account is untrusted. Reputation and identity verification are separate.',
-  ],
-  [
-    'Why are account actions unavailable?',
-    'Restricted, suspended and closed accounts cannot perform task or reward actions. You can still view your account status with a valid session. An in-app support and appeal process is being built; it is not available in this version.',
-  ],
-];
+import { HelpCenter } from '@/components/help/help-center';
+export const metadata = {
+  title: 'Help',
+  description:
+    'Answers about cash back, prize codes, paid tasks, your wallet and running campaigns on Acticlaim.',
+  robots: { index: true, follow: true },
+};
 export default function Page() {
   return (
-    <main id="main-content" className="help">
-      <Brand />
-      <h1>A little clarity goes a long way.</h1>
-      <p>Answers for getting started with your Acticlaim account.</p>
-      {questions.map(([question, answer]) => (
-        <details key={question}>
-          <summary>{question}</summary>
-          <p>{answer}</p>
-        </details>
-      ))}
-      <div className="flex flex-wrap gap-6 mt-8">
-        <Link className="text-link" href="/account">
-          Back to your account
+    <div className="help-page">
+      <header className="help-bar">
+        <Brand />
+        <Link className="button button-outline" href="/login">
+          Sign in
         </Link>
-        <Link className="text-link" href="/verify-email">
-          Resend verification
-        </Link>
-        <Link className="text-link" href="/forgot-password">
-          Reset password
-        </Link>
-      </div>
-    </main>
+      </header>
+      <main id="main-content" className="help-shell">
+        <div className="help-intro">
+          <h1>
+            How can we <em className="lp-serif">help?</em>
+          </h1>
+          <p>
+            Answers about earning, your wallet, running campaigns and keeping
+            your account safe.
+          </p>
+        </div>
+        <HelpCenter />
+        <div className="help-links">
+          <Link className="text-link" href="/verify-email">
+            Resend confirmation
+          </Link>
+          <Link className="text-link" href="/forgot-password">
+            Reset password
+          </Link>
+          <Link className="text-link" href="/terms">
+            Terms
+          </Link>
+          <Link className="text-link" href="/privacy">
+            Privacy
+          </Link>
+        </div>
+      </main>
+    </div>
   );
 }

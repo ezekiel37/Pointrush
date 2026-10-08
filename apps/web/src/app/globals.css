@@ -2757,6 +2757,170 @@
   .success-panel p {
     color: var(--color-muted);
   }
+  /* Help centre */
+  .help-page {
+    min-height: 100svh;
+    background:
+      radial-gradient(
+        40% 35% at 8% 20%,
+        rgb(212 242 90 / 0.28),
+        transparent 70%
+      ),
+      radial-gradient(
+        35% 30% at 92% 12%,
+        rgb(255 201 230 / 0.35),
+        transparent 70%
+      ),
+      radial-gradient(
+        45% 40% at 85% 85%,
+        rgb(18 132 98 / 0.14),
+        transparent 70%
+      ),
+      var(--color-canvas);
+  }
+  .help-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1rem clamp(1rem, 4vw, 2.5rem);
+  }
+  .help-shell {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: clamp(1.5rem, 5vw, 3.5rem) clamp(1rem, 4vw, 2.5rem) 5rem;
+  }
+  .help-intro {
+    text-align: center;
+    margin-bottom: clamp(1.75rem, 4vw, 2.75rem);
+  }
+  .help-intro h1 {
+    margin: 0 0 0.6rem;
+    font-size: clamp(2.2rem, 5.5vw, 3.4rem);
+    letter-spacing: -0.045em;
+    line-height: 1.05;
+  }
+  .help-intro p {
+    margin: 0 auto;
+    max-width: 46ch;
+    color: var(--color-muted);
+  }
+  .help-center {
+    display: grid;
+    grid-template-columns: minmax(220px, 300px) 1fr;
+    gap: 1.25rem;
+    align-items: start;
+    padding: clamp(1rem, 3vw, 1.75rem);
+    border-radius: 1.75rem;
+    background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+    border: 1px solid var(--color-line);
+    box-shadow: var(--shadow-float);
+    backdrop-filter: blur(18px);
+  }
+  .help-topics {
+    display: grid;
+    gap: 0.6rem;
+  }
+  .help-topics button {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    width: 100%;
+    padding: 0.95rem 1rem;
+    border: 1px solid var(--color-line);
+    border-radius: 0.9rem;
+    background: color-mix(in srgb, var(--color-surface) 55%, transparent);
+    color: var(--color-muted);
+    font: 500 0.95rem/1.2 var(--font-sans);
+    text-align: left;
+    cursor: pointer;
+    transition:
+      background 140ms,
+      color 140ms;
+  }
+  .help-topics button span {
+    flex: 1;
+  }
+  .help-topics button[aria-pressed='true'] {
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-weight: 600;
+    box-shadow: var(--shadow-card);
+  }
+  .help-topics button[aria-pressed='true'] > svg:first-child {
+    color: var(--color-brand-text);
+  }
+  .help-answers {
+    display: grid;
+    gap: 0.6rem;
+  }
+  .help-answers details {
+    border: 1px solid var(--color-line);
+    border-radius: 0.9rem;
+    background: color-mix(in srgb, var(--color-surface) 55%, transparent);
+    transition: background 140ms;
+  }
+  .help-answers details[open] {
+    background: var(--color-surface);
+    box-shadow: var(--shadow-card);
+  }
+  .help-answers summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.1rem;
+    font-weight: 550;
+    cursor: pointer;
+    list-style: none;
+  }
+  .help-answers summary::-webkit-details-marker {
+    display: none;
+  }
+  .help-toggle {
+    flex: none;
+    transition: transform 180ms;
+  }
+  .help-answers details[open] .help-toggle {
+    transform: rotate(45deg);
+  }
+  .help-answers details p {
+    margin: 0;
+    padding: 0 1.1rem 1.1rem;
+    color: var(--color-ink-soft);
+    line-height: 1.6;
+  }
+  .help-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem 1.75rem;
+    margin-top: 2rem;
+  }
+  @media (max-width: 760px) {
+    .help-center {
+      grid-template-columns: 1fr;
+      padding: 0.75rem;
+    }
+    /* Topics become a row of chips that scrolls sideways. */
+    .help-topics {
+      display: flex;
+      overflow-x: auto;
+      gap: 0.5rem;
+      padding-bottom: 0.25rem;
+      scrollbar-width: none;
+    }
+    .help-topics button {
+      flex: none;
+      width: auto;
+      padding: 0.6rem 0.9rem;
+      border-radius: 999px;
+    }
+    .help-topic-arrow {
+      display: none;
+    }
+  }
   .help {
     max-width: 760px;
     margin: auto;
