@@ -123,6 +123,10 @@ export default function Home() {
                 See how it works
               </a>
             </div>
+            <p className="lp-claim-link">
+              Found a code on a pack or card?{' '}
+              <Link href="/claim">Claim a prize code</Link>
+            </p>
             <dl className="lp-stats">
               <div>
                 <dt>To join</dt>

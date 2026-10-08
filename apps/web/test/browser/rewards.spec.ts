@@ -64,6 +64,20 @@ async function phone(page: Page) {
   await page.setViewportSize({ width: 390, height: 844 });
 }
 async function healthy(page: Page) {
+  // Measure the settled page: wait for time-based entrance animations (not
+  // looping or scroll-driven ones) so contrast is not read mid-fade.
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter(
+          (animation) =>
+            animation.timeline === document.timeline &&
+            animation.effect?.getComputedTiming().iterations !== Infinity,
+        )
+        .map((animation) => animation.finished.catch(() => undefined)),
+    ),
+  );
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   expect(
     await page.evaluate(
@@ -80,8 +94,10 @@ test('landing explains the product and leads to offers and claims', async ({
   await expect(page.getByRole('heading', { level: 1 })).toContainText(
     'Get paid',
   );
-  await expect(page.getByRole('link', { name: 'Find offers' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Claim a prize' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Start earning' })).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'Claim a prize code' }),
+  ).toHaveAttribute('href', '/claim');
   await healthy(page);
 });
 
@@ -165,7 +181,9 @@ test('prize claim keeps its identity across a dropped response and reveals the p
   );
   await page.getByRole('button', { name: 'Claim prize' }).click();
   await expect(page.getByText('₦5,000', { exact: true })).toBeVisible();
-  await expect(page.getByText('Added to your wallet')).toBeVisible();
+  await expect(
+    page.getByText('The money is in your Acticlaim wallet.'),
+  ).toBeVisible();
   expect(bodies).toHaveLength(2);
   expect(bodies[1]!.id).toBe(bodies[0]!.id);
   await healthy(page);
