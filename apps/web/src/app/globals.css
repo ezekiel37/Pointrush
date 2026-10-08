@@ -1377,13 +1377,129 @@
     padding-bottom: 0;
   }
   .lp-audience-icon {
-    display: grid;
-    place-items: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    background: var(--color-brand-soft);
     color: var(--color-brand-text);
+  }
+  /* Ways to earn: open rows, an illustration beside the words, no cards. */
+  .lp-ways {
+    display: grid;
+    gap: clamp(2.5rem, 6vw, 4rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .lp-ways li {
+    display: grid;
+    gap: 1rem;
+    align-items: center;
+  }
+  .lp-way-art {
+    width: min(100%, 300px);
+    justify-self: center;
+  }
+  .lp-way-text {
+    display: grid;
+    justify-items: start;
+    gap: 0.6rem;
+  }
+  .lp-ways h3 {
+    margin: 0;
+    font-size: clamp(1.35rem, 3.5vw, 1.9rem);
+    letter-spacing: -0.035em;
+  }
+  .lp-ways p {
+    margin: 0;
+    color: var(--color-muted);
+    max-width: 46ch;
+  }
+  .lp-ways .text-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  @media (min-width: 800px) {
+    .lp-ways li {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 4rem;
+    }
+    .lp-way-art {
+      width: min(100%, 360px);
+    }
+    /* Alternate sides so the page reads as a path, not a grid. */
+    .lp-ways li:nth-child(even) .lp-way-art {
+      order: 2;
+    }
+  }
+  /* Illustration colours, tied to the theme tokens. */
+  .ill {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+  .ill-soft {
+    fill: var(--color-brand-soft);
+  }
+  .ill-soft-strong {
+    fill: var(--color-mint);
+  }
+  .ill-surface {
+    fill: var(--color-surface);
+    stroke: var(--color-line);
+    stroke-width: 1.5;
+    filter: drop-shadow(0 14px 22px rgb(14 21 18 / 0.12));
+  }
+  .ill-sunken {
+    fill: var(--color-sunken);
+  }
+  .ill-line-fill {
+    fill: var(--color-line);
+  }
+  .ill-brand {
+    fill: var(--color-brand);
+  }
+  .ill-brand-text {
+    fill: var(--color-brand-text);
+  }
+  .ill-lime {
+    fill: var(--color-lime);
+  }
+  .ill-ink {
+    fill: var(--color-ink);
+    font-weight: 700;
+  }
+  .ill-muted {
+    fill: var(--color-muted);
+  }
+  .ill-mono {
+    font-family: var(--font-mono);
+    letter-spacing: 0.06em;
+  }
+  .ill-tick,
+  .ill-tick-dark {
+    fill: none;
+    stroke: #ffffff;
+    stroke-width: 3.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .ill-tick-dark {
+    stroke: #0e1512;
+  }
+  .ill-tick-sm {
+    stroke-width: 2.25;
+  }
+  .ill-band-mint {
+    fill: #5fd3a4;
+  }
+  .band-art {
+    position: relative;
+    width: min(100%, 300px);
+    justify-self: center;
+  }
+  @media (max-width: 640px) {
+    .band-art {
+      width: 180px;
+    }
   }
   .lp-social {
     display: flex;
@@ -1599,33 +1715,17 @@
   .lp-step-icon {
     position: relative;
     z-index: 1;
-    display: grid;
-    place-items: center;
-    width: 64px;
-    height: 64px;
-    border-radius: 20px;
-    background: var(--color-lime);
-    color: var(--color-on-lime);
-    box-shadow: 0 0 0 6px var(--color-canvas);
-  }
-  .lp-steps li:nth-child(2) .lp-step-icon {
-    background: var(--color-brand);
-    color: var(--color-on-fill);
-  }
-  .lp-steps li:nth-child(3) .lp-step-icon {
-    background: var(--color-ink-fill);
-    color: var(--color-on-fill);
+    color: var(--color-brand-text);
   }
   /* Dashed path joining the icons, on wide screens only. */
   @media (min-width: 800px) {
     .lp-steps li:not(:last-child)::after {
       content: '';
       position: absolute;
-      top: 32px;
-      left: 80px;
-      right: -1.5rem;
+      top: 16px;
+      left: 52px;
+      right: 1rem;
       border-top: 2px dashed var(--color-border);
-      opacity: 0.6;
     }
   }
   .lp-steps h3 {
@@ -2143,18 +2243,6 @@
     margin: 0;
     padding: 0;
   }
-  .feature-visual {
-    height: 190px;
-    margin: -1.35rem -1.35rem 1.25rem;
-    border-radius: var(--radius-card) var(--radius-card) 0 0;
-    background:
-      radial-gradient(80% 70% at 70% 0, var(--color-brand-soft), transparent),
-      var(--color-canvas);
-    display: grid;
-    place-items: center;
-    overflow: hidden;
-    position: relative;
-  }
   .steps {
     counter-reset: step;
     display: grid;
@@ -2464,6 +2552,10 @@
     gap: 2rem;
     align-items: center;
   }
+  /* Lets the heading and email form shrink to a phone's width. */
+  .band > .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .band::before {
     content: '';
     position: absolute;
@@ -2488,48 +2580,9 @@
     color: var(--color-on-fill);
     border-color: rgb(255 255 255 / 0.35);
   }
-  .band-cards {
-    position: relative;
-    height: 300px;
-  }
-  .band-cards .money-card-lime {
-    position: absolute;
-    right: 0;
-    top: 0;
-    transform: rotate(-6deg);
-  }
-  .band-cards .money-card-green {
-    position: absolute;
-    left: 0;
-    top: 110px;
-    transform: rotate(4deg);
-  }
   .promise-grid {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
     text-align: center;
-  }
-  .money-card {
-    position: relative;
-    width: min(85%, 300px);
-    aspect-ratio: 1.6;
-    padding: 1.2rem 1.3rem;
-    border-radius: 1.1rem;
-    color: var(--color-on-fill);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    box-shadow: 0 30px 60px -20px rgb(0 0 0 / 0.6);
-  }
-  .money-card-green {
-    background: linear-gradient(135deg, #1baf7a 0%, #0f6e50 55%, #0b4d39 100%);
-  }
-  .money-card-lime {
-    background: linear-gradient(135deg, #e8ff8a 0%, #d4f25a 45%, #9cc93a 100%);
-    color: var(--color-ink);
-  }
-  .money-card strong {
-    font-size: 1.7rem;
-    letter-spacing: -0.03em;
   }
   /* Account and auth journeys */
   .auth-layout {

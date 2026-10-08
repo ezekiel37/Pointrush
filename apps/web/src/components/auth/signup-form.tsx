@@ -1,11 +1,13 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { signupSchema } from '@/lib/forms';
 import { authClient, requireSuccess } from '@/lib/auth-client';
 import { useSubmit } from '@/lib/use-submit';
+import { safeNext, withNext } from '@/lib/next-path';
 import { Form } from '@/components/ui/form';
 import { Field } from '@/components/ui/field';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -15,6 +17,7 @@ import { PASSWORD_MIN_LENGTH } from '@pointrush/contracts';
 import { SIGNUP_EMAIL_KEY } from '@/components/landing/email-capture';
 export function SignupForm() {
   const [sent, setSent] = useState(false);
+  const next = safeNext(useSearchParams().get('next'));
   const submit = useSubmit();
   const {
     register,
@@ -51,7 +54,7 @@ export function SignupForm() {
         </p>
         <Link
           className={buttonVariants({ className: 'full-width' })}
-          href="/login"
+          href={withNext('/login', next)}
         >
           Continue to sign in
         </Link>
@@ -72,7 +75,7 @@ export function SignupForm() {
                 name,
                 email,
                 password,
-                callbackURL: `${window.location.origin}/login?verified=1`,
+                callbackURL: `${window.location.origin}/login?verified=1${next ? `&next=${encodeURIComponent(next)}` : ''}`,
               }),
             );
             resetField('password');
@@ -127,7 +130,8 @@ export function SignupForm() {
         </Button>
       </Form>
       <p className="form-switch">
-        Already have an account? <Link href="/login">Sign in</Link>
+        Already have an account?{' '}
+        <Link href={withNext('/login', next)}>Sign in</Link>
       </p>
     </>
   );

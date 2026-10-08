@@ -8,6 +8,7 @@ import { ArrowRight } from 'lucide-react';
 import { loginSchema } from '@/lib/forms';
 import { authClient, RequestError, requireSuccess } from '@/lib/auth-client';
 import { useSubmit } from '@/lib/use-submit';
+import { safeNext, withNext } from '@/lib/next-path';
 import { Form } from '@/components/ui/form';
 import { Field } from '@/components/ui/field';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ import { Feedback } from '@/components/ui/feedback';
 export function LoginForm() {
   const router = useRouter();
   const query = useSearchParams();
+  const next = safeNext(query.get('next'));
   const submit = useSubmit();
   const resend = useSubmit();
   // Set only after a correct password for an unconfirmed account, so it
@@ -66,7 +68,7 @@ export function LoginForm() {
               result.data.twoFactorRedirect
             )
               return;
-            router.replace('/account');
+            router.replace(next ?? '/account');
           }),
         )}
         aria-busy={submit.busy}
@@ -113,7 +115,7 @@ export function LoginForm() {
                     requireSuccess(
                       await authClient().sendVerificationEmail({
                         email: unverified,
-                        callbackURL: `${window.location.origin}/login?verified=1`,
+                        callbackURL: `${window.location.origin}/login?verified=1${next ? `&next=${encodeURIComponent(next)}` : ''}`,
                       }),
                     );
                     setResent(true);
@@ -134,7 +136,8 @@ export function LoginForm() {
         </Button>
       </Form>
       <p className="form-switch">
-        New to Acticlaim? <Link href="/signup">Create an account</Link>
+        New to Acticlaim?{' '}
+        <Link href={withNext('/signup', next)}>Create an account</Link>
       </p>
       <p className="small-note">
         <Link href="/verify-email">Resend verification email</Link>

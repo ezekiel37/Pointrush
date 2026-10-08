@@ -24,6 +24,12 @@ import {
 import { Brand } from '@/components/auth/auth-frame';
 import { EmailCapture } from '@/components/landing/email-capture';
 import { SocialLinks } from '@/components/landing/social-links';
+import {
+  LockedPoolIllustration,
+  PrizeIllustration,
+  RecordIllustration,
+  TillIllustration,
+} from '@/components/landing/illustrations';
 import { jobsEnabled } from '@/lib/features';
 
 export const metadata: Metadata = {
@@ -70,6 +76,28 @@ const audiences = [
         },
       ]
     : []),
+];
+
+const ways = [
+  {
+    art: <TillIllustration />,
+    title: 'Cash back when you buy',
+    body: 'Get a code on your phone and show it at the till. Staff confirm the purchase, and the cash back unlocks after the refund window.',
+  },
+  {
+    art: <PrizeIllustration />,
+    title: 'Prize codes that always win',
+    body: 'Found a code on a pack, card or receipt? Every code wins, and the prize money was locked before the codes were printed.',
+    // Claiming needs an account: sign in first, then return to Claim.
+    link: { href: '/login?next=/claim', label: 'Claim your code' },
+  },
+  {
+    art: <RecordIllustration jobs={jobsEnabled} />,
+    title: jobsEnabled ? 'Paid work with proof' : 'A record you earn',
+    body: jobsEnabled
+      ? 'Work for businesses with the pay locked in advance. Every approved job adds to a record nobody can fake.'
+      : 'Every confirmed purchase adds to a record nobody can fake: proof you are a real, regular customer.',
+  },
 ];
 
 export default function Home() {
@@ -125,7 +153,7 @@ export default function Home() {
             </div>
             <p className="lp-claim-link">
               Found a code on a pack or card?{' '}
-              <Link href="/claim">Claim a prize code</Link>
+              <Link href="/login?next=/claim">Claim a prize code</Link>
             </p>
             <dl className="lp-stats">
               <div>
@@ -278,9 +306,12 @@ export default function Home() {
           </div>
           <ol className="lp-steps">
             <li>
-              <span className="lp-step-icon" aria-hidden>
-                <Store size={26} strokeWidth={1.75} />
-              </span>
+              <Store
+                className="lp-step-icon"
+                size={32}
+                strokeWidth={1.6}
+                aria-hidden
+              />
               <h3>Pick an offer</h3>
               <p>
                 Cash back from a business near you, a prize code from a pack
@@ -288,9 +319,12 @@ export default function Home() {
               </p>
             </li>
             <li>
-              <span className="lp-step-icon" aria-hidden>
-                <BadgeCheck size={26} strokeWidth={1.75} />
-              </span>
+              <BadgeCheck
+                className="lp-step-icon"
+                size={32}
+                strokeWidth={1.6}
+                aria-hidden
+              />
               <h3>Do the real thing</h3>
               <p>
                 Buy as usual
@@ -301,9 +335,12 @@ export default function Home() {
               </p>
             </li>
             <li>
-              <span className="lp-step-icon" aria-hidden>
-                <Wallet size={26} strokeWidth={1.75} />
-              </span>
+              <Wallet
+                className="lp-step-icon"
+                size={32}
+                strokeWidth={1.6}
+                aria-hidden
+              />
               <h3>Get paid</h3>
               <p>
                 The money moves to your wallet. Withdraw to any Nigerian bank.
@@ -330,125 +367,21 @@ export default function Home() {
               happened: a purchase, a winning code or finished work.
             </p>
           </div>
-          <ul className="features">
-            <li className="card">
-              <div className="feature-visual" aria-hidden>
-                <div
-                  className="float"
-                  style={{
-                    position: 'static',
-                    animation: 'none',
-                    transform: 'rotate(-3deg)',
-                    textAlign: 'center',
-                  }}
-                >
-                  <span className="small-note">Show at the till</span>
-                  <strong
-                    className="num"
-                    style={{ fontFamily: 'var(--font-mono)' }}
-                  >
-                    7K4M2-PRDH9
-                  </strong>
-                  <div className="countdown-track" style={{ marginTop: 8 }}>
-                    <div
-                      className="countdown-fill"
-                      style={{ transform: 'scaleX(0.7)' }}
-                    />
-                  </div>
+          <ul className="lp-ways">
+            {ways.map(({ art, title, body, link }) => (
+              <li key={title}>
+                <div className="lp-way-art">{art}</div>
+                <div className="lp-way-text">
+                  <h3>{title}</h3>
+                  <p>{body}</p>
+                  {link && (
+                    <Link className="text-link" href={link.href}>
+                      {link.label} <ArrowRight size={14} aria-hidden />
+                    </Link>
+                  )}
                 </div>
-              </div>
-              <div
-                className="icon-line"
-                style={{ gap: '0.6rem', marginBottom: '0.5rem' }}
-              >
-                <ScanLine size={20} aria-hidden />
-                <h3 style={{ margin: 0 }}>Cash back when you buy</h3>
-              </div>
-              <p className="small-note">
-                Get a code, show it at the till, and the business confirms the
-                purchase. It unlocks after the refund window.
-              </p>
-            </li>
-            <li className="card">
-              <div className="feature-visual" aria-hidden>
-                <div
-                  style={{
-                    width: 190,
-                    padding: '1rem',
-                    borderRadius: 14,
-                    background: 'linear-gradient(135deg,#1baf7a,#0f6e50)',
-                    color: '#fff',
-                    boxShadow: 'var(--shadow-float)',
-                    transform: 'rotate(3deg)',
-                  }}
-                >
-                  <span style={{ fontSize: 12, opacity: 0.85 }}>
-                    Every code wins
-                  </span>
-                  <div
-                    style={{
-                      marginTop: 10,
-                      padding: '0.5rem',
-                      borderRadius: 8,
-                      background:
-                        'linear-gradient(90deg,#d4f25a 0 55%, #c9ccc9 55%)',
-                      color: '#0e1512',
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 12,
-                      fontWeight: 600,
-                    }}
-                  >
-                    AC-7K4M-9X…
-                  </div>
-                </div>
-              </div>
-              <div
-                className="icon-line"
-                style={{ gap: '0.6rem', marginBottom: '0.5rem' }}
-              >
-                <TicketCheck size={20} aria-hidden />
-                <h3 style={{ margin: 0 }}>Prizes you can trust</h3>
-              </div>
-              <p className="small-note">
-                Found a code on a pack or card? Claim it here. Every code wins,
-                and the prize money was locked before the codes were printed.
-              </p>
-            </li>
-            <li className="card">
-              <div className="feature-visual" aria-hidden>
-                <div
-                  className="float"
-                  style={{ position: 'static', animation: 'none', width: 200 }}
-                >
-                  <div className="row">
-                    <strong style={{ fontSize: '0.95rem' }}>Tolu A.</strong>
-                    <span className="chip chip-tier">Bronze</span>
-                  </div>
-                  <span className="small-note">
-                    {jobsEnabled
-                      ? '6 paid jobs · 2 repeat clients'
-                      : '23 purchases · 7 businesses'}
-                  </span>
-                  <span className="badge" style={{ marginTop: 8 }}>
-                    <BadgeCheck size={13} /> Verified record
-                  </span>
-                </div>
-              </div>
-              <div
-                className="icon-line"
-                style={{ gap: '0.6rem', marginBottom: '0.5rem' }}
-              >
-                <BadgeCheck size={20} aria-hidden />
-                <h3 style={{ margin: 0 }}>
-                  {jobsEnabled ? 'Paid work with proof' : 'A record you earn'}
-                </h3>
-              </div>
-              <p className="small-note">
-                {jobsEnabled
-                  ? 'Work for businesses with the pay locked in advance. Every paid job adds to a record nobody can fake.'
-                  : 'Every confirmed purchase adds to a public record nobody can fake: proof you are a real, regular customer.'}
-              </p>
-            </li>
+              </li>
+            ))}
           </ul>
         </section>
 
@@ -472,9 +405,12 @@ export default function Home() {
           <ul className="features">
             {audiences.map(({ icon: Icon, who, title, body, cta }) => (
               <li key={who} className="lp-audience">
-                <span className="lp-audience-icon" aria-hidden>
-                  <Icon size={20} />
-                </span>
+                <Icon
+                  className="lp-audience-icon"
+                  size={28}
+                  strokeWidth={1.6}
+                  aria-hidden
+                />
                 <p className="eyebrow" style={{ margin: 0 }}>
                   {who}
                 </p>
@@ -504,23 +440,8 @@ export default function Home() {
               How it works <ArrowRight size={14} aria-hidden />
             </Link>
           </div>
-          <div className="band-cards" aria-hidden>
-            <div className="money-card money-card-lime">
-              <span style={{ fontSize: 13, fontWeight: 600 }}>
-                Prize pool · locked
-              </span>
-              <strong>₦50,000</strong>
-              <span style={{ fontSize: 12 }}>10 prizes of ₦5,000</span>
-            </div>
-            <div className="money-card money-card-green">
-              <span style={{ fontSize: 13, opacity: 0.85 }}>
-                Cash back · locked
-              </span>
-              <strong>₦50,000</strong>
-              <span style={{ fontSize: 12, opacity: 0.85 }}>
-                100 buyers × ₦500
-              </span>
-            </div>
+          <div className="band-art">
+            <LockedPoolIllustration />
           </div>
         </section>
       </main>

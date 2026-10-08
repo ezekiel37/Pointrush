@@ -97,7 +97,7 @@ test('landing explains the product and leads to offers and claims', async ({
   await expect(page.getByRole('link', { name: 'Start earning' })).toBeVisible();
   await expect(
     page.getByRole('link', { name: 'Claim a prize code' }),
-  ).toHaveAttribute('href', '/claim');
+  ).toHaveAttribute('href', '/login?next=/claim');
   await healthy(page);
 });
 
