@@ -8,6 +8,16 @@ import { backingNaira, workDate } from '@/lib/work-format';
 import { Button } from '@/components/ui/button';
 import { Feedback, Loading } from '@/components/ui/feedback';
 import { WorkFrame, WorkFailure } from './work-frame';
+import {
+  CalendarClock,
+  CalendarDays,
+  CircleX,
+  FileCheck2,
+  ListChecks,
+  Scale,
+  ShieldCheck,
+  Users,
+} from 'lucide-react';
 export function TaskDetail({ id }: { id: string }) {
   const { data, error, loading, refresh } = useWorkRead(
     `tasks/${encodeURIComponent(id)}`,
@@ -39,40 +49,77 @@ export function TaskDetail({ id }: { id: string }) {
       ) : (
         data && (
           <>
-            <section className="account-panel">
-              <p className="eyebrow">Reward after approval</p>
-              <h2>{backingNaira(data.rewardBackingKobo)}</h2>
-              <p>
-                The business has already set this aside. It is paid into your
-                wallet when your work is approved.
-              </p>
-              <dl className="work-facts">
+            <section className="job-hero">
+              <div>
+                <p className="eyebrow">Pay after approval</p>
+                <p className="job-hero-pay">
+                  {backingNaira(data.rewardBackingKobo)}
+                </p>
+                <p className="small-note" style={{ margin: 0 }}>
+                  <ShieldCheck size={14} aria-hidden /> The business has already
+                  set this aside. It is paid into your wallet when your work is
+                  approved.
+                </p>
+              </div>
+              <dl className="job-facts">
                 <div>
-                  <dt>Opens</dt>
+                  <dt>
+                    <CalendarDays size={15} aria-hidden /> Opens
+                  </dt>
                   <dd>{workDate(data.startsAt)}</dd>
                 </div>
                 <div>
-                  <dt>Complete before</dt>
+                  <dt>
+                    <CalendarClock size={15} aria-hidden /> Complete before
+                  </dt>
                   <dd>{workDate(data.endsAt)}</dd>
                 </div>
                 <div>
-                  <dt>Places claimed</dt>
+                  <dt>
+                    <Users size={15} aria-hidden /> Places claimed
+                  </dt>
                   <dd>
                     {data.claimed} of {data.capacity}
                   </dd>
                 </div>
               </dl>
             </section>
-            <section className="account-panel">
-              <h2>What to do</h2>
-              <p className="work-prose">{data.instructions}</p>
-              <h2>What to submit</h2>
-              <p className="work-prose">{data.proofRequirements}</p>
-              <h2>Why work may be rejected</h2>
-              <p className="work-prose">{data.rejectionCriteria}</p>
+            <section className="account-panel job-brief">
+              <div className="job-brief-item">
+                <span className="job-brief-icon" aria-hidden>
+                  <ListChecks size={18} />
+                </span>
+                <div>
+                  <h2>What to do</h2>
+                  <p className="work-prose">{data.instructions}</p>
+                </div>
+              </div>
+              <div className="job-brief-item">
+                <span className="job-brief-icon" aria-hidden>
+                  <FileCheck2 size={18} />
+                </span>
+                <div>
+                  <h2>What to submit</h2>
+                  <p className="work-prose">{data.proofRequirements}</p>
+                </div>
+              </div>
+              <div className="job-brief-item">
+                <span
+                  className="job-brief-icon job-brief-icon-warn"
+                  aria-hidden
+                >
+                  <CircleX size={18} />
+                </span>
+                <div>
+                  <h2>Why work may be rejected</h2>
+                  <p className="work-prose">{data.rejectionCriteria}</p>
+                </div>
+              </div>
             </section>
             <section className="account-panel">
-              <h2>Review and your right to appeal</h2>
+              <h2 className="icon-heading">
+                <Scale size={18} aria-hidden /> Review and your right to appeal
+              </h2>
               <p>
                 The sponsor aims to review within {data.workTerms.reviewHours}{' '}
                 hours. A delayed review does not automatically approve or reject

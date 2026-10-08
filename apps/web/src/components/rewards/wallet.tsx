@@ -1,6 +1,8 @@
 'use client';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
+import type { ReactNode } from 'react';
+import { Check, Eye, EyeOff } from 'lucide-react';
 import { Page } from '@/components/shell/app-shell';
 import { Button } from '@/components/ui/button';
 import { Feedback, Loading } from '@/components/ui/feedback';
@@ -27,7 +29,68 @@ const stateLabel = {
   voided: ['Withdrawn by business', 'chip chip-muted'],
 } as const;
 
+const HIDE_KEY = 'acticlaim:hide-balances';
+
+// Hides balances on this device (for example in public). Saved per device;
+// if storage is blocked, the choice lasts until the page reloads.
+const hideEvent = 'acticlaim:hide-balances';
+let memoryHidden = false;
+function readHidden() {
+  try {
+    return localStorage.getItem(HIDE_KEY) === '1';
+  } catch {
+    return memoryHidden;
+  }
+}
+function subscribeHidden(notify: () => void) {
+  window.addEventListener('storage', notify);
+  window.addEventListener(hideEvent, notify);
+  return () => {
+    window.removeEventListener('storage', notify);
+    window.removeEventListener(hideEvent, notify);
+  };
+}
+function useHiddenBalances() {
+  const hidden = useSyncExternalStore(subscribeHidden, readHidden, () => false);
+  function toggle() {
+    memoryHidden = !hidden;
+    try {
+      localStorage.setItem(HIDE_KEY, memoryHidden ? '1' : '0');
+    } catch {
+      // Storage blocked: memoryHidden carries the choice.
+    }
+    window.dispatchEvent(new Event(hideEvent));
+  }
+  return [hidden, toggle] as const;
+}
+
+function Step({
+  done,
+  title,
+  children,
+}: {
+  done: boolean;
+  title: string;
+  children?: ReactNode;
+}) {
+  return (
+    <li className={`ready-step ${done ? 'ready-step-done' : ''}`}>
+      <span className="ready-step-mark" aria-hidden>
+        {done && <Check size={14} strokeWidth={3} />}
+      </span>
+      <div>
+        <p className="ready-step-title">
+          {title}
+          <span className="sr-only">{done ? ' (done)' : ' (to do)'}</span>
+        </p>
+        {!done && children}
+      </div>
+    </li>
+  );
+}
+
 export function Wallet() {
+  const [hidden, toggleHidden] = useHiddenBalances();
   const summary = useApiRead('points', pointsSummary);
   const purchases = useApiRead('purchases?limit=30', purchasePage);
   const withdrawals = useApiRead('wallet/withdrawals?limit=10', withdrawalPage);
@@ -91,20 +154,36 @@ export function Wallet() {
                   borderColor: 'var(--color-ink-fill)',
                 }}
               >
-                <p
-                  className="eyebrow"
-                  style={{
-                    color:
-                      'color-mix(in srgb, var(--color-on-fill) 72%, transparent)',
-                  }}
-                >
-                  In your wallet
-                </p>
+                <div className="row">
+                  <p
+                    className="eyebrow"
+                    style={{
+                      margin: 0,
+                      color:
+                        'color-mix(in srgb, var(--color-on-fill) 72%, transparent)',
+                    }}
+                  >
+                    In your wallet
+                  </p>
+                  <button
+                    type="button"
+                    className="eye-toggle"
+                    aria-pressed={hidden}
+                    aria-label={hidden ? 'Show balances' : 'Hide balances'}
+                    onClick={toggleHidden}
+                  >
+                    {hidden ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
                 <p
                   className="amount amount-xl"
                   style={{ margin: '0.25rem 0 0.75rem' }}
                 >
-                  {naira(data.walletKobo)}
+                  {hidden ? (
+                    <span aria-label="Balance hidden">₦ ••••••</span>
+                  ) : (
+                    naira(data.walletKobo)
+                  )}
                 </p>
                 {data.phoneVerified &&
                 !bank.data?.locked &&
@@ -160,7 +239,11 @@ export function Wallet() {
                   className="amount amount-xl amount-pending"
                   style={{ margin: '0.25rem 0 0.75rem' }}
                 >
-                  {naira(held.toString())}
+                  {hidden ? (
+                    <span aria-label="Balance hidden">₦ ••••</span>
+                  ) : (
+                    naira(held.toString())
+                  )}
                 </p>
                 <p className="small-note">
                   Held during each business&apos;s refund window. Not yet yours
@@ -168,6 +251,39 @@ export function Wallet() {
                 </p>
               </div>
             </section>
+
+            {!(data.phoneVerified && bank.data?.destination) && (
+              <section className="card ready" aria-labelledby="ready-heading">
+                <h2 id="ready-heading">Get ready to withdraw</h2>
+                <p className="small-note">
+                  Two quick checks keep your money going to you and nobody else.
+                </p>
+                <ol className="ready-steps">
+                  <Step done={data.phoneVerified} title="Verify your phone">
+                    <p className="small-note">
+                      One number per person.{' '}
+                      <Link href="/verify-phone?next=/wallet">
+                        Verify your phone
+                      </Link>
+                    </p>
+                  </Step>
+                  <Step
+                    done={Boolean(bank.data?.destination)}
+                    title="Add a bank account in your name"
+                  >
+                    <p className="small-note">
+                      {data.phoneVerified
+                        ? 'Add it below. We check the name with your bank.'
+                        : 'You can add it right after your phone is verified.'}
+                    </p>
+                  </Step>
+                  <Step
+                    done={BigInt(data.walletKobo) >= minWithdrawKobo}
+                    title="Have ₦1,000 or more in your wallet"
+                  />
+                </ol>
+              </section>
+            )}
 
             {data.phoneVerified && bank.data && (
               <BankAccount

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { z } from 'zod';
 import { ArrowRight, Plus } from 'lucide-react';
-import { AreaChart } from '@/components/charts/area-chart';
+import { BarChart } from '@/components/charts/bar-chart';
 import { StatusBreakdown } from '@/components/charts/status-breakdown';
 import { Button } from '@/components/ui/button';
 import { Feedback, Loading } from '@/components/ui/feedback';
@@ -118,12 +118,12 @@ export function BusinessHome() {
             }}
           >
             <dl className="stat-row" style={{ margin: 0 }}>
-              <div className="stat">
+              <div className="stat stat-primary">
                 <dt>Available to spend</dt>
                 <dd>{naira(data.availableKobo)}</dd>
               </div>
               <div className="stat">
-                <dt>Money locked</dt>
+                <dt>Locked in campaigns</dt>
                 <dd>{naira(data.lockedKobo)}</dd>
               </div>
               <div className="stat">
@@ -151,7 +151,7 @@ export function BusinessHome() {
                       : ''}
                   </p>
                 </div>
-                <AreaChart
+                <BarChart
                   height={280}
                   label={`Confirmed purchases per day, last ${data.days} days`}
                   unit={(v) =>

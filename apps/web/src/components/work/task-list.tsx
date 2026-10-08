@@ -7,6 +7,18 @@ import { backingNaira, workDate } from '@/lib/work-format';
 import { Loading } from '@/components/ui/feedback';
 import { WorkFrame, WorkFailure } from './work-frame';
 import { TaskSearch } from './task-search';
+import { CalendarClock, Users } from 'lucide-react';
+
+function initials(name: string) {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((word) => word[0]!.toUpperCase())
+      .join('') || '?'
+  );
+}
 export function TaskList() {
   const params = useSearchParams();
   const q = params.get('q') ?? '';
@@ -49,28 +61,51 @@ export function TaskList() {
                 </p>
               </section>
             ) : (
-              <ul className="work-list">
-                {data.items.map((task) => (
-                  <li className="account-panel" key={task.id}>
-                    <p className="eyebrow">{task.businessName}</p>
-                    <h2>
-                      <Link className="text-link" href={`/tasks/${task.id}`}>
-                        {task.title}
-                      </Link>
-                    </h2>
-                    <p>
-                      <strong>{backingNaira(task.rewardBackingKobo)}</strong>{' '}
-                      reward value after approval
-                    </p>
-                    <p className="small-note">
-                      Opens {workDate(task.startsAt)} · Closes{' '}
-                      {workDate(task.endsAt)}
-                    </p>
-                    <p className="small-note">
-                      {task.claimed} of {task.capacity} places claimed
-                    </p>
-                  </li>
-                ))}
+              <ul className="job-grid">
+                {data.items.map((task) => {
+                  const left = Math.max(0, task.capacity - task.claimed);
+                  return (
+                    <li className="job-card" key={task.id}>
+                      <div className="job-top">
+                        <span className="job-avatar" aria-hidden>
+                          {initials(task.businessName)}
+                        </span>
+                        <span className="job-business">
+                          {task.businessName}
+                        </span>
+                        <span className="job-pay">
+                          {backingNaira(task.rewardBackingKobo)}
+                        </span>
+                      </div>
+                      <h2>
+                        <Link className="job-link" href={`/tasks/${task.id}`}>
+                          {task.title}
+                        </Link>
+                      </h2>
+                      <p className="job-meta">
+                        <span>
+                          <CalendarClock size={15} aria-hidden /> Closes{' '}
+                          {workDate(task.endsAt)}
+                        </span>
+                        <span>
+                          <Users size={15} aria-hidden /> {left}{' '}
+                          {left === 1 ? 'place' : 'places'} left of{' '}
+                          {task.capacity}
+                        </span>
+                      </p>
+                      <div className="job-fill" aria-hidden>
+                        <i
+                          style={{
+                            width: `${Math.min(100, (task.claimed / Math.max(1, task.capacity)) * 100)}%`,
+                          }}
+                        />
+                      </div>
+                      <p className="small-note" style={{ margin: 0 }}>
+                        Paid to your wallet after approval
+                      </p>
+                    </li>
+                  );
+                })}
               </ul>
             )}
             <nav aria-label="Task pages" className="flex flex-wrap gap-4">

@@ -4,9 +4,11 @@ import type { KeyboardEvent, PointerEvent } from 'react';
 
 export type Point = { label: string; detail: string; value: number };
 
-// Single-series area chart (dataviz specs): 2px line, 10% wash, hairline grid,
-// clean y ticks, crosshair + tooltip on pointer and keyboard, and a table view.
-export function AreaChart({
+// Single-series daily column chart (dataviz specs): columns at most 24px wide
+// with a 4px rounded top and a square base, hairline grid, clean y ticks, a
+// whole-day hit target with tooltip on pointer and keyboard, and a table view.
+// Columns suit small daily counts better than a line between them.
+export function BarChart({
   points,
   label,
   unit,
@@ -38,28 +40,30 @@ export function AreaChart({
   const step = peak <= 4 ? 1 : 10 ** Math.floor(Math.log10(peak / 2));
   const max = Math.max(4, Math.ceil(peak / step / 2) * step * 2);
   const ticks = [0, max / 2, max];
-  const x = (i: number) =>
-    pad.left +
-    (points.length <= 1 ? innerW / 2 : (i / (points.length - 1)) * innerW);
+  const band = innerW / Math.max(1, points.length);
+  const barW = Math.max(3, Math.min(24, band - 2, band * 0.7));
+  // Centre of each day's band.
+  const x = (i: number) => pad.left + band * (i + 0.5);
   const y = (v: number) => pad.top + innerH - (v / max) * innerH;
-  const line = points
-    .map(
-      (p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(p.value).toFixed(1)}`,
-    )
-    .join(' ');
-  const area = points.length
-    ? `${line} L${x(points.length - 1)} ${pad.top + innerH} L${x(0)} ${pad.top + innerH}Z`
-    : '';
-  const every = points.length > 10 ? Math.ceil(points.length / 6) : 1;
+  const base = pad.top + innerH;
+  // Rounded top (4px, smaller for short bars), square at the baseline.
+  function column(i: number, value: number) {
+    const left = x(i) - barW / 2;
+    const top = y(value);
+    const r = Math.min(4, barW / 2, base - top);
+    return `M${left} ${base} V${top + r} Q${left} ${top} ${left + r} ${top} H${left + barW - r} Q${left + barW} ${top} ${left + barW} ${top + r} V${base} Z`;
+  }
+  // As many date labels as fit at about 64px each.
+  const fit = Math.max(2, Math.floor(innerW / 64));
+  const every = Math.max(1, Math.ceil(points.length / fit));
 
   function nearest(event: PointerEvent<SVGSVGElement>) {
     const rect = event.currentTarget.getBoundingClientRect();
     const px = ((event.clientX - rect.left) / rect.width) * width;
-    const ratio = (px - pad.left) / innerW;
     setActive(
       Math.min(
         points.length - 1,
-        Math.max(0, Math.round(ratio * (points.length - 1))),
+        Math.max(0, Math.floor((px - pad.left) / band)),
       ),
     );
   }
@@ -95,20 +99,6 @@ export function AreaChart({
         onPointerMove={nearest}
         onPointerLeave={() => setActive(null)}
       >
-        <defs>
-          <linearGradient id="area-wash" x1="0" y1="0" x2="0" y2="1">
-            <stop
-              offset="0"
-              stopColor="var(--color-brand)"
-              stopOpacity="0.14"
-            />
-            <stop
-              offset="1"
-              stopColor="var(--color-brand)"
-              stopOpacity="0.02"
-            />
-          </linearGradient>
-        </defs>
         {ticks.map((t) => (
           <g key={t}>
             <line
@@ -131,7 +121,7 @@ export function AreaChart({
         {points.map((p, i) =>
           // Always label the last day; skip a regular label too close to it.
           i === points.length - 1 ||
-          (i % every === 0 && points.length - 1 - i >= every * 0.6) ? (
+          (i % every === 0 && points.length - 1 - i >= every) ? (
             <text
               key={p.detail}
               className="chart-axis"
@@ -145,44 +135,24 @@ export function AreaChart({
             </text>
           ) : null,
         )}
-        <path d={area} fill="url(#area-wash)" />
-        <path
-          d={line}
-          fill="none"
-          stroke="var(--color-brand)"
-          strokeWidth="2"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-        {points.length > 0 && (
-          <circle
-            cx={x(points.length - 1)}
-            cy={y(points[points.length - 1]!.value)}
-            r="4"
-            fill="var(--color-brand)"
-            stroke="var(--color-surface)"
-            strokeWidth="2"
-          />
+        {points.map((p, i) =>
+          p.value > 0 ? (
+            <path
+              key={p.detail}
+              d={column(i, p.value)}
+              fill="var(--color-series-main)"
+              opacity={active === null || active === i ? 1 : 0.35}
+            />
+          ) : null,
         )}
-        {point && active !== null && (
-          <g>
-            <line
-              x1={x(active)}
-              x2={x(active)}
-              y1={pad.top}
-              y2={pad.top + innerH}
-              stroke="var(--color-faint)"
-              strokeWidth="1"
-            />
-            <circle
-              cx={x(active)}
-              cy={y(point.value)}
-              r="5"
-              fill="var(--color-brand)"
-              stroke="var(--color-surface)"
-              strokeWidth="2"
-            />
-          </g>
+        {active !== null && (
+          <rect
+            className="chart-band"
+            x={pad.left + band * active}
+            y={pad.top}
+            width={band}
+            height={innerH}
+          />
         )}
       </svg>
       {point && active !== null && (
