@@ -75,7 +75,9 @@ test('joining requires reading terms, locks duplicate submits and explains rewar
   });
   await page.goto(`/tasks/${id}`);
   await expect(page.getByRole('button', { name: 'Join task' })).toBeDisabled();
-  await expect(page.getByText(/Cash withdrawal/)).toBeVisible();
+  await expect(
+    page.getByText(/paid into your\s+wallet when your work is approved/),
+  ).toBeVisible();
   await page.getByRole('checkbox').check();
   await page.getByRole('button', { name: 'Join task' }).click();
   await expect.poll(() => posts).toBe(1);

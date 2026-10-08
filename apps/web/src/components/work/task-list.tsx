@@ -36,7 +36,8 @@ export function TaskList() {
         data && (
           <>
             <p role="status" className="small-note">
-              {data.items.length} tasks on this page
+              {data.items.length} {data.items.length === 1 ? 'task' : 'tasks'}{' '}
+              on this page
             </p>
             {data.items.length === 0 ? (
               <section className="account-panel">

@@ -129,7 +129,9 @@ export function AreaChart({
           </g>
         ))}
         {points.map((p, i) =>
-          i % every === 0 || i === points.length - 1 ? (
+          // Always label the last day; skip a regular label too close to it.
+          i === points.length - 1 ||
+          (i % every === 0 && points.length - 1 - i >= every * 0.6) ? (
             <text
               key={p.detail}
               className="chart-axis"

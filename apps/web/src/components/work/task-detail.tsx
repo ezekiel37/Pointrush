@@ -43,8 +43,8 @@ export function TaskDetail({ id }: { id: string }) {
               <p className="eyebrow">Reward after approval</p>
               <h2>{backingNaira(data.rewardBackingKobo)}</h2>
               <p>
-                This is the value set aside for approved work. Cash withdrawal
-                and reward redemption are not available in this version.
+                The business has already set this aside. It is paid into your
+                wallet when your work is approved.
               </p>
               <dl className="work-facts">
                 <div>
