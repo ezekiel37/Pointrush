@@ -98,13 +98,9 @@ export default function Home() {
       >
         <section className="lp-hero3" aria-labelledby="hero-heading">
           <div className="lp-hero3-copy">
-            <Link className="lp-kicker" href="/help">
-              <span className="lp-kicker-line" aria-hidden />
-              <span className="lp-kicker-dot" aria-hidden>
-                <ArrowRight size={14} />
-              </span>
+            <p className="lp-kicker">
               Free to join. <b>Paid to your bank.</b>
-            </Link>
+            </p>
             <h1 id="hero-heading">
               <span className="lp-h-light">Get paid back</span>
               <span className="lp-h-bold">for what you</span>

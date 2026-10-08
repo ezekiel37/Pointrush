@@ -1386,30 +1386,14 @@
     justify-items: start;
     gap: 1.5rem;
   }
-  .lp-kicker {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.55rem;
+  .lp-hero3-copy > .lp-kicker {
+    margin: 0;
     font-size: 0.9rem;
     color: var(--color-ink-soft);
-    text-decoration: none;
   }
   .lp-kicker b {
     font-weight: 650;
     color: var(--color-ink);
-  }
-  .lp-kicker-line {
-    width: 2.25rem;
-    height: 1px;
-    background: var(--color-ink);
-  }
-  .lp-kicker-dot {
-    display: grid;
-    place-items: center;
-    width: 26px;
-    height: 26px;
-    border: 1px solid var(--color-ink);
-    border-radius: 50%;
   }
   .lp-hero3 h1 {
     display: grid;
@@ -1431,11 +1415,6 @@
     letter-spacing: -0.03em;
     font-size: 1.12em;
     color: var(--color-brand-text);
-    background: linear-gradient(
-      transparent 68%,
-      rgb(212 242 90 / 0.75) 68% 90%,
-      transparent 90%
-    );
     justify-self: start;
     padding-right: 0.1em;
   }
@@ -1937,12 +1916,25 @@
       left: 0;
       bottom: 6%;
     }
+    .lp-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0;
+      width: 100%;
+    }
     .lp-stats div {
-      padding-right: 0.9rem;
-      margin-right: 0.4rem;
+      align-content: start;
+      padding: 0 0.6rem;
+      margin: 0;
+    }
+    .lp-stats div:first-child {
+      padding-left: 0;
     }
     .lp-stats dd {
-      font-size: 1.3rem;
+      font-size: 1.15rem;
+    }
+    .lp-stats dt {
+      font-size: 0.72rem;
     }
     .lp-capture .button {
       padding: 0 1rem;
