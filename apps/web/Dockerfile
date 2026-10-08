@@ -11,14 +11,14 @@ COPY packages/contracts/package.json packages/contracts/package.json
 RUN npm ci --workspace @pointrush/web --workspace @pointrush/contracts --include-workspace-root --ignore-scripts
 COPY packages/contracts packages/contracts
 COPY apps/web apps/web
-# Public settings are fixed into the website when it is built.
+# Public settings are fixed into the website when it is built. Without
+# NEXT_PUBLIC_API_ORIGIN the site uses api.<its own domain>.
 ARG NEXT_PUBLIC_API_ORIGIN
-ARG NEXT_PUBLIC_FEATURE_JOBS=off
+ARG NEXT_PUBLIC_FEATURE_JOBS=on
 ENV NEXT_PUBLIC_API_ORIGIN=$NEXT_PUBLIC_API_ORIGIN \
     NEXT_PUBLIC_FEATURE_JOBS=$NEXT_PUBLIC_FEATURE_JOBS \
     NEXT_OUTPUT=standalone \
     NEXT_TELEMETRY_DISABLED=1
-RUN test -n "$NEXT_PUBLIC_API_ORIGIN" || { echo "NEXT_PUBLIC_API_ORIGIN must be set when building, for example https://api.acticlaim.com" >&2; exit 1; }
 RUN npm run build --workspace @pointrush/contracts && npm run build --workspace @pointrush/web
 
 FROM node:24-bookworm-slim AS runtime

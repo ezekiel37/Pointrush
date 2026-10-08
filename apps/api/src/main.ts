@@ -21,7 +21,7 @@ async function bootstrap(): Promise<void> {
         provider: smsProvider(config.sms),
         ...(config.sms ? { config: config.sms } : {}),
       },
-      { jobs: config.jobsEnabled ?? false },
+      { jobs: config.jobsEnabled ?? true },
     ),
     {
       logger: new ConsoleLogger({ json: true }),

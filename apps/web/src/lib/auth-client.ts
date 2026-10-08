@@ -1,5 +1,7 @@
 import { createAuthClient } from 'better-auth/react';
 import { twoFactorClient } from 'better-auth/client/plugins';
+import { apiOrigin } from './api-origin';
+export { apiOrigin };
 type AuthClientOptions = {
   baseURL: string;
   basePath: string;
@@ -13,18 +15,6 @@ type AuthClientOptions = {
 type PointRushAuthClient = ReturnType<
   typeof createAuthClient<AuthClientOptions>
 >;
-export function apiOrigin(): string {
-  const value = process.env.NEXT_PUBLIC_API_ORIGIN;
-  if (!value) throw new Error('API configuration unavailable');
-  const url = new URL(value);
-  const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
-  if (
-    url.origin !== value ||
-    (url.protocol !== 'https:' && !(local && url.protocol === 'http:'))
-  )
-    throw new Error('Invalid API configuration');
-  return value;
-}
 let client: PointRushAuthClient | undefined;
 // Lazy: missing configuration produces a recoverable UI error, not a broken build.
 export function authClient() {

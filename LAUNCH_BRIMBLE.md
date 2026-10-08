@@ -31,7 +31,9 @@ Brimble's screens may name things slightly differently from these steps. If a st
 ## 3. Create the server on Brimble
 
 1. **New project → Import from GitHub** and choose `Pointrush`, branch `develop`.
-2. Choose **Docker** deployment with the Dockerfile `apps/api/Dockerfile`. The build must use the **repository root** as its folder (the Dockerfile copies files from several folders). If the build fails with "file not found", tell Claude.
+2. **Root directory**: `./`. **Framework**: Docker. Brimble builds the `Dockerfile` at the top of the repository, which is the server (a copy of `apps/api/Dockerfile`). Build, start, install and output fields are ignored.
+   **Pre-start command**: `node apps/api/dist/database/migrate-cli.js` (sets up or updates the database every time the server starts).
+   Keep the `PORT` secret Brimble adds; the server listens on it.
 3. **Region: Germany.** It is close to the Supabase database, and every request makes several database trips.
 4. **Size**: the smallest available (0.5–1 vCPU, 512 MB–1 GB memory) is enough. Use one instance; the Hacker plan has no autoscaling.
 5. **Port**: 8080. **Health check path**: `/api/v1/health/live`.
@@ -85,13 +87,12 @@ Create three cron jobs on the server project:
 
 | Name    | Command                                            | Schedule                        |
 | ------- | -------------------------------------------------- | ------------------------------- |
-| migrate | `node apps/api/dist/database/migrate-cli.js`       | `0 0 1 1 *` (only run by hand)  |
 | emails  | `node apps/api/dist/auth/email-worker-cli.js`      | `* * * * *` (every minute)      |
 | payouts | `node apps/api/dist/payments/payout-worker-cli.js` | `*/5 * * * *` (every 5 minutes) |
 
 Then:
 
-1. Open **migrate** and press **Run now**. The run history shows `Database migrations completed.` Run it again after every update.
+1. The database is set up by the server's pre-start command; its log shows `Database migrations completed.`
 2. Check that **emails** and **payouts** run, and that their history shows `auth_email_batch` and `payout_batch`.
 
 If verification emails never arrive, check the Resend key and domain. With a wrong key the emails job shows `"dead"` and drops those emails; people can ask for a new one from the sign-in page.
@@ -99,19 +100,19 @@ If verification emails never arrive, check the Resend key and domain. With a wro
 ## 8. The website (Brimble)
 
 1. In the same Brimble project, add a **second app** from the same repository and branch (`develop`).
-2. Choose **Docker** with the Dockerfile `apps/web/Dockerfile`, again building from the **repository root**.
-3. **Region: Germany**, the smallest size, one instance. **Port**: 3000. **Health check path**: `/login`.
-4. **Environment variables** (the website reads these while it is being built):
-   - `NEXT_PUBLIC_API_ORIGIN` = `https://api.acticlaim.com`
-   - `NEXT_PUBLIC_FEATURE_JOBS` = `on`
-
-   If the build stops with "NEXT_PUBLIC_API_ORIGIN must be set when building", Brimble is not passing variables to the build; tell Claude.
+2. **Root directory**: `./`. **Framework**: not Docker (the top-level Dockerfile is the server). Choose **Next.js** or **Other** and set:
+   - **Install command**: `npm ci`
+   - **Build command**: `npm run build --workspace @pointrush/contracts && npm run build --workspace @pointrush/web`
+   - **Start command**: `npm run start --workspace @pointrush/web`
+   - **Output directory**: empty
+3. **Region: Germany**, the smallest size, one instance. Keep the `PORT` secret Brimble adds.
+4. **Secrets** (optional): `NEXT_PUBLIC_API_ORIGIN` = `https://api.acticlaim.com`. Without it, the site uses `api.` plus its own domain, which is the same thing. Jobs are on unless `NEXT_PUBLIC_FEATURE_JOBS` = `off`.
 
 5. Deploy.
 6. **Domains**: add `acticlaim.com` (and `www.acticlaim.com` if you want it) to this app, and put the records Brimble shows into Cloudflare, with the cloud icon grey.
 7. Open `https://acticlaim.com`. The home page should load, and **Sign in** should reach the server without an error.
 
-Changing `NEXT_PUBLIC_API_ORIGIN` later needs a new build (redeploy), not just a restart.
+Changing `NEXT_PUBLIC_FEATURE_JOBS` later needs a new build (redeploy), not just a restart.
 
 ## 9. Make yourself the first reviewer
 
