@@ -46,8 +46,6 @@
   --color-danger-surface: #fdecea;
   /* Purchase-state series, validated as a categorical set (dataviz). */
   --color-series-paid: #1baf7a;
-  /* Single-series chart marks: passes chroma and 3:1 on both surfaces. */
-  --color-series-main: #128462;
   --color-series-ready: #2a78d6;
   --color-series-held: #eda100;
   --color-series-voided: #4a3aa7;
@@ -809,11 +807,6 @@
   }
   .chart:focus-visible {
     outline-offset: 6px;
-  }
-  .chart-band {
-    fill: var(--color-ink);
-    opacity: 0.05;
-    pointer-events: none;
   }
   .chart-grid {
     stroke: var(--color-line);

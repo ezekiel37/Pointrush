@@ -4,11 +4,9 @@ import type { KeyboardEvent, PointerEvent } from 'react';
 
 export type Point = { label: string; detail: string; value: number };
 
-// Single-series daily column chart (dataviz specs): columns at most 24px wide
-// with a 4px rounded top and a square base, hairline grid, clean y ticks, a
-// whole-day hit target with tooltip on pointer and keyboard, and a table view.
-// Columns suit small daily counts better than a line between them.
-export function BarChart({
+// Single-series area chart (dataviz specs): smooth 2px line, light wash, hairline grid,
+// clean y ticks, crosshair + tooltip on pointer and keyboard, and a table view.
+export function AreaChart({
   points,
   label,
   unit,
@@ -40,19 +38,33 @@ export function BarChart({
   const step = peak <= 4 ? 1 : 10 ** Math.floor(Math.log10(peak / 2));
   const max = Math.max(4, Math.ceil(peak / step / 2) * step * 2);
   const ticks = [0, max / 2, max];
-  const band = innerW / Math.max(1, points.length);
-  const barW = Math.max(3, Math.min(24, band - 2, band * 0.7));
-  // Centre of each day's band.
-  const x = (i: number) => pad.left + band * (i + 0.5);
+  const x = (i: number) =>
+    pad.left +
+    (points.length <= 1 ? innerW / 2 : (i / (points.length - 1)) * innerW);
   const y = (v: number) => pad.top + innerH - (v / max) * innerH;
-  const base = pad.top + innerH;
-  // Rounded top (4px, smaller for short bars), square at the baseline.
-  function column(i: number, value: number) {
-    const left = x(i) - barW / 2;
-    const top = y(value);
-    const r = Math.min(4, barW / 2, base - top);
-    return `M${left} ${base} V${top + r} Q${left} ${top} ${left + r} ${top} H${left + barW - r} Q${left + barW} ${top} ${left + barW} ${top + r} V${base} Z`;
-  }
+  // Smooth curve through every point (monotone cubic): it never overshoots
+  // a day's real value or dips below zero.
+  const xs = points.map((_, i) => x(i));
+  const ys = points.map((p) => y(p.value));
+  const slopes = xs.map((_, i) => {
+    if (points.length < 2) return 0;
+    if (i === 0) return (ys[1]! - ys[0]!) / (xs[1]! - xs[0]!);
+    if (i === xs.length - 1)
+      return (ys[i]! - ys[i - 1]!) / (xs[i]! - xs[i - 1]!);
+    const before = (ys[i]! - ys[i - 1]!) / (xs[i]! - xs[i - 1]!);
+    const after = (ys[i + 1]! - ys[i]!) / (xs[i + 1]! - xs[i]!);
+    return before * after <= 0 ? 0 : (2 * before * after) / (before + after);
+  });
+  const line = points
+    .map((_, i) => {
+      if (i === 0) return `M${xs[0]!.toFixed(1)} ${ys[0]!.toFixed(1)}`;
+      const dx = (xs[i]! - xs[i - 1]!) / 3;
+      return `C${(xs[i - 1]! + dx).toFixed(1)} ${(ys[i - 1]! + slopes[i - 1]! * dx).toFixed(1)} ${(xs[i]! - dx).toFixed(1)} ${(ys[i]! - slopes[i]! * dx).toFixed(1)} ${xs[i]!.toFixed(1)} ${ys[i]!.toFixed(1)}`;
+    })
+    .join(' ');
+  const area = points.length
+    ? `${line} L${x(points.length - 1)} ${pad.top + innerH} L${x(0)} ${pad.top + innerH}Z`
+    : '';
   // As many date labels as fit at about 64px each.
   const fit = Math.max(2, Math.floor(innerW / 64));
   const every = Math.max(1, Math.ceil(points.length / fit));
@@ -60,10 +72,11 @@ export function BarChart({
   function nearest(event: PointerEvent<SVGSVGElement>) {
     const rect = event.currentTarget.getBoundingClientRect();
     const px = ((event.clientX - rect.left) / rect.width) * width;
+    const ratio = (px - pad.left) / innerW;
     setActive(
       Math.min(
         points.length - 1,
-        Math.max(0, Math.floor((px - pad.left) / band)),
+        Math.max(0, Math.round(ratio * (points.length - 1))),
       ),
     );
   }
@@ -99,6 +112,20 @@ export function BarChart({
         onPointerMove={nearest}
         onPointerLeave={() => setActive(null)}
       >
+        <defs>
+          <linearGradient id="area-wash" x1="0" y1="0" x2="0" y2="1">
+            <stop
+              offset="0"
+              stopColor="var(--color-brand)"
+              stopOpacity="0.14"
+            />
+            <stop
+              offset="1"
+              stopColor="var(--color-brand)"
+              stopOpacity="0.02"
+            />
+          </linearGradient>
+        </defs>
         {ticks.map((t) => (
           <g key={t}>
             <line
@@ -135,24 +162,44 @@ export function BarChart({
             </text>
           ) : null,
         )}
-        {points.map((p, i) =>
-          p.value > 0 ? (
-            <path
-              key={p.detail}
-              d={column(i, p.value)}
-              fill="var(--color-series-main)"
-              opacity={active === null || active === i ? 1 : 0.35}
-            />
-          ) : null,
-        )}
-        {active !== null && (
-          <rect
-            className="chart-band"
-            x={pad.left + band * active}
-            y={pad.top}
-            width={band}
-            height={innerH}
+        <path d={area} fill="url(#area-wash)" />
+        <path
+          d={line}
+          fill="none"
+          stroke="var(--color-brand)"
+          strokeWidth="2"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+        {points.length > 0 && (
+          <circle
+            cx={x(points.length - 1)}
+            cy={y(points[points.length - 1]!.value)}
+            r="4"
+            fill="var(--color-brand)"
+            stroke="var(--color-surface)"
+            strokeWidth="2"
           />
+        )}
+        {point && active !== null && (
+          <g>
+            <line
+              x1={x(active)}
+              x2={x(active)}
+              y1={pad.top}
+              y2={pad.top + innerH}
+              stroke="var(--color-faint)"
+              strokeWidth="1"
+            />
+            <circle
+              cx={x(active)}
+              cy={y(point.value)}
+              r="5"
+              fill="var(--color-brand)"
+              stroke="var(--color-surface)"
+              strokeWidth="2"
+            />
+          </g>
         )}
       </svg>
       {point && active !== null && (

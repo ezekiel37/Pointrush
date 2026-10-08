@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { z } from 'zod';
 import { ArrowRight, Plus } from 'lucide-react';
-import { BarChart } from '@/components/charts/bar-chart';
+import { AreaChart } from '@/components/charts/area-chart';
 import { StatusBreakdown } from '@/components/charts/status-breakdown';
 import { Button } from '@/components/ui/button';
 import { Feedback, Loading } from '@/components/ui/feedback';
@@ -151,7 +151,7 @@ export function BusinessHome() {
                       : ''}
                   </p>
                 </div>
-                <BarChart
+                <AreaChart
                   height={280}
                   label={`Confirmed purchases per day, last ${data.days} days`}
                   unit={(v) =>
