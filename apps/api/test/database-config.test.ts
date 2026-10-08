@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { X509Certificate } from 'node:crypto';
 import { test } from 'node:test';
 import {
   poolOptions,
@@ -120,4 +123,31 @@ test("a provider's own root certificate is added, never used to skip verificatio
     () => readDatabaseConfig({ DATABASE_URL: url, DATABASE_CA_CERT: 'nope' }),
     /DATABASE_CA_CERT/,
   );
+});
+
+test('a certificate pasted as one line (as dashboards store it) is rebuilt and still verified', () => {
+  // A real self-signed root certificate, in the format Supabase provides.
+  const pem = readFileSync(
+    resolve('test/fixtures/test-root-ca.pem'),
+    'utf8',
+  ).trim();
+  const url = 'postgresql://user:secret@pooler.example.com/postgres';
+  for (const pasted of [
+    pem.replace(/\n/g, ''),
+    pem.replace(/\n/g, ' '),
+    pem.replace(/\n/g, '\\n'),
+    pem,
+  ]) {
+    const ssl = readDatabaseConfig({
+      DATABASE_URL: url,
+      DATABASE_CA_CERT: pasted,
+    })?.ssl;
+    assert.deepEqual(ssl, { rejectUnauthorized: true, ca: pem });
+    assert.equal(new X509Certificate(ssl.ca).subject, 'CN=Acticlaim Test Root');
+  }
+  for (const broken of [`${pem} extra`, 'not a certificate', pem.slice(0, 60)])
+    assert.throws(
+      () => readDatabaseConfig({ DATABASE_URL: url, DATABASE_CA_CERT: broken }),
+      /DATABASE_CA_CERT/,
+    );
 });

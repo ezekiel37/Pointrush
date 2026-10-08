@@ -8,6 +8,7 @@ import { configureHttp } from './http/configure-http.js';
 import { AuthService } from './auth/auth.service.js';
 import { paymentProvider } from './payments/payments.module.js';
 import { smsProvider } from './phone/phone.module.js';
+import { safeErrorSummary } from './database/safe-error.js';
 
 async function bootstrap(): Promise<void> {
   const config = readEnvironment(process.env);
@@ -47,9 +48,9 @@ async function bootstrap(): Promise<void> {
   await app.listen(config.port, '0.0.0.0');
 }
 
-void bootstrap().catch(() => {
+void bootstrap().catch((error: unknown) => {
   process.stderr.write(
-    'Acticlaim API startup failed. Check configuration and service logs.\n',
+    `Acticlaim API startup failed. Check configuration and service logs. Cause: ${safeErrorSummary(error)}\n`,
   );
   process.exitCode = 1;
 });
