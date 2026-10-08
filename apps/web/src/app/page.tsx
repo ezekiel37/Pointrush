@@ -480,7 +480,7 @@ export default function Home() {
                 </p>
                 <h3>{title}</h3>
                 <p className="small-note">{body}</p>
-                <Link className="text-link" href="/business">
+                <Link className="text-link" href="/signup">
                   {cta} <ArrowRight size={14} aria-hidden />
                 </Link>
               </li>

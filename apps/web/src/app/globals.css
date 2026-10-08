@@ -1341,11 +1341,14 @@
     color: var(--color-brand-text);
   }
   .lp-audience {
-    display: grid;
-    align-content: start;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     gap: 0.6rem;
-    padding-top: 1.25rem;
-    border-top: 2px solid var(--color-ink);
+  }
+  /* Links line up at the bottom whatever the length of the text above. */
+  .lp-audience .text-link {
+    margin-top: auto;
   }
   .lp-audience h3 {
     margin: 0;
