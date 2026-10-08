@@ -61,7 +61,7 @@ Brimble's screens may name things slightly differently from these steps. If a st
 
 For `AUTH_EMAIL_ENCRYPTION_KEY`, use a password generator set to "hex", or run `openssl rand -hex 32` on any Mac or Linux computer. Keep a copy in your password manager: if it changes, queued emails can no longer be read.
 
-The server does not start until `PAYMENTS_WEBHOOK_SECRET` is set, so do step 6 before the first deploy.
+Bachs only accepts a webhook address that already answers, so the **first deploy leaves out** `PAYMENTS_PROVIDER`, `BACHS_API_KEY` and `PAYMENTS_WEBHOOK_SECRET` (the server then runs with payments off). They are added in step 6.
 
 ## 5. Your address for the server
 
@@ -73,9 +73,11 @@ The server does not start until `PAYMENTS_WEBHOOK_SECRET` is set, so do step 6 b
 
 In the Bachs sandbox dashboard:
 
-1. Add the webhook URL `https://api.acticlaim.com/api/v1/payments/webhooks/bachs` for collection and payout events. Bachs accepts it before the server is up.
-2. Copy its signing secret into `PAYMENTS_WEBHOOK_SECRET` on Brimble.
-3. Deploy.
+1. Once `https://api.acticlaim.com/api/v1/health/live` answers (step 5), add the webhook URL `https://api.acticlaim.com/api/v1/payments/webhooks/bachs` for `collection.succeeded`, `payout.paid` and `payout.failed` (or all events).
+2. Copy its signing secret.
+3. On Brimble, add `PAYMENTS_PROVIDER` = `bachs`, `BACHS_API_KEY` = `sk_sandbox_…` and `PAYMENTS_WEBHOOK_SECRET` = the signing secret, then redeploy.
+
+If Bachs still says the URL cannot be reached while the health address works, tell Claude: the webhook address may need to answer Bachs's test differently.
 
 ## 7. Database setup and scheduled jobs (Brimble cron jobs)
 
