@@ -4,6 +4,7 @@ import * as s from '../database/schema.js';
 import type { FundingDatabase } from '../funding/funding-ledger.js';
 import { EmailPayloadCipher } from './email-payload.js';
 import { authEmailJobs } from './email-queue.schema.js';
+import { renderEmail } from './email-template.js';
 
 // Security emails (a bank account was added, withdrawals were locked). They go
 // through the same encrypted queue and worker as sign-in emails. They carry no
@@ -18,6 +19,7 @@ export class QueuedSecurityAlerts implements SecurityAlerts {
     private readonly db: FundingDatabase,
     key: string,
     private readonly sender: string,
+    private readonly replyTo?: string,
   ) {
     this.cipher = new EmailPayloadCipher(key);
   }
@@ -41,8 +43,15 @@ export class QueuedSecurityAlerts implements SecurityAlerts {
       payload: this.cipher.seal(id, {
         from: `Acticlaim <${this.sender}>`,
         to: user.email,
-        subject,
-        text: `${text}\n\nIf this was not you, open the Acticlaim app, go to Wallet and press "This wasn't me". Acticlaim will never ask for your password or a fee.`,
+        ...(this.replyTo ? { reply_to: this.replyTo } : {}),
+        // No button or link: a copied alert cannot become a phishing email.
+        ...renderEmail({
+          subject,
+          preheader: 'A security update about your Acticlaim account.',
+          heading: subject,
+          paragraphs: [text],
+          note: 'If this was not you, open the Acticlaim app yourself (not from an email), go to Wallet and press "This wasn\'t me". Acticlaim will never ask for your password, a PIN or a fee.',
+        }),
       }),
     });
   }

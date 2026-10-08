@@ -54,7 +54,11 @@ export class AppModule {
             baseURL: auth.baseURL,
             trustedOrigins: auth.trustedOrigins,
           },
-          createQueuedAuthEmail(auth.emailEncryptionKey, auth.emailFrom),
+          createQueuedAuthEmail(
+            auth.emailEncryptionKey,
+            auth.emailFrom,
+            auth.emailReplyTo,
+          ),
           auth.dailyEmailLimit,
         ),
       );

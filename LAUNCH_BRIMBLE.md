@@ -54,6 +54,7 @@ Brimble's screens may name things slightly differently from these steps. If a st
 | `AUTH_SECRET`               | A random 48-character string (a password manager can generate one)                          |
 | `AUTH_EMAIL_ENCRYPTION_KEY` | Exactly 64 characters using only `0-9` and `a-f` (see below)                                |
 | `EMAIL_FROM`                | `accounts@mail.acticlaim.com` (shown to people as "Acticlaim")                              |
+| `EMAIL_REPLY_TO`            | Optional. Where replies go, for example `support@acticlaim.com`                             |
 | `RESEND_API_KEY`            | The Resend key                                                                              |
 | `PAYMENTS_PROVIDER`         | `bachs`                                                                                     |
 | `BACHS_API_KEY`             | `sk_sandbox_…`                                                                              |

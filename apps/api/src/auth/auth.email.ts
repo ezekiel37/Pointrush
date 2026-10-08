@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { z } from 'zod';
 import type { SendEmailPayload } from './email-payload.js';
+import { renderEmail } from './email-template.js';
 
 export class EmailDeliveryError extends Error {
   constructor(
@@ -20,15 +21,29 @@ export interface AuthEmail {
 
 export type SendAuthEmail = (message: AuthEmail) => Promise<void>;
 
-// A plain-text template avoids interpolating untrusted names into HTML.
+// Templates never include the display name: it is user input.
 export function authEmailContent(message: AuthEmail) {
-  const verify = message.kind === 'verify-email';
-  return {
-    subject: verify
-      ? 'Verify your Acticlaim email'
-      : 'Reset your Acticlaim password',
-    text: `${verify ? 'Verify your email address' : 'Reset your password'} using this link:\n\n${message.url}\n\nIf you did not request this, ignore this email. Never share this link. Acticlaim will never ask for your password.`,
-  };
+  if (message.kind === 'verify-email')
+    return renderEmail({
+      subject: 'Confirm your email for Acticlaim',
+      preheader: 'One tap to finish setting up your account.',
+      heading: 'Confirm your email',
+      paragraphs: [
+        'Welcome to Acticlaim. Confirm this email address to finish setting up your account, then sign in.',
+      ],
+      button: { label: 'Confirm email', url: message.url },
+      note: 'This link works for 1 hour. If you did not create an Acticlaim account, ignore this email. Never share this link.',
+    });
+  return renderEmail({
+    subject: 'Reset your Acticlaim password',
+    preheader: 'Choose a new password for your account.',
+    heading: 'Reset your password',
+    paragraphs: [
+      'We received a request to reset the password for your Acticlaim account. Choose a new one with the button below. You will be signed out on your other devices.',
+    ],
+    button: { label: 'Choose a new password', url: message.url },
+    note: 'This link works for 30 minutes. If you did not ask for this, ignore this email: your password stays the same. Never share this link.',
+  });
 }
 
 export function createResendAuthEmail(

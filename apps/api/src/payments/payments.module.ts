@@ -29,7 +29,11 @@ export function paymentProvider(
 export class PaymentsModule {
   static forRoot(
     provider?: PaymentProvider,
-    alerts?: { emailEncryptionKey: string; emailFrom: string },
+    alerts?: {
+      emailEncryptionKey: string;
+      emailFrom: string;
+      emailReplyTo?: string;
+    },
   ): DynamicModule {
     return {
       module: PaymentsModule,
@@ -48,6 +52,7 @@ export class PaymentsModule {
                     db.db,
                     alerts.emailEncryptionKey,
                     alerts.emailFrom,
+                    alerts.emailReplyTo,
                   )
                 : undefined,
             ),

@@ -12,6 +12,7 @@ import { EmailPayloadCipher } from './email-payload.js';
 export function createQueuedAuthEmail(
   key: string,
   sender: string,
+  replyTo?: string,
 ): SendAuthEmail {
   const cipher = new EmailPayloadCipher(key);
   if (!z.email().safeParse(sender).success)
@@ -37,6 +38,7 @@ export function createQueuedAuthEmail(
           payload: cipher.seal(id, {
             from: `Acticlaim <${sender}>`,
             to: message.to,
+            ...(replyTo ? { reply_to: replyTo } : {}),
             ...authEmailContent(message),
           }),
         },

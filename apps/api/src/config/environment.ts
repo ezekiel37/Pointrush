@@ -12,6 +12,8 @@ export interface AuthEnvironment {
   baseURL: string;
   trustedOrigins: string[];
   emailFrom: string;
+  // Replies to account emails go here (for example support@acticlaim.com).
+  emailReplyTo?: string;
   emailEncryptionKey: string;
   dailyEmailLimit?: number;
 }
@@ -73,6 +75,7 @@ const schema = z.object({
   AUTH_BASE_URL: z.string().optional(),
   AUTH_TRUSTED_ORIGINS: z.string().optional(),
   EMAIL_FROM: z.email().optional(),
+  EMAIL_REPLY_TO: z.email().optional(),
   AUTH_EMAIL_ENCRYPTION_KEY: emailEncryptionKey.optional(),
   AUTH_EMAIL_DAILY_LIMIT: z
     .string()
@@ -131,6 +134,7 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
     AUTH_BASE_URL,
     AUTH_TRUSTED_ORIGINS,
     EMAIL_FROM,
+    EMAIL_REPLY_TO,
     AUTH_EMAIL_ENCRYPTION_KEY,
     AUTH_EMAIL_DAILY_LIMIT,
   } = parseEnvironment(schema, input);
@@ -204,6 +208,7 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
       baseURL: AUTH_BASE_URL,
       trustedOrigins: [...new Set(trustedOrigins)],
       emailFrom: EMAIL_FROM,
+      ...(EMAIL_REPLY_TO ? { emailReplyTo: EMAIL_REPLY_TO } : {}),
       emailEncryptionKey: AUTH_EMAIL_ENCRYPTION_KEY,
       dailyEmailLimit: AUTH_EMAIL_DAILY_LIMIT,
     };

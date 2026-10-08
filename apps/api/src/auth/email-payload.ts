@@ -7,6 +7,9 @@ export const emailPayloadSchema = z
     to: z.email(),
     subject: z.string().min(1).max(200),
     text: z.string().min(1).max(16000),
+    // Optional so jobs queued before templates existed still decrypt.
+    html: z.string().min(1).max(64000).optional(),
+    reply_to: z.email().optional(),
   })
   .strict();
 export type EmailPayload = z.infer<typeof emailPayloadSchema>;
