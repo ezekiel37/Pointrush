@@ -16,6 +16,7 @@ import {
   PenLine,
   Scale,
   ShieldAlert,
+  Star,
   Store,
   ScanLine,
   Search,
@@ -51,6 +52,7 @@ const groups = [
       { href: '/business/funds', label: 'Funds', icon: Landmark },
       { href: '/business/staff', label: 'Staff', icon: UsersRound },
       { href: '/business/profile', label: 'Profile', icon: Store },
+      { href: '/business/reviews', label: 'Reviews', icon: Star },
     ],
   },
   ...(jobsEnabled
@@ -86,6 +88,7 @@ const reviewGroups = [
       { href: '/review/appeals', label: 'Appeals', icon: Scale },
       { href: '/review/disputes', label: 'Void disputes', icon: Undo2 },
       { href: '/admin/renames', label: 'Names & logos', icon: PenLine },
+      { href: '/admin/reviews', label: 'Reviews', icon: Star },
     ],
   },
   {

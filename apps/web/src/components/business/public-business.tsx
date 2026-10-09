@@ -1,13 +1,15 @@
 'use client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { CalendarDays, History, Store, Tag, TicketCheck } from 'lucide-react';
 import { Brand } from '@/components/auth/auth-frame';
+import { Button } from '@/components/ui/button';
 import { Loading } from '@/components/ui/feedback';
 import { naira, shortDate } from '@/lib/api';
 import { RequestError } from '@/lib/auth-client';
-import { publicBusiness } from '@/lib/profiles';
+import { myRating, publicBusiness } from '@/lib/profiles';
+import { RateDialog, RatingCard, RatingSummary, Stars } from './ratings';
 import { publicFileUrl } from '@/lib/files';
 import { useApiRead } from '@/lib/use-api-read';
 
@@ -32,6 +34,12 @@ export function PublicBusiness({ handle }: { handle: string }) {
   const missing =
     read.error instanceof RequestError && read.error.status === 404;
   const b = data && !('redirect' in data) ? data : null;
+  // Signed-in customers the business served can rate it; others see none.
+  const mine = useApiRead(
+    b ? `businesses/${b.handle}/ratings/mine` : null,
+    myRating,
+  );
+  const [rating, setRating] = useState(false);
 
   return (
     <>
@@ -84,6 +92,15 @@ export function PublicBusiness({ handle }: { handle: string }) {
                 <div style={{ minWidth: 0 }}>
                   <h1>{b.name}</h1>
                   <p className="business-handle">@{b.handle}</p>
+                  {b.ratings.count > 0 && (
+                    <p className="icon-line" style={{ margin: '0 0 0.3rem' }}>
+                      <Stars value={b.ratings.average ?? 0} size={15} />
+                      <strong className="num">
+                        {b.ratings.average?.toFixed(1)}
+                      </strong>
+                      <span className="small-note">({b.ratings.count})</span>
+                    </p>
+                  )}
                   <p className="small-note icon-line">
                     <CalendarDays size={15} aria-hidden /> On Acticlaim since{' '}
                     {month(b.since)}
@@ -109,6 +126,55 @@ export function PublicBusiness({ handle }: { handle: string }) {
                   {b.description}
                 </p>
               )}
+              <section aria-labelledby="ratings-heading" className="grid gap-3">
+                <div className="row" style={{ alignItems: 'center' }}>
+                  <h2 id="ratings-heading" style={{ margin: 0 }}>
+                    Ratings
+                  </h2>
+                  {mine.data?.canRate &&
+                    (!mine.data.rating || mine.data.rating.canEdit) && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setRating(true)}
+                      >
+                        {mine.data.rating
+                          ? 'Edit your rating'
+                          : 'Rate this business'}
+                      </Button>
+                    )}
+                </div>
+                {mine.data?.needsPhone && (
+                  <p className="small-note">
+                    Verify your phone to rate this business.
+                  </p>
+                )}
+                <RatingSummary data={b.ratings} />
+                {b.ratings.recent.length > 0 && (
+                  <ul className="rating-list">
+                    {b.ratings.recent.map((item) => (
+                      <RatingCard
+                        key={item.id}
+                        item={item}
+                        currentName={b.name}
+                      />
+                    ))}
+                  </ul>
+                )}
+                {rating && (
+                  <RateDialog
+                    open={rating}
+                    onClose={() => setRating(false)}
+                    handle={b.handle}
+                    businessName={b.name}
+                    initial={mine.data?.rating ?? null}
+                    onSaved={() => {
+                      read.refresh();
+                      mine.refresh();
+                    }}
+                  />
+                )}
+              </section>
               <section aria-labelledby="live-heading">
                 <h2 id="live-heading">Live offers</h2>
                 {b.offers.length ? (

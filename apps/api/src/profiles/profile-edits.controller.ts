@@ -12,12 +12,39 @@ import { AUTH_USER_ID, PublicRoute } from '../auth/session.guard.js';
 import type { AuthenticatedRequest } from '../auth/session.guard.js';
 import { RateLimit } from '../http/rate-limit.js';
 import { ProfileEditsService } from './profile-edits.service.js';
+import { RatingsService } from '../sponsors/ratings.service.js';
 
 @Controller()
 export class ProfileEditsController {
   constructor(
     @Inject(ProfileEditsService) private readonly edits: ProfileEditsService,
+    @Inject(RatingsService) private readonly ratings: RatingsService,
   ) {}
+  @Get('businesses/:handle/ratings/mine')
+  myRating(@Req() r: AuthenticatedRequest, @Param('handle') handle: string) {
+    return this.ratings.mine(r[AUTH_USER_ID], handle);
+  }
+  @Post('businesses/:handle/ratings')
+  @RateLimit({ limit: 10, windowMs: 60000 })
+  rate(
+    @Req() r: AuthenticatedRequest,
+    @Param('handle') handle: string,
+    @Body() body: unknown,
+  ) {
+    return this.ratings.rate(r[AUTH_USER_ID], handle, body);
+  }
+  @Get('sponsor/ratings')
+  businessRatings(@Req() r: AuthenticatedRequest) {
+    return this.ratings.forBusiness(r[AUTH_USER_ID]);
+  }
+  @Post('sponsor/ratings/:id/replies')
+  reply(
+    @Req() r: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    return this.ratings.reply(r[AUTH_USER_ID], id, body);
+  }
   @Get('handles/check')
   @RateLimit({ limit: 60, windowMs: 60000 })
   check(@Req() r: AuthenticatedRequest, @Query('handle') handle: unknown) {

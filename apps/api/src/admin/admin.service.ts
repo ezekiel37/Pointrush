@@ -16,6 +16,7 @@ import {
 } from '../settings/settings.js';
 import { platformSettings } from '../settings/settings.schema.js';
 import { ProfileEditsService } from '../profiles/profile-edits.service.js';
+import { RatingsService } from '../sponsors/ratings.service.js';
 
 type Row = Record<string, unknown>;
 const rows = (result: unknown) =>
@@ -74,8 +75,22 @@ const rulingInput = z
 // is paid from the campaign's locked funds, never from Acticlaim's.
 export class AdminService {
   private readonly edits: ProfileEditsService;
+  private readonly ratings: RatingsService;
   constructor(private readonly db: FundingDatabase) {
     this.edits = new ProfileEditsService(db);
+    this.ratings = new RatingsService(db);
+  }
+
+  // Latest ratings across businesses, for spotting abuse.
+  async recentRatings(user: string) {
+    return this.reviewer(user, async (tx) => ({
+      items: await this.ratings.recent(tx),
+    }));
+  }
+  async removeRating(user: string, ratingId: string, input: unknown) {
+    return this.reviewer(user, (tx, actor) =>
+      this.ratings.remove(tx, actor, ratingId, input),
+    );
   }
 
   // Business renames waiting for a reviewer.

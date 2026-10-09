@@ -64,6 +64,10 @@ const reasons: Record<string, string> = {
   'Upload limit reached': 'upload_limit',
   'Picture unavailable': 'picture_unavailable',
   'Evidence unavailable': 'evidence_unavailable',
+  'Rating unavailable': 'rating_unavailable',
+  'Rating locked': 'rating_locked',
+  'Reply unavailable': 'reply_unavailable',
+  'Removal unavailable': 'removal_unavailable',
 };
 
 // The same mapping for transactions that do not resolve an actor first.

@@ -32,6 +32,46 @@ export const businessDetails = z.object({
   ),
 });
 
+export const ratingItem = z.object({
+  id: z.uuid(),
+  stars: z.number(),
+  comment: z.string().nullable(),
+  by: z.string(),
+  businessNameThen: z.string(),
+  at: date,
+  edited: z.boolean(),
+  reply: z.object({ body: z.string(), at: date }).nullable(),
+});
+export const ratingSummary = z.object({
+  count: z.number(),
+  average: z.number().nullable(),
+  stars: z.array(z.object({ stars: z.number(), count: z.number() })),
+  recent: z.array(ratingItem),
+});
+export const myRating = z.object({
+  canRate: z.boolean(),
+  needsPhone: z.boolean(),
+  rating: z
+    .object({
+      id: z.uuid(),
+      stars: z.number(),
+      comment: z.string().nullable(),
+      removed: z.boolean(),
+      editableUntil: date.nullable(),
+      canEdit: z.boolean().default(false),
+    })
+    .nullable(),
+});
+export const businessRatings = z.object({
+  summary: ratingSummary,
+  items: z.array(
+    ratingItem.extend({
+      removed: z.boolean(),
+      removedReason: z.string().nullable(),
+    }),
+  ),
+});
+
 export const publicBusiness = z.union([
   z.object({ redirect: z.string() }),
   z.object({
@@ -50,6 +90,12 @@ export const publicBusiness = z.union([
         endsAt: date,
       }),
     ),
+    ratings: ratingSummary.default({
+      count: 0,
+      average: null,
+      stars: [],
+      recent: [],
+    }),
   }),
 ]);
 

@@ -20,6 +20,7 @@ import { ReferralsController } from '../referrals/referrals.controller.js';
 import { ReferralsService } from '../referrals/referrals.service.js';
 import { ProfileEditsController } from '../profiles/profile-edits.controller.js';
 import { ProfileEditsService } from '../profiles/profile-edits.service.js';
+import { RatingsService } from '../sponsors/ratings.service.js';
 
 @Module({
   controllers: [
@@ -35,6 +36,11 @@ import { ProfileEditsService } from '../profiles/profile-edits.service.js';
     ProfileEditsController,
   ],
   providers: [
+    {
+      provide: RatingsService,
+      inject: [DatabaseService],
+      useFactory: (db: DatabaseService) => new RatingsService(db.db),
+    },
     {
       provide: ProfileEditsService,
       inject: [DatabaseService],

@@ -274,6 +274,13 @@
       "when": 1791570526223,
       "tag": "0038_file_storage",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1791572162720,
+      "tag": "0039_business_ratings",
+      "breakpoints": true
     }
   ]
 }

@@ -1011,6 +1011,100 @@
     max-width: 12rem;
     font-size: 0.86rem;
   }
+  /* Ratings */
+  .stars {
+    display: inline-flex;
+    gap: 1px;
+  }
+  .star-on {
+    fill: var(--color-series-held);
+    color: var(--color-series-held);
+  }
+  .star-off {
+    color: var(--color-border);
+  }
+  .rating-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    gap: 1rem;
+    align-items: center;
+  }
+  .rating-average {
+    display: grid;
+    gap: 0.25rem;
+  }
+  .rating-average strong {
+    font-size: 2.2rem;
+    line-height: 1;
+  }
+  .rating-bars {
+    display: grid;
+    gap: 0.3rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .rating-bars li {
+    display: grid;
+    grid-template-columns: 2.2rem 1fr 2rem;
+    gap: 0.5rem;
+    align-items: center;
+    font-size: 0.85rem;
+  }
+  .rating-bars .meter {
+    width: 100%;
+  }
+  .rating-list {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .rating-card {
+    display: grid;
+    gap: 0.45rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+  }
+  .rating-reply {
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.6rem 0.8rem;
+    border-left: 3px solid var(--color-brand);
+    background: var(--color-canvas);
+    border-radius: 0 10px 10px 0;
+    font-size: 0.9rem;
+  }
+  .star-picker {
+    display: flex;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .star-picker legend {
+    margin-bottom: 0.4rem;
+    font-weight: 550;
+    font-size: 0.9rem;
+  }
+  .star-picker label {
+    position: relative;
+    cursor: pointer;
+  }
+  .star-picker input {
+    position: absolute;
+    opacity: 0;
+    inset: 0;
+    cursor: pointer;
+  }
+  .star-picker input:focus-visible + svg {
+    outline: 2.5px solid var(--color-brand);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
   /* Public business page */
   .business-hero {
     display: flex;

@@ -204,3 +204,8 @@ export {
   accountAvatars,
   taskProofFiles,
 } from '../files/files.schema.js';
+export {
+  businessRatings,
+  businessRatingReplies,
+  businessRatingRemovals,
+} from '../sponsors/rating.schema.js';

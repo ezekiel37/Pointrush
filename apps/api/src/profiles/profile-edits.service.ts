@@ -11,6 +11,7 @@ import type { FundingDatabase } from '../funding/funding-ledger.js';
 import { AccountsRepository } from '../accounts/accounts.repository.js';
 import { handleSchema } from '../sponsors/sponsor.validation.js';
 import { actorTransaction } from '../tasks/actor-transaction.js';
+import { RatingsService } from '../sponsors/ratings.service.js';
 
 type Row = Record<string, unknown>;
 const rows = (result: unknown) =>
@@ -77,8 +78,10 @@ function parse<T>(schema: z.ZodType<T>, value: unknown, message: string): T {
 // service shapes requests and answers.
 export class ProfileEditsService {
   private readonly accounts: AccountsRepository;
+  private readonly ratings: RatingsService;
   constructor(private readonly db: FundingDatabase) {
     this.accounts = new AccountsRepository({ db } as never);
+    this.ratings = new RatingsService(db);
   }
 
   // Live check while someone types a handle.
@@ -339,6 +342,7 @@ export class ProfileEditsService {
       since: iso(b.terms_accepted_at),
       formerly,
       offers,
+      ratings: await this.ratings.summary(this.db, String(b.id)),
     };
   }
 

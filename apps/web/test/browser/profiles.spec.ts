@@ -336,3 +336,175 @@ test('a profile picture is uploaded and shown; a new logo waits for review', asy
   await expect(page.getByText('In review')).toBeVisible();
   await healthy(page);
 });
+
+test('customers rate a business they used; the page shows old names and replies', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const posted: Record<string, unknown>[] = [];
+  const recent = [
+    {
+      id: '8a7b6c5d-4e3f-4a2b-9c1d-0e9f8a7b6c5d',
+      stars: 2,
+      comment: 'Food was cold.',
+      by: 'Kemi',
+      businessNameThen: 'Mama Put Kitchen',
+      at: '2026-09-20T10:00:00Z',
+      edited: false,
+      reply: {
+        body: 'Sorry, we fixed our warmer.',
+        at: '2026-09-21T10:00:00Z',
+      },
+    },
+  ];
+  await page.route('**/api/v1/businesses/mama_put_ikeja', (route) =>
+    route.fulfill({
+      json: {
+        handle: 'mama_put_ikeja',
+        name: 'Mama Put Ikeja',
+        description: null,
+        logoFileId: null,
+        since: '2026-08-01T10:00:00Z',
+        formerly: [],
+        offers: [],
+        ratings: {
+          count: 1,
+          average: 2,
+          stars: [5, 4, 3, 2, 1].map((n) => ({
+            stars: n,
+            count: n === 2 ? 1 : 0,
+          })),
+          recent,
+        },
+      },
+    }),
+  );
+  await page.route(
+    '**/api/v1/businesses/mama_put_ikeja/ratings/mine',
+    (route) =>
+      route.fulfill({
+        json: { canRate: true, needsPhone: false, rating: null },
+      }),
+  );
+  await page.route('**/api/v1/businesses/mama_put_ikeja/ratings', (route) => {
+    posted.push(route.request().postDataJSON());
+    return route.fulfill({ json: posted.at(-1) });
+  });
+  await page.goto('/b/mama_put_ikeja');
+  await expect(
+    page.getByText('Rated while named Mama Put Kitchen'),
+  ).toBeVisible();
+  await expect(page.getByText('Sorry, we fixed our warmer.')).toBeVisible();
+  await expect(
+    page.getByText('Verified customer', { exact: true }),
+  ).toBeVisible();
+  await healthy(page);
+  await page.getByRole('button', { name: 'Rate this business' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Rate Mama Put Ikeja' });
+  await expect(
+    dialog.getByRole('button', { name: 'Save rating' }),
+  ).toBeDisabled();
+  await dialog.getByRole('radio', { name: '4 stars' }).check();
+  await dialog.getByLabel('What was it like? (optional)').fill('Good jollof.');
+  await healthy(page);
+  await dialog.getByRole('button', { name: 'Save rating' }).click();
+  await expect(page.getByText('Thanks for your rating')).toBeVisible();
+  expect(posted).toEqual([{ stars: 4, comment: 'Good jollof.' }]);
+});
+
+test('a business replies once; a reviewer removes an abusive rating with a reason', async ({
+  page,
+}) => {
+  const ratingId = '8a7b6c5d-4e3f-4a2b-9c1d-0e9f8a7b6c5d';
+  let replied: string | null = null;
+  let removed: string | null = null;
+  const rating = () => ({
+    id: ratingId,
+    stars: 1,
+    comment: 'Call me on 0803 000 0000',
+    by: 'Tunde',
+    businessNameThen: 'Mama Put Kitchen',
+    at: '2026-09-20T10:00:00Z',
+    edited: false,
+    reply: replied ? { body: replied, at: '2026-09-21T10:00:00Z' } : null,
+  });
+  await page.route('**/api/v1/sponsor/profile/details', (route) =>
+    route.fulfill({
+      json: {
+        id: '5b0f8d4e-1c2a-4e7a-9f3b-2d6c8a1e4f70',
+        name: 'Mama Put Kitchen',
+        contactEmail: 'owner@example.com',
+        description: null,
+        logoFileId: null,
+        handle: 'mama_put',
+        since: '2026-08-01T10:00:00Z',
+        canChangeHandle: false,
+        nameNeedsReview: true,
+        handles: [],
+        changes: [],
+      },
+    }),
+  );
+  await page.route('**/api/v1/sponsor/ratings', (route) =>
+    route.fulfill({
+      json: {
+        summary: {
+          count: 1,
+          average: 1,
+          stars: [5, 4, 3, 2, 1].map((n) => ({
+            stars: n,
+            count: n === 1 ? 1 : 0,
+          })),
+          recent: [],
+        },
+        items: [{ ...rating(), removed: false, removedReason: null }],
+      },
+    }),
+  );
+  await page.route(`**/api/v1/sponsor/ratings/${ratingId}/replies`, (route) => {
+    replied = route.request().postDataJSON().body;
+    return route.fulfill({ json: { body: replied } });
+  });
+  await page.goto('/business/reviews');
+  await page.getByRole('button', { name: 'Reply' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Reply to this rating' });
+  await dialog
+    .getByLabel('Your reply')
+    .fill('Please call our shop line instead.');
+  await dialog.getByRole('button', { name: 'Post reply' }).click();
+  await expect(page.getByText('Reply posted')).toBeVisible();
+  await expect(
+    page.getByText('Please call our shop line instead.'),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Reply' })).toHaveCount(0);
+
+  await page.route('**/api/v1/admin/ratings', (route) =>
+    route.fulfill({
+      json: {
+        items: [
+          {
+            ...rating(),
+            businessNow: 'Mama Put Kitchen',
+            username: 'tunde',
+            removed: Boolean(removed),
+            removedReason: removed,
+          },
+        ],
+      },
+    }),
+  );
+  await page.route(`**/api/v1/admin/ratings/${ratingId}/removals`, (route) => {
+    removed = route.request().postDataJSON().reason;
+    return route.fulfill({ json: { removed: true } });
+  });
+  await page.goto('/admin/reviews');
+  await page.getByRole('button', { name: 'Remove' }).click();
+  const removal = page.getByRole('dialog', { name: 'Remove this rating?' });
+  await removal.getByLabel('Reason').fill('Contains a phone number');
+  await healthy(page);
+  await removal.getByRole('button', { name: 'Remove rating' }).click();
+  await expect(page.getByText('Rating removed')).toBeVisible();
+  await expect(
+    page.getByText('Removed: Contains a phone number'),
+  ).toBeVisible();
+});

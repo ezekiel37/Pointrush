@@ -32,6 +32,18 @@ export class AdminController {
   analytics(@Req() r: AuthenticatedRequest) {
     return this.admin.analytics(r[AUTH_USER_ID]);
   }
+  @Get('ratings')
+  ratings(@Req() r: AuthenticatedRequest) {
+    return this.admin.recentRatings(r[AUTH_USER_ID]);
+  }
+  @Post('ratings/:id/removals')
+  removeRating(
+    @Req() r: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    return this.admin.removeRating(r[AUTH_USER_ID], id, body);
+  }
   @Get('profile-changes')
   profileChanges(@Req() r: AuthenticatedRequest) {
     return this.admin.profileChanges(r[AUTH_USER_ID]);
