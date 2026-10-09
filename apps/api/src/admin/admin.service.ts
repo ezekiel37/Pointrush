@@ -15,6 +15,7 @@ import {
   readSettings,
 } from '../settings/settings.js';
 import { platformSettings } from '../settings/settings.schema.js';
+import { ProfileEditsService } from '../profiles/profile-edits.service.js';
 
 type Row = Record<string, unknown>;
 const rows = (result: unknown) =>
@@ -72,7 +73,27 @@ const rulingInput = z
 // authenticator check. Only a reversed void ruling moves money: the shopper
 // is paid from the campaign's locked funds, never from Acticlaim's.
 export class AdminService {
-  constructor(private readonly db: FundingDatabase) {}
+  private readonly edits: ProfileEditsService;
+  constructor(private readonly db: FundingDatabase) {
+    this.edits = new ProfileEditsService(db);
+  }
+
+  // Business renames waiting for a reviewer.
+  async profileChanges(user: string) {
+    return this.reviewer(user, async (tx) => ({
+      items: await this.edits.pending(tx),
+    }));
+  }
+  async decideProfileChange(user: string, changeId: string, input: unknown) {
+    return this.reviewer(user, (tx, actor) =>
+      this.edits.decide(tx, actor, changeId, input),
+    );
+  }
+  async setBusinessHandle(user: string, sponsorId: string, input: unknown) {
+    return this.reviewer(user, (tx, actor) =>
+      this.edits.setHandleAsReviewer(tx, actor, sponsorId, input),
+    );
+  }
 
   private async reviewer<T>(
     user: string,
@@ -399,6 +420,8 @@ export class AdminService {
             (select count(*) from withdrawals w where not exists (select 1 from withdrawal_outcomes o where o.withdrawal_id = w.id))::int as withdrawals_pending,
             (select count(*) from bill_purchases b where not exists (select 1 from bill_outcomes o where o.bill_id = b.id))::int as bills_pending,
             (select count(*) from sponsor_tasks where review_state = 'pending_review')::int as campaigns_to_review,
+            (select count(*) from business_profile_changes c where c.needs_review
+              and not exists (select 1 from business_profile_decisions d where d.change_id = c.id))::int as profile_changes,
             (select count(*) from purchase_voids v where exists (select 1 from purchase_void_disputes d where d.confirmation_id = v.confirmation_id)
               and not exists (select 1 from purchase_void_rulings r where r.confirmation_id = v.confirmation_id))::int as disputes_open
         `),
@@ -447,6 +470,7 @@ export class AdminService {
         },
         queues: {
           campaignsToReview: n('campaigns_to_review'),
+          profileChanges: n('profile_changes'),
           disputesOpen: n('disputes_open'),
           withdrawalsPending: n('withdrawals_pending'),
           billsPending: n('bills_pending'),
@@ -468,6 +492,7 @@ export class AdminService {
         await tx.execute(sql`
           select a.id, a.access_state, a.created_at, u.username, p.display_name,
             au.email, sp.name as business_name,
+            (select handle from business_handles h where h.sponsor_id = sp.id order by seq desc limit 1) as handle,
             exists (select 1 from verified_phones v where v.account_id = a.id) as phone_verified
           from accounts a
           left join usernames u on u.account_id = a.id and u.is_current
@@ -477,6 +502,12 @@ export class AdminService {
           left join sponsor_profiles sp on sp.owner_id = a.id
           where u.username like ${like} or lower(p.display_name) like ${like}
             or lower(au.email) like ${like} or lower(sp.name) like ${like}
+            -- Old usernames, any business handle and earlier business names
+            -- still find the account.
+            or exists (select 1 from usernames ou where ou.account_id = a.id and ou.username like ${like})
+            or exists (select 1 from business_handles bh where bh.sponsor_id = sp.id and bh.handle like ${like})
+            or exists (select 1 from business_profile_changes bc where bc.sponsor_id = sp.id
+              and bc.field = 'name' and lower(bc.old_value) like ${like})
           order by (u.username = ${term}) desc, (lower(au.email) = ${term}) desc, a.created_at desc
           limit 25`),
       ).map((r) => ({
@@ -485,6 +516,7 @@ export class AdminService {
         displayName: r.display_name == null ? null : String(r.display_name),
         email: r.email == null ? null : String(r.email),
         businessName: r.business_name == null ? null : String(r.business_name),
+        handle: r.handle == null ? null : String(r.handle),
         accessState: String(r.access_state),
         phoneVerified: Boolean(r.phone_verified),
         createdAt: iso(r.created_at),
@@ -505,6 +537,11 @@ export class AdminService {
     if (!z.uuid().safeParse(accountId).success) throw new NotFoundException();
     return this.reviewer(user, async (tx, actor) => {
       const view = await this.accountView(tx, accountId);
+      const usernames = rows(
+        await tx.execute(
+          sql`select username from usernames where account_id = ${accountId} and not is_current order by claimed_at desc`,
+        ),
+      ).map((r) => String(r.username));
       await recordAudit(tx, {
         kind: 'admin_account_viewed',
         subject: accountId,
@@ -533,11 +570,16 @@ export class AdminService {
       const business = rows(
         await tx.execute(sql`
           select sp.id, sp.name, sp.terms_accepted_at as created_at,
-            (select count(*) from sponsor_tasks t where t.sponsor_id = sp.id)::int as campaigns
+            (select count(*) from sponsor_tasks t where t.sponsor_id = sp.id)::int as campaigns,
+            (select coalesce(json_agg(h.handle order by h.seq desc), '[]'::json) from business_handles h where h.sponsor_id = sp.id) as handles,
+            (select coalesce(json_agg(c.old_value order by c.created_at desc), '[]'::json) from business_profile_changes c
+              left join business_profile_decisions d on d.change_id = c.id
+              where c.sponsor_id = sp.id and c.field = 'name' and (not c.needs_review or d.decision = 'applied')) as former_names
           from sponsor_profiles sp where sp.owner_id = ${accountId}`),
       )[0];
       return {
         ...view,
+        formerUsernames: usernames,
         email: money?.email == null ? null : String(money.email),
         accountType:
           money?.account_type === 'business' ? 'business' : 'personal',
@@ -549,6 +591,13 @@ export class AdminService {
               name: String(business.name),
               createdAt: iso(business.created_at),
               campaigns: Number(business.campaigns),
+              // Newest first: the first is current, the rest redirect.
+              handles: (typeof business.handles === 'string'
+                ? JSON.parse(business.handles)
+                : business.handles) as string[],
+              formerNames: (typeof business.former_names === 'string'
+                ? JSON.parse(business.former_names)
+                : business.former_names) as string[],
               fundedKobo: String(money?.funded ?? '0'),
               availableKobo: String(money?.business_available ?? '0'),
               lockedKobo: String(money?.business_locked ?? '0'),

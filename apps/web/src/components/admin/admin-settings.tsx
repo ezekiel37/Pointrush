@@ -132,6 +132,11 @@ function problems(s: PlatformSettings) {
       'Must be at least the smallest withdrawal';
   if (s.newAccounts.days > 365) out['newAccounts.days'] = 'At most 365 days';
   if (s.funding.minKobo < 10000) out['funding.minKobo'] = 'At least ₦100';
+  const badHandle = s.handles.reserved.find(
+    (h) => !/^[a-z][a-z0-9_]{1,28}[a-z0-9]$/.test(h),
+  );
+  if (badHandle)
+    out['handles.reserved'] = `“${badHandle}” is not a valid handle`;
   if (s.funding.maxKobo < s.funding.minKobo)
     out['funding.maxKobo'] = 'Must be at least the minimum top-up';
   if (s.campaigns.minBudgetKobo < s.campaigns.minCashbackKobo)
@@ -453,6 +458,49 @@ export function AdminSettings() {
                     label="Most per day while new"
                   />
                 </div>
+              </div>
+            </Section>
+            <Section
+              title="Reserved handles"
+              intro="Handles no business or person can take, on top of built-in words like admin and acticlaim. Add big brand names here so nobody can pose as them."
+            >
+              <div className="field">
+                <label htmlFor="reserved-handles">Reserved handles</label>
+                <textarea
+                  id="reserved-handles"
+                  className="input textarea"
+                  disabled={locked}
+                  defaultValue={s.handles.reserved.join(', ')}
+                  aria-describedby="reserved-handles-help"
+                  onChange={(event) =>
+                    setDraft({
+                      ...s,
+                      handles: {
+                        reserved: Array.from(
+                          new Set(
+                            event.target.value
+                              .split(/[\s,]+/)
+                              .map((h) =>
+                                h.trim().replace(/^@/, '').toLowerCase(),
+                              )
+                              .filter(Boolean),
+                          ),
+                        ),
+                      },
+                    })
+                  }
+                />
+                <p
+                  id="reserved-handles-help"
+                  className={
+                    issues['handles.reserved']
+                      ? 'field-help field-error'
+                      : 'field-help'
+                  }
+                >
+                  {issues['handles.reserved'] ??
+                    'Separate with commas. Existing handles are not affected.'}
+                </p>
               </div>
             </Section>
             <Section

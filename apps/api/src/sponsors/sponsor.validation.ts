@@ -18,9 +18,22 @@ const plain = (max: number) =>
           !/\p{Cc}/u.test(character) || '\n\r\t'.includes(character),
       ),
     );
+// Business handles: lowercase letters, numbers and single underscores.
+export const handleSchema = z
+  .string()
+  .trim()
+  .transform((v) => v.replace(/^@/, '').toLowerCase())
+  .pipe(
+    z
+      .string()
+      .regex(/^[a-z][a-z0-9_]{1,28}[a-z0-9]$/)
+      .refine((v) => !v.includes('__')),
+  );
 export const sponsorInput = z
   .object({
     name: plain(120),
+    // Chosen at sign-up; made from the name when left out.
+    handle: handleSchema.optional(),
     termsVersion: plain(80),
     acceptTerms: z.literal(true),
   })

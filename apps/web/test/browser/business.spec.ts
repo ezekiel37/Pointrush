@@ -32,6 +32,16 @@ test('a business is created against the current terms, then sent to add funds', 
   await page.route('**/api/v1/business/overview?*', (route) =>
     route.fulfill({ status: 404, json: { statusCode: 404 } }),
   );
+  // Handles are checked as they are typed.
+  await page.route('**/api/v1/handles/check?*', (route) => {
+    const handle = new URL(route.request().url()).searchParams.get('handle');
+    return route.fulfill({
+      json:
+        handle === 'mama_put'
+          ? { available: false, reason: 'taken', suggestion: 'mama_put_2' }
+          : { available: true, reason: null, suggestion: null },
+    });
+  });
 
   await page.goto('/business/setup');
   await expect(page.getByText('Business accounts open soon')).toBeVisible();
@@ -42,6 +52,11 @@ test('a business is created against the current terms, then sent to add funds', 
   await page.getByRole('button', { name: 'Create business' }).click();
   await expect(page.getByText('Enter your business name.')).toBeVisible();
   await page.getByLabel('Business name').fill('  Mama Put  ');
+  // The handle is suggested from the name; a taken one offers another.
+  await expect(page.getByLabel('Business handle')).toHaveValue('mama_put');
+  await expect(page.getByText('@mama_put is taken.')).toBeVisible();
+  await page.getByRole('button', { name: 'Use @mama_put_2' }).click();
+  await expect(page.getByText('@mama_put_2 is available.')).toBeVisible();
   await page.getByRole('button', { name: 'Create business' }).click();
   await expect(page.getByText('Accept the business terms')).toBeVisible();
   expect(bodies).toHaveLength(0);
@@ -49,7 +64,12 @@ test('a business is created against the current terms, then sent to add funds', 
   await page.getByRole('button', { name: 'Create business' }).click();
   await page.waitForURL('**/business/funds');
   expect(bodies).toEqual([
-    { name: 'Mama Put', acceptTerms: true, termsVersion: 'business-2026-10' },
+    {
+      name: 'Mama Put',
+      handle: 'mama_put_2',
+      acceptTerms: true,
+      termsVersion: 'business-2026-10',
+    },
   ]);
 });
 

@@ -31,6 +31,7 @@ export const analytics = z.object({
   }),
   queues: z.object({
     campaignsToReview: z.number(),
+    profileChanges: z.number().default(0),
     disputesOpen: z.number(),
     withdrawalsPending: z.number(),
     billsPending: z.number(),
@@ -48,6 +49,7 @@ export const searchResults = z.object({
       displayName: z.string().nullable(),
       email: z.string().nullable(),
       businessName: z.string().nullable(),
+      handle: z.string().nullable().default(null),
       accessState: z.string(),
       phoneVerified: z.boolean(),
       createdAt: date,
@@ -67,12 +69,15 @@ export const personDetail = z.object({
   createdAt: date,
   walletKobo: money,
   purchases: z.number(),
+  formerUsernames: z.array(z.string()).default([]),
   businessProfile: z
     .object({
       id: z.uuid(),
       name: z.string(),
       createdAt: date,
       campaigns: z.number(),
+      handles: z.array(z.string()).default([]),
+      formerNames: z.array(z.string()).default([]),
       fundedKobo: money,
       availableKobo: money,
       lockedKobo: money,
@@ -112,6 +117,7 @@ export const settingsShape = z.object({
     dailyCount: z.number(),
   }),
   newAccounts: z.object({ days: z.number(), dailyWithdrawalKobo: kobo }),
+  handles: z.object({ reserved: z.array(z.string()) }),
   referrals: z.object({
     enabled: z.boolean(),
     friend: z.object({
@@ -177,6 +183,20 @@ export const referralPool = z.object({
       basisKobo: money,
       inviter: z.string().nullable(),
       invited: z.string().nullable(),
+      at: date,
+    }),
+  ),
+});
+
+export const profileChanges = z.object({
+  items: z.array(
+    z.object({
+      id: z.uuid(),
+      sponsorId: z.uuid(),
+      handle: z.string().nullable(),
+      field: z.string(),
+      oldValue: z.string().nullable(),
+      newValue: z.string().nullable(),
       at: date,
     }),
   ),

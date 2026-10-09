@@ -192,3 +192,9 @@ export {
   referralPoolTopups,
   referralRewards,
 } from '../referrals/referral.schema.js';
+export {
+  businessHandles,
+  businessProfileChanges,
+  businessProfileDecisions,
+  displayNameChanges,
+} from '../sponsors/business-profile.schema.js';

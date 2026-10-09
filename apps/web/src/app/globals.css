@@ -939,6 +939,76 @@
     grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
     gap: 1rem;
   }
+  .rename-row .small-note {
+    margin: 0.2rem 0 0;
+  }
+  /* Public business page */
+  .business-hero {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+  .business-hero h1 {
+    margin: 0;
+  }
+  .business-mark {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    background: var(--color-brand-soft);
+    color: var(--color-brand-text);
+  }
+  .business-handle {
+    margin: 0.1rem 0 0.35rem;
+    color: var(--color-brand-text);
+    font-weight: 600;
+  }
+  .formerly {
+    margin: 0;
+    padding: 0.7rem 0.9rem;
+    border-radius: 12px;
+    background: var(--color-pending-surface);
+    color: var(--color-ink);
+    font-size: 0.9rem;
+  }
+  /* @handle input: the @ and the availability mark sit inside the box. */
+  .handle-input .input {
+    padding-left: 2.3rem;
+    padding-right: 2.6rem;
+  }
+  .handle-at {
+    position: absolute;
+    left: 0.85rem;
+    top: 0;
+    bottom: 0;
+    margin: auto 0;
+    color: var(--color-muted);
+  }
+  .handle-state {
+    position: absolute;
+    right: 0.85rem;
+    top: 0;
+    bottom: 0;
+    display: grid;
+    place-items: center;
+    color: var(--color-brand-text);
+  }
+  .handle-input .input[aria-invalid='true'] ~ .handle-state {
+    color: var(--color-danger);
+  }
+  .link-button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-brand-text);
+    font: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+  }
   /* Invite: a link you can copy or share in one tap. */
   .invite-banner {
     display: flex;

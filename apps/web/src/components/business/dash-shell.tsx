@@ -13,8 +13,10 @@ import {
   LayoutGrid,
   Landmark,
   Menu,
+  PenLine,
   Scale,
   ShieldAlert,
+  Store,
   ScanLine,
   Search,
   SlidersHorizontal,
@@ -48,6 +50,7 @@ const groups = [
       },
       { href: '/business/funds', label: 'Funds', icon: Landmark },
       { href: '/business/staff', label: 'Staff', icon: UsersRound },
+      { href: '/business/profile', label: 'Profile', icon: Store },
     ],
   },
   ...(jobsEnabled
@@ -82,6 +85,7 @@ const reviewGroups = [
       { href: '/review/campaigns', label: 'Campaigns', icon: ClipboardCheck },
       { href: '/review/appeals', label: 'Appeals', icon: Scale },
       { href: '/review/disputes', label: 'Void disputes', icon: Undo2 },
+      { href: '/admin/renames', label: 'Renames', icon: PenLine },
     ],
   },
   {

@@ -96,6 +96,8 @@ export class TaskWorkService {
               .where(eq(s.campaignGroupCompletions.taskId, task.id))
           ).length > 0,
         termsVersion: task.termsVersion,
+        // Who runs it, linking to their public page.
+        business: await this.business(tx, task.sponsorId),
         // Bring-a-friend offers: whether this person can invite (they have
         // bought here before), their username for the link, and how many
         // friends they brought to this offer.
@@ -104,6 +106,16 @@ export class TaskWorkService {
           : null,
       };
     });
+  }
+
+  private async business(tx: FundingDatabase, sponsorId: string) {
+    const result = (await tx.execute(sql`select sp.name,
+        (select handle from business_handles h where h.sponsor_id = sp.id order by seq desc limit 1) as handle
+      from sponsor_profiles sp where sp.id = ${sponsorId}`)) as unknown as {
+      rows: { name: string; handle: string | null }[];
+    };
+    const row = (result.rows ?? (result as unknown as typeof result.rows))[0];
+    return row ? { name: row.name, handle: row.handle } : null;
   }
 
   // Bring-a-friend offers: whether this person can invite (they have bought

@@ -68,6 +68,10 @@ export const offerDetail = z.object({
   model: z.string(),
   campaignTerms: campaignTerms.nullable(),
   groupComplete: z.boolean().default(false),
+  business: z
+    .object({ name: z.string(), handle: z.string().nullable() })
+    .nullable()
+    .default(null),
   invite: z
     .object({
       canInvite: z.boolean(),

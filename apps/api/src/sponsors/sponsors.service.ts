@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { checkTaskMinimums, readSettings } from '../settings/settings.js';
+import { conflictFromDatabase } from '../tasks/actor-transaction.js';
 import {
   BadRequestException,
   ConflictException,
@@ -65,6 +66,17 @@ export class SponsorsService {
       );
     if (value.termsVersion !== this.termsVersion)
       throw new ConflictException('Accept the current sponsor terms');
+    try {
+      return await this.createProfileIn(authUserId, value);
+    } catch (error) {
+      throw conflictFromDatabase(error);
+    }
+  }
+
+  private createProfileIn(
+    authUserId: string,
+    value: { name: string; termsVersion: string; handle?: string | undefined },
+  ) {
     return this.db.transaction(async (tx) => {
       const owner = await this.owner(tx, authUserId);
       const [existing] = await tx
@@ -88,6 +100,12 @@ export class SponsorsService {
           termsVersion: value.termsVersion,
         })
         .returning();
+      // The handle is checked by the database: unique across businesses
+      // and usernames, and not reserved.
+      await tx.execute(
+        sql`insert into business_handles (handle, sponsor_id, actor_id)
+          values (coalesce(${value.handle ?? null}, handle_suggest(${value.name})), ${profile!.id}, ${owner.id})`,
+      );
       await tx
         .insert(fundingAccounts)
         .values({ ownerId: owner.id, bucket: 'available' })

@@ -13,6 +13,8 @@ import { apiRequest } from '@/lib/api';
 import { RequestError } from '@/lib/auth-client';
 import { businessRules } from '@/lib/business-rules';
 import { useApiRead } from '@/lib/use-api-read';
+import { cleanHandle, handleFromName } from '@/lib/profiles';
+import { HandleField } from './handle-field';
 
 const terms = z.object({ version: z.string().nullable() });
 const profile = z.object({ id: z.uuid(), name: z.string() });
@@ -21,6 +23,8 @@ function setupError(error: unknown) {
   if (error instanceof RequestError) {
     if (error.status === 403)
       return 'Verify your email and finish setting up your account first.';
+    if (error.code === 'handle_unavailable')
+      return 'That handle was just taken. Choose another one.';
     if (error.status === 409)
       return 'This account already has a business with another name, or the terms changed. Reload and try again.';
     if (error.status === 400)
@@ -33,6 +37,10 @@ export function BusinessSetup() {
   const router = useRouter();
   const current = useApiRead('sponsor/terms', terms);
   const [name, setName] = useState('');
+  // Suggested from the name until the owner types their own.
+  const [handle, setHandle] = useState('');
+  const [handleEdited, setHandleEdited] = useState(false);
+  const [handleOk, setHandleOk] = useState(false);
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -46,6 +54,10 @@ export function BusinessSetup() {
       setInvalid('Enter your business name.');
       return;
     }
+    if (!handleOk) {
+      setError('Choose an available handle.');
+      return;
+    }
     if (!accepted) {
       setError('Accept the business terms to continue.');
       return;
@@ -57,7 +69,12 @@ export function BusinessSetup() {
       // Creating the same business again returns it, so a retry is safe.
       await apiRequest('sponsor/profile', profile, {
         method: 'POST',
-        body: { name: name.trim(), acceptTerms: true, termsVersion: version },
+        body: {
+          name: name.trim(),
+          handle: cleanHandle(handle),
+          acceptTerms: true,
+          termsVersion: version,
+        },
       });
       router.push('/business/funds');
     } catch (cause) {
@@ -107,9 +124,21 @@ export function BusinessSetup() {
                 onChange={(e) => {
                   setName(e.target.value);
                   setInvalid('');
+                  if (!handleEdited) setHandle(handleFromName(e.target.value));
                 }}
                 hint="Shown to shoppers on your offers, exactly as typed."
                 error={invalid}
+              />
+              <HandleField
+                value={handle}
+                disabled={busy}
+                onChange={(next, available) => {
+                  if (next !== handle) {
+                    setHandle(next);
+                    setHandleEdited(true);
+                  }
+                  setHandleOk(available);
+                }}
               />
               <label className="work-consent">
                 <input

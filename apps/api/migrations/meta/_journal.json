@@ -260,6 +260,13 @@
       "when": 1791565903343,
       "tag": "0036_cash_referrals",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1791568831223,
+      "tag": "0037_business_handles",
+      "breakpoints": true
     }
   ]
 }

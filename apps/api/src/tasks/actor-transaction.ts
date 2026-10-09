@@ -54,7 +54,27 @@ const reasons: Record<string, string> = {
   'Daily bill payment limit reached': 'bill_daily_limit',
   'Dispute unavailable': 'dispute_unavailable',
   'Ruling unavailable': 'ruling_unavailable',
+  'Handle unavailable': 'handle_unavailable',
+  'Handle locked': 'handle_locked',
+  'Profile change pending': 'profile_change_pending',
+  'Profile change unavailable': 'profile_change_unavailable',
+  'Profile decision unavailable': 'profile_decision_unavailable',
+  'Display name changed recently': 'display_name_too_soon',
+  'Display name change unavailable': 'display_name_unavailable',
 };
+
+// The same mapping for transactions that do not resolve an actor first.
+export function conflictFromDatabase(error: unknown) {
+  const { code, message } = databaseError(error);
+  if (['23514', '23505', '23503'].includes(code ?? ''))
+    return new ConflictException({
+      statusCode: 409,
+      message:
+        'Task state changed or command is not eligible; reload current details',
+      reason: (message && reasons[message]) ?? 'not_eligible',
+    });
+  return error;
+}
 
 function databaseError(error: unknown) {
   const cause = error instanceof Error ? error.cause : undefined;
@@ -95,14 +115,6 @@ export async function actorTransaction<T>(
       return action(tx, actor.id);
     });
   } catch (error) {
-    const { code, message } = databaseError(error);
-    if (['23514', '23505', '23503'].includes(code ?? ''))
-      throw new ConflictException({
-        statusCode: 409,
-        message:
-          'Task state changed or command is not eligible; reload current details',
-        reason: (message && reasons[message]) ?? 'not_eligible',
-      });
-    throw error;
+    throw conflictFromDatabase(error);
   }
 }

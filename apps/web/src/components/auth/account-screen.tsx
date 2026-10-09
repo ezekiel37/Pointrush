@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, LogOut } from 'lucide-react';
 import { AuthFrame, Brand } from './auth-frame';
 import { OnboardingForm } from './onboarding-form';
+import { IdentityPanel } from './identity-panel';
 import { Button } from '@/components/ui/button';
 import { Feedback, Loading } from '@/components/ui/feedback';
 import { getAccount } from '@/lib/account';
@@ -186,27 +187,11 @@ export function AccountScreen({ goHome = false }: { goHome?: boolean }) {
                     See offers
                   </Link>
                 </section>
-                <section className="account-panel">
-                  <h2>Your profile</h2>
-                  <dl>
-                    <div>
-                      <dt>Username</dt>
-                      <dd>@{account.username}</dd>
-                    </div>
-                    <div>
-                      <dt>Account status</dt>
-                      <dd>Active</dd>
-                    </div>
-                    <div>
-                      <dt>Reputation</dt>
-                      <dd>New</dd>
-                    </div>
-                  </dl>
-                  <p className="small-note mt-5">
-                    Email verification confirms email ownership. It is not an
-                    identity verification badge.
-                  </p>
-                </section>
+                <IdentityPanel
+                  displayName={account.displayName}
+                  username={account.username}
+                  onSaved={() => void refresh()}
+                />
                 <section className="account-panel security-panel">
                   <p className="eyebrow">Reviewer security</p>
                   <h2>Use an authenticator app</h2>

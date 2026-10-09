@@ -73,6 +73,11 @@ export function AdminOverview() {
                       '/review/campaigns',
                     ],
                     [
+                      'Business renames',
+                      data.queues.profileChanges,
+                      '/admin/renames',
+                    ],
+                    [
                       'Void disputes',
                       data.queues.disputesOpen,
                       '/review/disputes',

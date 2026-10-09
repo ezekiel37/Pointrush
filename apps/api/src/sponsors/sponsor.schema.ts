@@ -28,6 +28,9 @@ export const sponsorProfiles = pgTable(
       .references(() => accounts.id),
     name: varchar('name', { length: 120 }).notNull(),
     contactEmail: varchar('contact_email', { length: 320 }).notNull(),
+    // Shown on the public business page. Changed only through
+    // business_profile_changes, which keep the history.
+    description: varchar('description', { length: 500 }),
     termsVersion: varchar('terms_version', { length: 80 }).notNull(),
     termsAcceptedAt: timestamp('terms_accepted_at', { withTimezone: true })
       .notNull()

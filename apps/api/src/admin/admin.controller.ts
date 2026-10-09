@@ -32,6 +32,26 @@ export class AdminController {
   analytics(@Req() r: AuthenticatedRequest) {
     return this.admin.analytics(r[AUTH_USER_ID]);
   }
+  @Get('profile-changes')
+  profileChanges(@Req() r: AuthenticatedRequest) {
+    return this.admin.profileChanges(r[AUTH_USER_ID]);
+  }
+  @Post('profile-changes/:id/decisions')
+  decideProfileChange(
+    @Req() r: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    return this.admin.decideProfileChange(r[AUTH_USER_ID], id, body);
+  }
+  @Post('businesses/:id/handle')
+  setBusinessHandle(
+    @Req() r: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    return this.admin.setBusinessHandle(r[AUTH_USER_ID], id, body);
+  }
   @Get('referrals')
   referralPool(@Req() r: AuthenticatedRequest) {
     return this.admin.referralPool(r[AUTH_USER_ID]);

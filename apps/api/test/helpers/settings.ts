@@ -28,6 +28,7 @@ export async function lowLimits(
       dailyCount: 3,
     },
     newAccounts: { days: 0, dailyWithdrawalKobo: 100000000 },
+    handles: { reserved: ['shoprite'] },
     referrals: {
       enabled: referrals,
       friend: {

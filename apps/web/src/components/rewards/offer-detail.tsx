@@ -176,7 +176,24 @@ export function OfferDetail({
   const data = offer.data;
   const terms = data?.campaignTerms;
   return (
-    <Page title={data?.title ?? 'Offer'} eyebrow="Cash back offer">
+    <Page
+      title={data?.title ?? 'Offer'}
+      eyebrow="Cash back offer"
+      intro={
+        data?.business ? (
+          <>
+            By{' '}
+            {data.business.handle ? (
+              <Link href={`/b/${data.business.handle}`}>
+                {data.business.name}
+              </Link>
+            ) : (
+              data.business.name
+            )}
+          </>
+        ) : undefined
+      }
+    >
       {offer.loading && !data ? (
         <Loading>Loading offer…</Loading>
       ) : offer.error && !code ? (

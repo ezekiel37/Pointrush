@@ -8,7 +8,9 @@ import { Feedback, Loading } from '@/components/ui/feedback';
 import { Field } from '@/components/ui/field';
 import { apiRequest, naira, shortDate } from '@/lib/api';
 import { personDetail, searchResults } from '@/lib/admin';
-import type { z } from 'zod';
+import { z } from 'zod';
+import { Dialog } from '@/components/ui/dialog';
+import { toast } from '@/components/ui/toast';
 import { useApiRead } from '@/lib/use-api-read';
 import { AdminFailure, AdminFrame, denied } from './admin-frame';
 
@@ -95,7 +97,11 @@ export function AdminPeople() {
                           'No profile yet'}
                       </strong>
                       <span className="small-note truncate">
-                        {[p.username && `@${p.username}`, p.email]
+                        {[
+                          p.handle && `@${p.handle}`,
+                          p.username && `@${p.username}`,
+                          p.email,
+                        ]
                           .filter(Boolean)
                           .join(' · ')}
                       </span>
@@ -119,6 +125,42 @@ export function AdminPeople() {
 export function AdminPerson({ id }: { id: string }) {
   const read = useApiRead(`admin/accounts/${id}`, personDetail);
   const p = read.data;
+  const [handleOpen, setHandleOpen] = useState(false);
+  const [newHandle, setNewHandle] = useState('');
+  const [handleReason, setHandleReason] = useState('');
+  const [handleBusy, setHandleBusy] = useState(false);
+  const [handleError, setHandleError] = useState('');
+
+  async function changeHandle(event: FormEvent) {
+    event.preventDefault();
+    if (!p?.businessProfile || handleBusy) return;
+    setHandleBusy(true);
+    setHandleError('');
+    try {
+      await apiRequest(
+        `admin/businesses/${p.businessProfile.id}/handle`,
+        z.unknown(),
+        {
+          method: 'POST',
+          body: {
+            handle: newHandle.trim().replace(/^@/, '').toLowerCase(),
+            reason: handleReason.trim(),
+          },
+        },
+      );
+      toast('Handle changed');
+      setHandleOpen(false);
+      setNewHandle('');
+      setHandleReason('');
+      read.refresh();
+    } catch {
+      setHandleError(
+        'Not changed. The handle may be taken or reserved, or this is your own business.',
+      );
+    } finally {
+      setHandleBusy(false);
+    }
+  }
   return (
     <AdminFrame
       title={p?.businessProfile?.name ?? p?.displayName ?? 'Account'}
@@ -136,6 +178,12 @@ export function AdminPerson({ id }: { id: string }) {
                 {(
                   [
                     ['Username', p.username ? `@${p.username}` : 'None yet'],
+                    [
+                      'Earlier usernames',
+                      p.formerUsernames.length
+                        ? p.formerUsernames.map((u) => `@${u}`).join(', ')
+                        : 'None',
+                    ],
                     ['Email', p.email ?? 'Unknown'],
                     [
                       'Signed up as',
@@ -166,6 +214,27 @@ export function AdminPerson({ id }: { id: string }) {
                   {(
                     [
                       ['Name', p.businessProfile.name],
+                      [
+                        'Handle',
+                        p.businessProfile.handles[0]
+                          ? `@${p.businessProfile.handles[0]}`
+                          : 'None',
+                      ],
+                      [
+                        'Earlier handles',
+                        p.businessProfile.handles.length > 1
+                          ? p.businessProfile.handles
+                              .slice(1)
+                              .map((h) => `@${h}`)
+                              .join(', ')
+                          : 'None',
+                      ],
+                      [
+                        'Earlier names',
+                        p.businessProfile.formerNames.length
+                          ? p.businessProfile.formerNames.join(', ')
+                          : 'None',
+                      ],
                       ['Campaigns', String(p.businessProfile.campaigns)],
                       ['Funded in total', naira(p.businessProfile.fundedKobo)],
                       ['Available', naira(p.businessProfile.availableKobo)],
@@ -183,6 +252,68 @@ export function AdminPerson({ id }: { id: string }) {
                 </dl>
               </section>
             )}
+            {p.businessProfile && (
+              <Button
+                type="button"
+                variant="outline"
+                style={{ justifySelf: 'start' }}
+                onClick={() => {
+                  setHandleError('');
+                  setHandleOpen(true);
+                }}
+              >
+                Change business handle
+              </Button>
+            )}
+            <Dialog
+              open={handleOpen}
+              onClose={() => !handleBusy && setHandleOpen(false)}
+              title="Change this business's handle"
+              description="Only for impersonation or a legal complaint. The old handle stays reserved and leads to the new one. The owner sees your reason."
+            >
+              <form className="grid gap-4" onSubmit={changeHandle} noValidate>
+                <Field
+                  id="admin-handle"
+                  label="New handle"
+                  value={newHandle}
+                  onChange={(event) => setNewHandle(event.target.value)}
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  disabled={handleBusy}
+                  data-autofocus
+                />
+                <Field
+                  id="admin-handle-reason"
+                  label="Reason"
+                  placeholder="Trademark complaint from Shoprite Holdings"
+                  value={handleReason}
+                  onChange={(event) => setHandleReason(event.target.value)}
+                  disabled={handleBusy}
+                />
+                {handleError && <Feedback error>{handleError}</Feedback>}
+                <div className="dialog-foot">
+                  <Button
+                    variant="ghost"
+                    type="button"
+                    onClick={() => setHandleOpen(false)}
+                    disabled={handleBusy}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="accent"
+                    type="submit"
+                    loading={handleBusy}
+                    disabled={
+                      newHandle.trim().length < 3 ||
+                      handleReason.trim().length < 3
+                    }
+                  >
+                    Change handle
+                  </Button>
+                </div>
+              </form>
+            </Dialog>
             {p.history.length > 0 && (
               <section className="card">
                 <h2 style={{ marginTop: 0 }}>Access changes</h2>

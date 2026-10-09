@@ -56,6 +56,19 @@ export const settingsSchema = z
         dailyWithdrawalKobo: kobo(naira(10_000_000)).min(naira(100)),
       })
       .strict(),
+    handles: z
+      .object({
+        // Handles nobody may take, on top of the built-in list (admin,
+        // acticlaim, support and similar). Big brand names belong here.
+        reserved: z
+          .array(
+            z
+              .string()
+              .regex(/^[a-z][a-z0-9_]{1,28}[a-z0-9]$/, 'Use a valid handle'),
+          )
+          .max(1000),
+      })
+      .strict(),
     referrals: z
       .object({
         enabled: z.boolean(),
@@ -195,6 +208,30 @@ export const defaultSettings: Settings = {
     dailyCount: 3,
   },
   newAccounts: { days: 7, dailyWithdrawalKobo: naira(50_000) },
+  handles: {
+    reserved: [
+      'shoprite',
+      'dangote',
+      'mtn',
+      'airtel',
+      'glo',
+      'gtbank',
+      'access_bank',
+      'zenith_bank',
+      'first_bank',
+      'opay',
+      'palmpay',
+      'moniepoint',
+      'kuda',
+      'jumia',
+      'konga',
+      'chicken_republic',
+      'dominos',
+      'kfc',
+      'coca_cola',
+      'pepsi',
+    ],
+  },
   referrals: {
     enabled: true,
     friend: {

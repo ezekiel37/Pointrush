@@ -33,6 +33,7 @@ const settings = {
     dailyCount: 3,
   },
   newAccounts: { days: 7, dailyWithdrawalKobo: 5000000 },
+  handles: { reserved: ['shoprite'] },
   referrals: {
     enabled: true,
     friend: {
