@@ -25,8 +25,12 @@ export class CampaignsController {
     return this.overviews.overview(r[AUTH_USER_ID], query);
   }
   @Post('campaigns/:id/codes')
-  activate(@Req() r: AuthenticatedRequest, @Param('id') id: string) {
-    return this.campaigns.activate(r[AUTH_USER_ID], id);
+  activate(
+    @Req() r: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    return this.campaigns.activate(r[AUTH_USER_ID], id, body);
   }
   @Post('campaigns/:id/confirmations')
   confirm(

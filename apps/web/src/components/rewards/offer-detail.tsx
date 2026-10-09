@@ -44,6 +44,8 @@ function codeError(error: unknown) {
     if (error.status === 401) return 'Sign in to get your code.';
     if (error.code === 'offer_unavailable')
       return 'This offer is not available to you right now. You may have used it already (monthly offers come back next month), or it is not running.';
+    if (error.code === 'invite_unavailable')
+      return 'This offer is for people new to this business, invited by one of its customers. Ask a customer for their invite link.';
     if (error.code === 'code_rate_limit')
       return 'Too many codes requested. Use your latest code or try again later.';
   }
@@ -135,7 +137,13 @@ function Ticket({ code, onRenew }: { code: Code; onRenew: () => void }) {
   );
 }
 
-export function OfferDetail({ id }: { id: string }) {
+export function OfferDetail({
+  id,
+  inviteRef = null,
+}: {
+  id: string;
+  inviteRef?: string | null;
+}) {
   const offer = useApiRead(`work/tasks/${id}`, offerDetail);
   const [code, setCode] = useState<Code | null>(null);
   const [busy, setBusy] = useState(false);
@@ -153,7 +161,8 @@ export function OfferDetail({ id }: { id: string }) {
     try {
       const issued = await apiRequest(`campaigns/${id}/codes`, purchaseCode, {
         method: 'POST',
-        body: {},
+        body:
+          inviteRef && data?.campaignTerms?.referral ? { ref: inviteRef } : {},
       });
       saveCode(issued);
       setCode(issued);
@@ -209,6 +218,15 @@ export function OfferDetail({ id }: { id: string }) {
               </section>
             )}
             {code && error && <Feedback error>{error}</Feedback>}
+            {data?.campaignTerms?.referral && (
+              <FriendInvite
+                id={id}
+                rewardKobo={data.rewardBackingKobo}
+                referrerKobo={data.campaignTerms.referral.referrerKobo}
+                invite={data.invite}
+                inviteRef={inviteRef}
+              />
+            )}
           </div>
           {data && terms && (
             <section className="card grid gap-3">
@@ -287,5 +305,71 @@ export function OfferDetail({ id }: { id: string }) {
         </div>
       )}
     </Page>
+  );
+}
+
+// Bring-a-friend offers: customers share a link; new customers see who
+// invited them. The cash back is split between the two.
+function FriendInvite({
+  id,
+  rewardKobo,
+  referrerKobo,
+  invite,
+  inviteRef,
+}: {
+  id: string;
+  rewardKobo: string;
+  referrerKobo: string;
+  invite: z.infer<typeof offerDetail>['invite'];
+  inviteRef: string | null;
+}) {
+  const [copied, setCopied] = useState(false);
+  const friendKobo = (BigInt(rewardKobo) - BigInt(referrerKobo)).toString();
+  if (invite?.canInvite) {
+    const link =
+      invite.username &&
+      `${typeof window === 'undefined' ? '' : window.location.origin}/offers/${id}?ref=${invite.username}`;
+    return (
+      <section className="card grid gap-3" aria-labelledby="invite-heading">
+        <h2 id="invite-heading" style={{ margin: 0 }}>
+          Invite friends
+        </h2>
+        <p className="small-note" style={{ margin: 0 }}>
+          You get {naira(referrerKobo)} for each friend new to this business who
+          buys, and they get {naira(friendKobo)}. {invite.invited} of{' '}
+          {invite.limit} friends so far.
+        </p>
+        {link ? (
+          <div className="flex gap-2" style={{ flexWrap: 'wrap' }}>
+            <Button
+              type="button"
+              onClick={() => {
+                const share = navigator.share
+                  ? navigator.share({ url: link, title: 'Cash back for you' })
+                  : navigator.clipboard.writeText(link);
+                void share.then(
+                  () => setCopied(true),
+                  () => setCopied(false),
+                );
+              }}
+            >
+              {copied ? 'Link shared' : 'Share your invite link'}
+            </Button>
+          </div>
+        ) : (
+          <p className="small-note" style={{ margin: 0 }}>
+            <Link href="/profile">Choose a username</Link> to get your invite
+            link.
+          </p>
+        )}
+      </section>
+    );
+  }
+  return (
+    <Feedback>
+      {inviteRef
+        ? `Invited by @${inviteRef}. If you are new to this business, you get ${naira(friendKobo)} back.`
+        : 'This offer is for people new to this business, invited by one of its customers.'}
+    </Feedback>
   );
 }

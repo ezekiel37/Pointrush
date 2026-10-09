@@ -177,6 +177,34 @@ test('a group offer sends its target and base amount', async ({ page }) => {
   expect(bodies[0]).not.toHaveProperty('campaignTerms.repeat');
 });
 
+test('a bring-a-friend offer sends the inviter share', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.route('**/api/v1/business/overview?*', (route) =>
+    route.fulfill({ json: overview() }),
+  );
+  const bodies: Record<string, unknown>[] = [];
+  await page.route('**/api/v1/sponsor/tasks', (route) => {
+    bodies.push(route.request().postDataJSON());
+    return route.fulfill({ json: { id: businessId } });
+  });
+  await page.goto('/business/campaigns/new');
+  await page.getByLabel('Campaign name').fill('Bring a friend');
+  await page.getByLabel('What shoppers do').fill('Buy any meal.');
+  await page.getByLabel('Cash back per purchase (₦)').fill('1,000');
+  await page.getByLabel('Number of shoppers').fill('20');
+  await page.getByRole('button', { name: 'Bring a friend' }).click();
+  await page.getByLabel('Goes to the customer who invited (₦)').fill('400');
+  await expect(page.getByText('The new customer gets ₦600.')).toBeVisible();
+  await page.getByLabel('Place name').fill('Mama Put Kitchen');
+  await page.getByLabel('Address').fill('12 Campus Road, Ibadan');
+  await healthy(page);
+  await page.getByRole('button', { name: /Lock ₦20,000 and submit/ }).click();
+  await page.waitForURL('**/business/campaigns?created=1');
+  expect(bodies[0]).toMatchObject({
+    campaignTerms: { referral: { referrerKobo: '40000' } },
+  });
+});
+
 test('a prize promotion funds every code: there is no chance mode', async ({
   page,
 }) => {

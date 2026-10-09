@@ -571,6 +571,103 @@ test('a group offer pays everyone the full cash back once the target is reached'
   );
 });
 
+test('bring a friend: a new customer invited by a customer splits the cash back', async () => {
+  const work = fixture.work;
+  const merchant = await fixture.business();
+  // First an ordinary offer, so Ada becomes a customer of this business.
+  const regular = await campaign(2, '50000', merchant);
+  const [ada, bola, chidi] = [
+    await identity(),
+    await identity(),
+    await identity(),
+  ];
+  await db.insert(s.usernames).values({
+    username: 'ada_okafor',
+    accountId: ada.account,
+    isCurrent: true,
+  });
+  const adaCode = await campaigns.activate(ada.user, regular.id);
+  await campaigns.confirm(
+    merchant.user,
+    regular.id,
+    confirmation(adaCode.code),
+  );
+
+  const friends = await campaign(3, '100000', merchant, {
+    terms: { referral: { referrerKobo: '40000' } },
+  });
+  const view = await work.readTask(ada.user, friends.id);
+  assert.deepEqual(view.invite, {
+    canInvite: true,
+    username: 'ada_okafor',
+    invited: 0,
+    limit: 10,
+  });
+  // A bring-a-friend offer needs an invite from an existing customer.
+  assert.equal(
+    await reason(campaigns.activate(bola.user, friends.id)),
+    'invite_unavailable',
+  );
+  assert.equal(
+    await reason(
+      campaigns.activate(bola.user, friends.id, { ref: 'nobody_here' }),
+    ),
+    'invite_unavailable',
+  );
+  // Existing customers cannot use it themselves.
+  assert.equal(
+    await reason(
+      campaigns.activate(ada.user, friends.id, { ref: 'ada_okafor' }),
+    ),
+    'invite_unavailable',
+  );
+  const code = await campaigns.activate(bola.user, friends.id, {
+    ref: 'ADA_okafor',
+  });
+  const bought = await campaigns.confirm(
+    merchant.user,
+    friends.id,
+    confirmation(code.code),
+  );
+  assert.equal((await work.readTask(ada.user, friends.id)).invite?.invited, 1);
+  // Ada can keep inviting new people.
+  assert.ok(
+    (await campaigns.activate(chidi.user, friends.id, { ref: 'ada_okafor' }))
+      .code,
+  );
+  await travel('25 hours');
+  try {
+    await campaigns.release(bola.user, bought.id);
+    await campaigns.release(bola.user, bought.id);
+  } finally {
+    await travel('0');
+  }
+  // ₦600 to the friend, ₦400 to the customer who invited them, once.
+  assert.equal(await wallet(bola.account), 60000n);
+  assert.equal(await wallet(ada.account), 40000n);
+  // Combining offer types is refused.
+  await assert.rejects(
+    fixture.sponsors.createTask(merchant.user, {
+      requestId: randomUUID(),
+      title: 'Mixed',
+      instructions: 'Buy',
+      proofRequirements: 'Till confirmation',
+      rejectionCriteria: 'Refunds',
+      model: 'purchase_cashback',
+      capacity: 5,
+      rewardKobo: '50000',
+      startsAt: new Date(Date.now() + 60000).toISOString(),
+      endsAt: new Date(Date.now() + 120000).toISOString(),
+      campaignTerms: {
+        ...terms,
+        referral: { referrerKobo: '10000' },
+        repeat: 'monthly',
+      },
+    }),
+    { status: 400 },
+  );
+});
+
 test('voids are capped at 20%, shoppers can dispute for 7 days, and voided money stays locked until decided', async () => {
   const { merchant, id, allocation } = await campaign(20, '50000');
   const shoppers: Awaited<ReturnType<typeof identity>>[] = [];

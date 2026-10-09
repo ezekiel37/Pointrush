@@ -1093,3 +1093,57 @@ test('bills show coming soon until a provider is connected', async ({
   ).toBeVisible();
   await healthy(page);
 });
+
+test('bring a friend: invite links carry the username and customers can share', async ({
+  page,
+}) => {
+  await phone(page);
+  const friendOffer = {
+    ...offer,
+    instructions: 'Buy any meal.',
+    rewardBackingKobo: '100000',
+    campaignTerms: {
+      ...offer.campaignTerms,
+      referral: { referrerKobo: '40000' },
+    },
+  };
+  let invite: Record<string, unknown> | null = null;
+  await page.route(`**/api/v1/work/tasks/${offerId}`, (route) =>
+    route.fulfill({ json: { ...friendOffer, invite } }),
+  );
+  const bodies: unknown[] = [];
+  await page.route(`**/api/v1/campaigns/${offerId}/codes`, (route) => {
+    bodies.push(route.request().postDataJSON());
+    return route.fulfill({
+      json: {
+        taskId: offerId,
+        code: 'ABCDEFGHJK',
+        display: 'ABCDE-FGHJK',
+        expiresAt: new Date(Date.now() + 15 * 60000).toISOString(),
+      },
+    });
+  });
+  // A new customer arriving from a friend's link.
+  invite = { canInvite: false, username: null, invited: 0, limit: 10 };
+  await page.goto(`/offers/${offerId}?ref=Ada_Okafor`);
+  await expect(
+    page.getByText(/Invited by @ada_okafor\. If you are new/),
+  ).toBeVisible();
+  await expect(page.getByText(/you get ₦600 back/)).toBeVisible();
+  await page.getByRole('button', { name: 'Get my code' }).click();
+  await expect(page.getByText('ABCDE-FGHJK')).toBeVisible();
+  expect(bodies).toEqual([{ ref: 'ada_okafor' }]);
+  await healthy(page);
+
+  // An existing customer sees their invite link.
+  await page.evaluate(() => localStorage.clear());
+  invite = { canInvite: true, username: 'bola', invited: 3, limit: 10 };
+  await page.goto(`/offers/${offerId}`);
+  const section = page.getByRole('region', { name: 'Invite friends' });
+  await expect(section).toContainText('You get ₦400');
+  await expect(section).toContainText('3 of 10 friends');
+  await expect(
+    section.getByRole('button', { name: 'Share your invite link' }),
+  ).toBeVisible();
+  await healthy(page);
+});

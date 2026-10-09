@@ -39,6 +39,7 @@ const pending = z.object({
       placeAddress: z.string(),
       repeat: z.literal('monthly').optional(),
       group: z.object({ target: z.number().int(), baseKobo: money }).optional(),
+      referral: z.object({ referrerKobo: money }).optional(),
     })
     .nullable(),
   promotionTerms: z
@@ -170,6 +171,14 @@ function Terms({ task }: { task: Pending }) {
           ? 'Once per customer per month'
           : 'Once per customer',
       ],
+      ...(task.campaignTerms.referral
+        ? ([
+            [
+              'Bring a friend',
+              `New customers only, invited by a customer; ${naira(task.campaignTerms.referral.referrerKobo)} of each cash back goes to the inviter`,
+            ],
+          ] as [string, string][])
+        : []),
       ...(task.campaignTerms.group
         ? ([
             [

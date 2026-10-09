@@ -26,6 +26,8 @@ export const purchaseCodes = pgTable(
       .notNull()
       .references(() => accounts.id),
     code: varchar('code', { length: 10 }).notNull(),
+    // Bring-a-friend offers: the existing customer who invited this shopper.
+    referrerId: uuid('referrer_id').references(() => accounts.id),
     expiresAt: at('expires_at').notNull(),
     createdAt: at('created_at').notNull().defaultNow(),
   },
@@ -54,6 +56,8 @@ export const purchaseConfirmations = pgTable(
     actorId: uuid('actor_id')
       .notNull()
       .references(() => accounts.id),
+    // Copied from the code by the database; set only for bring-a-friend offers.
+    referrerId: uuid('referrer_id').references(() => accounts.id),
     amountKobo: bigint('amount_kobo', { mode: 'bigint' }).notNull(),
     // 'once' for a one-off offer; the Lagos calendar month ('2026-10') for a
     // monthly offer. Set by the database, never by the caller.

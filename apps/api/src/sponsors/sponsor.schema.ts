@@ -101,6 +101,15 @@ export const sponsorTasks = pgTable(
         and (${t.campaignTerms}->'group'->>'baseKobo')::numeric < ${t.rewardKobo}
         and not (${t.campaignTerms} ? 'repeat'))`,
     ),
+    // Bring a friend: each new customer's cash back is split, `referrerKobo`
+    // to the customer who invited them and the rest to the friend.
+    check(
+      'sponsor_task_campaign_referral',
+      sql`${t.campaignTerms} is null or not (${t.campaignTerms} ? 'referral') or (
+        ${t.campaignTerms}->'referral'->>'referrerKobo' ~ '^[1-9][0-9]{0,14}$'
+        and (${t.campaignTerms}->'referral'->>'referrerKobo')::numeric < ${t.rewardKobo}
+        and not (${t.campaignTerms} ? 'repeat') and not (${t.campaignTerms} ? 'group'))`,
+    ),
     check(
       'sponsor_task_promotion_terms',
       sql`(${t.model} = 'claim_code') = (${t.promotionTerms} is not null) and (${t.model} <> 'claim_code' or ${t.workTerms} is null)`,

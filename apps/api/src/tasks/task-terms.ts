@@ -35,9 +35,19 @@ export const campaignTermsSchema = z
       })
       .strict()
       .optional(),
+    // Bring a friend: only customers new to the business, invited by one who
+    // has bought there. The cash back is split: `referrerKobo` to the inviter.
+    referral: z
+      .object({ referrerKobo: z.string().regex(/^[1-9][0-9]{0,14}$/) })
+      .strict()
+      .optional(),
   })
   .strict()
-  .refine((t) => !(t.group && t.repeat));
+  .refine(
+    (t) =>
+      [t.group, t.repeat, t.referral].filter((v) => v !== undefined).length <=
+      1,
+  );
 export type CampaignTerms = z.infer<typeof campaignTermsSchema>;
 
 // Prize promotions: the business creates codes on Acticlaim and funds every

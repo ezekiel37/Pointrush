@@ -36,6 +36,9 @@ export const campaignTerms = z.object({
   // Group offer: the full cash back once `target` people buy, `baseKobo`
   // each otherwise.
   group: z.object({ target: z.number().int(), baseKobo: money }).optional(),
+  // Bring a friend: `referrerKobo` of each new customer's cash back goes to
+  // the customer who invited them.
+  referral: z.object({ referrerKobo: money }).optional(),
 });
 export const offerSummary = z.object({
   id: z.uuid(),
@@ -65,6 +68,15 @@ export const offerDetail = z.object({
   model: z.string(),
   campaignTerms: campaignTerms.nullable(),
   groupComplete: z.boolean().default(false),
+  invite: z
+    .object({
+      canInvite: z.boolean(),
+      username: z.string().nullable(),
+      invited: z.number().int(),
+      limit: z.number().int(),
+    })
+    .nullable()
+    .default(null),
 });
 
 export const purchaseCode = z.object({

@@ -225,6 +225,13 @@
       "when": 1791549060775,
       "tag": "0031_group_offers",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1791550097715,
+      "tag": "0032_friend_offers",
+      "breakpoints": true
     }
   ]
 }

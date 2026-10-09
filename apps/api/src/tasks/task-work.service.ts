@@ -48,7 +48,7 @@ export class TaskWorkService {
 
   async readTask(user: string, taskId: string) {
     parse(id, taskId);
-    return this.run(user, async (tx) => {
+    return this.run(user, async (tx, actor) => {
       const [task] = await tx
         .select()
         .from(s.sponsorTasks)
@@ -96,8 +96,42 @@ export class TaskWorkService {
               .where(eq(s.campaignGroupCompletions.taskId, task.id))
           ).length > 0,
         termsVersion: task.termsVersion,
+        // Bring-a-friend offers: whether this person can invite (they have
+        // bought here before), their username for the link, and how many
+        // friends they brought to this offer.
+        invite: task.campaignTerms?.referral
+          ? await this.invite(tx, task, actor)
+          : null,
       };
     });
+  }
+
+  // Bring-a-friend offers: whether this person can invite (they have bought
+  // here before), their username for the link, and how many friends they
+  // brought to this offer.
+  private async invite(
+    tx: FundingDatabase,
+    task: { id: string; sponsorId: string },
+    actor: string,
+  ) {
+    const result = (await tx.execute(sql`select
+        exists (select 1 from purchase_confirmations p join sponsor_tasks st on st.id = p.task_id
+          where st.sponsor_id = ${task.sponsorId} and p.account_id = ${actor}
+            and (not exists (select 1 from purchase_voids v where v.confirmation_id = p.id)
+              or exists (select 1 from purchase_void_rulings r where r.confirmation_id = p.id and r.decision = 'reversed'))) as can_invite,
+        (select username from usernames where account_id = ${actor} and is_current) as username,
+        (select count(*)::int from purchase_confirmations p where p.task_id = ${task.id}
+          and p.referrer_id = ${actor} and purchase_holds_place(p.id)) as invited`)) as unknown as {
+      rows: { can_invite: boolean; username: string | null; invited: number }[];
+    };
+    // node-postgres returns { rows }; some drivers return the rows directly.
+    const row = (result.rows ?? (result as unknown as typeof result.rows))[0]!;
+    return {
+      canInvite: Boolean(row.can_invite),
+      username: row.username,
+      invited: Number(row.invited),
+      limit: 10,
+    };
   }
 
   async publish(user: string, taskId: string) {

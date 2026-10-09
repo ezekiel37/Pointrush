@@ -104,7 +104,8 @@ export function CampaignForm({ model }: { model: Model }) {
     endsAt: localInput(new Date(start.getTime() + 30 * 86400000)),
     minSpend: '0',
     holdHours: 72,
-    repeat: 'once' as 'once' | 'monthly' | 'group',
+    repeat: 'once' as 'once' | 'monthly' | 'group' | 'friend',
+    referrerShare: '',
     groupTarget: '',
     groupBase: '',
     placeName: '',
@@ -159,6 +160,11 @@ export function CampaignForm({ model }: { model: Model }) {
         next.placeAddress = 'Add the address shoppers will visit.';
       if (!form.voidWhen.trim())
         next.voidWhen = 'Say when you may void a purchase.';
+      if (form.repeat === 'friend') {
+        const share = toKobo(form.referrerShare);
+        if (!share || (rewardKobo && BigInt(share) >= BigInt(rewardKobo)))
+          next.referrerShare = 'Enter an amount below the cash back.';
+      }
       if (form.repeat === 'group') {
         const target = /^[1-9]\d{0,5}$/.test(form.groupTarget)
           ? Number(form.groupTarget)
@@ -203,6 +209,9 @@ export function CampaignForm({ model }: { model: Model }) {
             placeName: form.placeName.trim(),
             placeAddress: form.placeAddress.trim(),
             ...(form.repeat === 'monthly' ? { repeat: 'monthly' } : {}),
+            ...(form.repeat === 'friend'
+              ? { referral: { referrerKobo: toKobo(form.referrerShare) } }
+              : {}),
             ...(form.repeat === 'group'
               ? {
                   group: {
@@ -389,7 +398,7 @@ export function CampaignForm({ model }: { model: Model }) {
                     How often each customer gets it
                   </span>
                   <div
-                    className="segmented preset-row three"
+                    className="segmented preset-row two"
                     role="group"
                     aria-labelledby="repeat-label"
                   >
@@ -398,6 +407,7 @@ export function CampaignForm({ model }: { model: Model }) {
                         ['once', 'Once'],
                         ['monthly', 'Once a month'],
                         ['group', 'Group offer'],
+                        ['friend', 'Bring a friend'],
                       ] as const
                     ).map(([value, label]) => (
                       <button
@@ -413,12 +423,26 @@ export function CampaignForm({ model }: { model: Model }) {
                   <p className="field-help">
                     {form.repeat === 'monthly'
                       ? 'A customer can get it again each new month, so you can see who keeps coming back. The number of cash backs above is the total across all months.'
-                      : form.repeat === 'group'
-                        ? 'Customers bring friends: if enough people buy before the end, everyone gets the full cash back above. If not, each buyer still gets a smaller amount and the rest comes back to you.'
-                        : 'Each customer gets this cash back one time.'}
+                      : form.repeat === 'friend'
+                        ? 'Only for people new to your business, invited by one of your customers. The cash back above is split: part to the customer who invited them, the rest to the new customer. You pay only when a new customer buys.'
+                        : form.repeat === 'group'
+                          ? 'Customers bring friends: if enough people buy before the end, everyone gets the full cash back above. If not, each buyer still gets a smaller amount and the rest comes back to you.'
+                          : 'Each customer gets this cash back one time.'}
                   </p>
                 </div>
               )}
+              {model === 'purchase_cashback' &&
+                form.repeat === 'friend' &&
+                field('referrerShare', 'Goes to the customer who invited (₦)', {
+                  inputMode: 'decimal',
+                  placeholder: '300',
+                  hint:
+                    rewardKobo &&
+                    toKobo(form.referrerShare) &&
+                    BigInt(toKobo(form.referrerShare)!) < BigInt(rewardKobo)
+                      ? `The new customer gets ${naira((BigInt(rewardKobo) - BigInt(toKobo(form.referrerShare)!)).toString())}.`
+                      : 'The rest goes to the new customer.',
+                })}
               {model === 'purchase_cashback' && form.repeat === 'group' && (
                 <div className="pair">
                   {field('groupTarget', 'Buyers needed', {

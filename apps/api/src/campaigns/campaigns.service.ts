@@ -28,6 +28,17 @@ const confirmInput = z
       .transform(BigInt),
   })
   .strict();
+// Bring-a-friend offers: the inviter's username, from their invite link.
+const activateInput = z
+  .object({
+    ref: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .regex(/^[a-z][a-z0-9_]{1,18}[a-z0-9]$/)
+      .optional(),
+  })
+  .strict();
 const voidInput = z
   .object({ reason: z.string().trim().min(1).max(500) })
   .strict();
@@ -107,9 +118,25 @@ export class CampaignsService {
     return row.task;
   }
 
-  async activate(user: string, taskId: string) {
+  async activate(user: string, taskId: string, input: unknown = {}) {
     parse(id, taskId);
+    const { ref } = parse(activateInput, input ?? {});
     return actorTransaction(this.db, user, async (tx, actor) => {
+      // An unknown username simply has no inviter; the database then refuses
+      // the code for a bring-a-friend offer.
+      const referrerId = ref
+        ? ((
+            await tx
+              .select({ accountId: s.usernames.accountId })
+              .from(s.usernames)
+              .where(
+                and(
+                  eq(s.usernames.username, ref),
+                  eq(s.usernames.isCurrent, true),
+                ),
+              )
+          )[0]?.accountId ?? null)
+        : null;
       // Reuse a live, unused code so repeated taps do not mint new ones.
       const [live] = await tx
         .select()
@@ -122,6 +149,9 @@ export class CampaignsService {
           and(
             eq(s.purchaseCodes.taskId, taskId),
             eq(s.purchaseCodes.accountId, actor),
+            referrerId
+              ? eq(s.purchaseCodes.referrerId, referrerId)
+              : isNull(s.purchaseCodes.referrerId),
             isNull(s.purchaseConfirmations.id),
             sql`${s.purchaseCodes.expiresAt} > clock_timestamp() + interval '2 minutes'`,
           ),
@@ -136,6 +166,7 @@ export class CampaignsService {
             .values({
               taskId,
               accountId: actor,
+              referrerId,
               code: newCode(),
               // Replaced by the database clock.
               expiresAt: new Date(),
