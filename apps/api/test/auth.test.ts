@@ -100,6 +100,11 @@ test('real auth lifecycle: verified email, protected cookie, reset revocation an
 
   const signin = await request('/sign-in/email', { email, password });
   assert.equal(signin.status, 200);
+  // Every sign-in is kept in the audit trail.
+  assert.deepEqual(
+    (await db.select().from(schema.auditEvents)).map((e) => e.kind),
+    ['sign_in'],
+  );
   const cookieHeader = signin.headers.get('set-cookie');
   assert.ok(cookieHeader);
   assert.match(cookieHeader, /HttpOnly/i);

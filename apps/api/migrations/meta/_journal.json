@@ -232,6 +232,13 @@
       "when": 1791550097715,
       "tag": "0032_friend_offers",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1791553175943,
+      "tag": "0033_security_audit",
+      "breakpoints": true
     }
   ]
 }

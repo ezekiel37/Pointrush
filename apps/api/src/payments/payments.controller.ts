@@ -32,7 +32,10 @@ export class PaymentsController {
     return this.payments.createFundingIntent(r[AUTH_USER_ID], body);
   }
   // Called by the provider, not a browser: authenticated by its signature.
+  // Its own ceiling, so junk traffic to other public routes cannot crowd out
+  // provider notifications. Unsigned requests are rejected before any work.
   @PublicRoute()
+  @RateLimit({ limit: 30000, windowMs: 60000 })
   @Post('payments/webhooks/:provider')
   @HttpCode(200)
   async webhook(
@@ -71,10 +74,13 @@ export class PaymentsController {
   async withdraw(@Req() r: AuthenticatedRequest, @Body() body: unknown) {
     const { password, ...request } =
       body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
+    const auth = this.auth;
     if (
-      !this.auth ||
+      !auth ||
       typeof password !== 'string' ||
-      !(await this.auth.verifyPassword(r.headers, password))
+      !(await this.payments.checkPassword(r[AUTH_USER_ID], () =>
+        auth.verifyPassword(r.headers, password),
+      ))
     )
       throw new ConflictException({
         statusCode: 409,

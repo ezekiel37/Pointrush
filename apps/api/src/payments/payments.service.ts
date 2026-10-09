@@ -10,6 +10,7 @@ import { z } from 'zod';
 import type { FundingDatabase } from '../funding/funding-ledger.js';
 import { postFundingTransfer } from '../funding/funding-ledger.js';
 import * as s from '../database/schema.js';
+import { checkMoneyPassword } from '../audit/audit.js';
 import { actorTransaction } from '../tasks/actor-transaction.js';
 import type { SecurityAlerts } from '../auth/security-alerts.js';
 import { InvalidWebhook, ProviderError } from './provider.js';
@@ -261,6 +262,11 @@ export class PaymentsService {
       return paid ? 'payout_paid' : 'payout_failed';
     }
     return 'ignored';
+  }
+
+  // Re-entered password for a withdrawal; repeated failures pause it.
+  checkPassword(user: string, verify: () => Promise<boolean>) {
+    return checkMoneyPassword(this.db, user, 'withdrawal', verify);
   }
 
   async requestWithdrawal(user: string, input: unknown) {

@@ -8,6 +8,7 @@ import { z } from 'zod';
 import type { FundingDatabase } from '../funding/funding-ledger.js';
 import * as s from '../database/schema.js';
 import { actorTransaction } from '../tasks/actor-transaction.js';
+import { checkMoneyPassword } from '../audit/audit.js';
 import { safeErrorSummary } from '../database/safe-error.js';
 import type { BillKind, BillProvider, Biller } from './provider.js';
 
@@ -65,6 +66,11 @@ export class BillsService {
     private readonly provider?: BillProvider,
     private readonly now: () => number = Date.now,
   ) {}
+
+  // Re-entered password for a bill payment; repeated failures pause it.
+  checkPassword(user: string, verify: () => Promise<boolean>) {
+    return checkMoneyPassword(this.db, user, 'bill', verify);
+  }
 
   private requireProvider() {
     if (!this.provider)

@@ -7,6 +7,7 @@ import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import * as s from '../database/schema.js';
 import type { FundingDatabase } from '../funding/funding-ledger.js';
+import { recordAudit } from '../audit/audit.js';
 import { actorTransaction } from '../tasks/actor-transaction.js';
 
 type Row = Record<string, unknown>;
@@ -102,12 +103,18 @@ export class AdminService {
       .pipe(z.string().regex(/^[a-z0-9_]{3,20}$/))
       .safeParse(username);
     if (!parsed.success) throw new BadRequestException('Enter a username');
-    return this.reviewer(user, async (tx) => {
+    return this.reviewer(user, async (tx, actor) => {
       const [found] = await tx
         .select({ accountId: s.usernames.accountId })
         .from(s.usernames)
         .where(eq(s.usernames.username, parsed.data));
       if (!found?.accountId) throw new NotFoundException();
+      // Reviewers' look-ups are recorded: who looked at whose account.
+      await recordAudit(tx, {
+        kind: 'admin_account_viewed',
+        subject: found.accountId,
+        actor,
+      });
       return this.accountView(tx, found.accountId);
     });
   }
@@ -154,9 +161,15 @@ export class AdminService {
   }
 
   async flaggedPayments(user: string) {
-    return this.reviewer(user, async (tx) => ({
-      items: rows(
-        await tx.execute(sql`
+    return this.reviewer(user, async (tx, actor) => {
+      await recordAudit(tx, {
+        kind: 'admin_payments_viewed',
+        subject: actor,
+        actor,
+      });
+      return {
+        items: rows(
+          await tx.execute(sql`
           select e.id, e.provider, e.event_id, e.type, e.reference, e.amount_kobo::text as amount_kobo,
             e.currency, e.outcome, e.received_at, r.note, r.created_at as reviewed_at
           from payment_events e
@@ -164,22 +177,23 @@ export class AdminService {
           where e.outcome in ('mismatch', 'unknown_reference')
           order by (r.event_id is null) desc, e.received_at desc
           limit 100`),
-      ).map((r) => ({
-        id: String(r.id),
-        provider: String(r.provider),
-        eventId: String(r.event_id),
-        type: String(r.type),
-        reference: r.reference == null ? null : String(r.reference),
-        amountKobo: r.amount_kobo == null ? null : String(r.amount_kobo),
-        currency: r.currency == null ? null : String(r.currency),
-        outcome: String(r.outcome),
-        receivedAt: iso(r.received_at),
-        review:
-          r.note == null
-            ? null
-            : { note: String(r.note), at: iso(r.reviewed_at) },
-      })),
-    }));
+        ).map((r) => ({
+          id: String(r.id),
+          provider: String(r.provider),
+          eventId: String(r.event_id),
+          type: String(r.type),
+          reference: r.reference == null ? null : String(r.reference),
+          amountKobo: r.amount_kobo == null ? null : String(r.amount_kobo),
+          currency: r.currency == null ? null : String(r.currency),
+          outcome: String(r.outcome),
+          receivedAt: iso(r.received_at),
+          review:
+            r.note == null
+              ? null
+              : { note: String(r.note), at: iso(r.reviewed_at) },
+        })),
+      };
+    });
   }
 
   async reviewPayment(user: string, eventId: string, input: unknown) {
@@ -197,9 +211,15 @@ export class AdminService {
   // Shoppers' disputes of voided cash back, oldest first, with the business's
   // void record on that campaign for context.
   async voidDisputes(user: string) {
-    return this.reviewer(user, async (tx) => ({
-      items: rows(
-        await tx.execute(sql`
+    return this.reviewer(user, async (tx, actor) => {
+      await recordAudit(tx, {
+        kind: 'admin_disputes_viewed',
+        subject: actor,
+        actor,
+      });
+      return {
+        items: rows(
+          await tx.execute(sql`
           select p.id, t.title, sp.name as business, u.username as shopper,
             p.amount_kobo::text as amount_kobo, t.reward_kobo::text as cashback_kobo,
             p.created_at as purchased_at, v.reason as void_reason, v.created_at as voided_at,
@@ -216,22 +236,23 @@ export class AdminService {
           where not exists (select 1 from purchase_void_rulings r where r.confirmation_id = d.confirmation_id)
           order by d.created_at
           limit 100`),
-      ).map((r) => ({
-        id: String(r.id),
-        title: String(r.title),
-        business: String(r.business),
-        shopper: r.shopper == null ? null : String(r.shopper),
-        amountKobo: String(r.amount_kobo),
-        cashbackKobo: String(r.cashback_kobo),
-        purchasedAt: iso(r.purchased_at),
-        voidReason: String(r.void_reason),
-        voidedAt: iso(r.voided_at),
-        note: String(r.note),
-        disputedAt: iso(r.disputed_at),
-        campaignConfirmed: Number(r.confirmed),
-        campaignVoided: Number(r.voided),
-      })),
-    }));
+        ).map((r) => ({
+          id: String(r.id),
+          title: String(r.title),
+          business: String(r.business),
+          shopper: r.shopper == null ? null : String(r.shopper),
+          amountKobo: String(r.amount_kobo),
+          cashbackKobo: String(r.cashback_kobo),
+          purchasedAt: iso(r.purchased_at),
+          voidReason: String(r.void_reason),
+          voidedAt: iso(r.voided_at),
+          note: String(r.note),
+          disputedAt: iso(r.disputed_at),
+          campaignConfirmed: Number(r.confirmed),
+          campaignVoided: Number(r.voided),
+        })),
+      };
+    });
   }
 
   async ruleOnVoid(user: string, confirmationId: string, input: unknown) {

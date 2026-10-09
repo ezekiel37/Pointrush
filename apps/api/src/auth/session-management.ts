@@ -2,6 +2,7 @@ import { and, eq, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import * as schema from '../database/schema.js';
+import { recordAudit } from '../audit/audit.js';
 
 type SessionDatabase = PgDatabase<PgQueryResultHKT, typeof schema>;
 const sessionIdSchema = z.string().trim().min(1).max(200);
@@ -47,6 +48,8 @@ export class SessionManagementService {
         ),
       )
       .returning({ id: schema.authSessions.id });
+    if (deleted.length)
+      await recordAudit(this.db, { kind: 'session_revoked', subject: userId });
     return { revoked: deleted.length > 0 };
   }
 
@@ -61,6 +64,11 @@ export class SessionManagementService {
         ),
       )
       .returning({ id: schema.authSessions.id });
+    await recordAudit(this.db, {
+      kind: 'sessions_revoked',
+      subject: userId,
+      detail: { count: deleted.length },
+    });
     return { revoked: deleted.length };
   }
 }

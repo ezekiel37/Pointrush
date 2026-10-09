@@ -19,6 +19,7 @@ import { authAdapterSchema } from './auth.schema.js';
 import type { SendAuthEmail } from './auth.email.js';
 import { emailQueuePlugin } from './email-queue.schema.js';
 import { assertTrustedOrigin } from '../config/validation.js';
+import { recordAudit } from '../audit/audit.js';
 
 export interface AuthConfig {
   secret: string;
@@ -58,6 +59,22 @@ export function createAuth(
       transaction: true,
     }),
     logger: { disabled: true },
+    // Every new session is a sign-in; recorded for the person's audit trail.
+    databaseHooks: {
+      session: {
+        create: {
+          after: async (session) => {
+            await recordAudit(db, {
+              kind: 'sign_in',
+              subject: session.userId,
+              ...(session.userAgent
+                ? { detail: { userAgent: session.userAgent.slice(0, 200) } }
+                : {}),
+            });
+          },
+        },
+      },
+    },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
         if (ctx.path.startsWith('/two-factor/')) {

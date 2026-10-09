@@ -37,10 +37,13 @@ export class BillsController {
   async buy(@Req() r: AuthenticatedRequest, @Body() body: unknown) {
     const { password, ...request } =
       body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
+    const auth = this.auth;
     if (
-      !this.auth ||
+      !auth ||
       typeof password !== 'string' ||
-      !(await this.auth.verifyPassword(r.headers, password))
+      !(await this.bills.checkPassword(r[AUTH_USER_ID], () =>
+        auth.verifyPassword(r.headers, password),
+      ))
     )
       throw new ConflictException({
         statusCode: 409,
