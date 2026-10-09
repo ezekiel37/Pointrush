@@ -39,6 +39,18 @@ const settingsChange = z
   })
   .strict();
 const searchInput = z.string().trim().min(2).max(80);
+const topupInput = z
+  .object({
+    id: z.uuid(),
+    amountKobo: z
+      .string()
+      .regex(/^[1-9][0-9]{0,11}$/)
+      .transform(BigInt)
+      .refine((v) => v <= 100_000_000_00n),
+    bankReference: z.string().trim().min(3).max(120),
+    reason: z.string().trim().min(3).max(500),
+  })
+  .strict();
 
 // Who may change settings: named reviewer accounts only (see
 // SETTINGS_ADMIN_ACCOUNT_IDS). Read at each change so a removal applies at once.
@@ -543,6 +555,118 @@ export class AdminService {
             }
           : null,
       };
+    });
+  }
+
+  // The referral pool: what Acticlaim put in, what it paid, what is left.
+  async referralPool(user: string) {
+    return this.reviewer(user, async (tx, actor) => {
+      const [totals] = rows(
+        await tx.execute(sql`
+          with pool as (select id from funding_accounts where bucket = 'referral_pool')
+          select
+            coalesce((select sum(case when f.destination_id = p.id then f.amount_kobo else -f.amount_kobo end)
+              from pool p join funding_transfers f on f.source_id = p.id or f.destination_id = p.id), 0)::text as balance,
+            coalesce((select sum(amount_kobo) from referral_pool_topups), 0)::text as funded,
+            coalesce((select sum(amount_kobo) from referral_rewards), 0)::text as paid,
+            coalesce((select sum(amount_kobo) from referral_rewards
+              where created_at >= date_trunc('month', clock_timestamp() at time zone 'Africa/Lagos') at time zone 'Africa/Lagos'), 0)::text as paid_month,
+            (select count(*) from referral_rewards)::int as rewards,
+            (select count(*) from referrals)::int as invites`),
+      );
+      const topups = rows(
+        await tx.execute(sql`
+          select t.id, t.amount_kobo::text as amount, t.bank_reference, t.reason, t.created_at, u.username
+          from referral_pool_topups t
+          left join usernames u on u.account_id = t.actor_id and u.is_current
+          order by t.created_at desc limit 20`),
+      ).map((r) => ({
+        id: String(r.id),
+        amountKobo: String(r.amount),
+        bankReference: String(r.bank_reference),
+        reason: String(r.reason),
+        by: r.username == null ? null : String(r.username),
+        at: iso(r.created_at),
+      }));
+      const rewards = rows(
+        await tx.execute(sql`
+          select w.id, w.kind, w.amount_kobo::text as amount, w.basis_kobo::text as basis, w.created_at,
+            ui.username as inviter, ue.username as invited
+          from referral_rewards w
+          left join usernames ui on ui.account_id = w.referrer_id and ui.is_current
+          left join usernames ue on ue.account_id = w.referee_id and ue.is_current
+          order by w.created_at desc limit 50`),
+      ).map((r) => ({
+        id: String(r.id),
+        kind: String(r.kind),
+        amountKobo: String(r.amount),
+        basisKobo: String(r.basis),
+        inviter: r.inviter == null ? null : String(r.inviter),
+        invited: r.invited == null ? null : String(r.invited),
+        at: iso(r.created_at),
+      }));
+      return {
+        balanceKobo: String(totals?.balance ?? '0'),
+        fundedKobo: String(totals?.funded ?? '0'),
+        paidKobo: String(totals?.paid ?? '0'),
+        paidThisMonthKobo: String(totals?.paid_month ?? '0'),
+        rewards: Number(totals?.rewards ?? 0),
+        invites: Number(totals?.invites ?? 0),
+        canFund: settingsAdmins().includes(actor),
+        topups,
+        recent: rewards,
+      };
+    });
+  }
+
+  // Records money Acticlaim deposited for referral rewards. The deposit
+  // must already be in Acticlaim's bank account: this records it, with the
+  // bank reference, so rewards never exceed real money.
+  async fundReferralPool(user: string, input: unknown) {
+    const parsed = topupInput.safeParse(input);
+    if (!parsed.success)
+      throw new BadRequestException(
+        'Give the amount, the bank reference and a reason',
+      );
+    const value = parsed.data;
+    return this.reviewer(user, async (tx, actor) => {
+      if (!settingsAdmins().includes(actor))
+        throw new ForbiddenException({
+          statusCode: 403,
+          message: 'Only settings admins can fund the referral pool',
+          reason: 'settings_read_only',
+        });
+      const [existing] = rows(
+        await tx.execute(
+          sql`select amount_kobo::text as amount from referral_pool_topups where id = ${value.id}`,
+        ),
+      );
+      if (existing) {
+        if (String(existing.amount) !== value.amountKobo.toString())
+          throw new BadRequestException('Top-up ID already used');
+        return { id: value.id };
+      }
+      await tx.execute(
+        sql`insert into referral_pool_topups (id, amount_kobo, actor_id, bank_reference, reason)
+          values (${value.id}, ${value.amountKobo.toString()}::bigint, ${actor}, ${value.bankReference}, ${value.reason})`,
+      );
+      await tx.execute(
+        sql`insert into funding_accounts (bucket) values ('clearing') on conflict do nothing`,
+      );
+      await tx.execute(sql`
+        insert into funding_transfers (id, source_id, destination_id, amount_kobo, kind, reference, actor_id, reason)
+        values (gen_random_uuid(),
+          (select id from funding_accounts where bucket = 'clearing'),
+          (select id from funding_accounts where bucket = 'referral_pool'),
+          ${value.amountKobo.toString()}::bigint, 'referral_pool_funded',
+          ${`referral-topup:${value.id}`}, ${actor}, ${value.reason})`);
+      await recordAudit(tx, {
+        kind: 'referral_pool_funded',
+        subject: value.id,
+        actor,
+        detail: { amountKobo: value.amountKobo.toString() },
+      });
+      return { id: value.id };
     });
   }
 }

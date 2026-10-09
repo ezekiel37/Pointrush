@@ -3,6 +3,15 @@ import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common';
 import type { Response } from 'express';
 import { AccountError } from '../accounts/account.error.js';
 
+// Validation and permission reasons forms explain to people. Any other 400
+// or 403 reason stays internal.
+const publicReasons = new Set([
+  'below_minimum',
+  'above_maximum',
+  'invalid_settings',
+  'settings_read_only',
+]);
+
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(ApiExceptionFilter.name);
@@ -47,18 +56,31 @@ export class ApiExceptionFilter implements ExceptionFilter {
     // A stable machine-readable reason lets clients explain conflicts and
     // unavailable features precisely.
     const reason =
-      (status === 409 || status === 429 || status === 503) &&
+      (status === 409 ||
+        status === 429 ||
+        status === 503 ||
+        ((status === 400 || status === 403) &&
+          details &&
+          typeof details === 'object' &&
+          'reason' in details &&
+          publicReasons.has(String(details.reason)))) &&
       details &&
       typeof details === 'object' &&
       'reason' in details &&
       typeof details.reason === 'string'
         ? details.reason
         : undefined;
+    // Which account field was wrong, so forms can mark it.
+    const field =
+      exception instanceof AccountError && status === 400
+        ? exception.field
+        : undefined;
     response.status(status).json({
       statusCode: status,
       message,
       requestId,
       ...(reason && { reason }),
+      ...(field && { field }),
     });
   }
 }

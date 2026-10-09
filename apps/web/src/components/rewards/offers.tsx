@@ -1,12 +1,37 @@
 'use client';
 import Link from 'next/link';
-import { MapPin } from 'lucide-react';
+import { ChevronRight, Gift, MapPin } from 'lucide-react';
+import { nairaOfKobo, useLimits } from '@/lib/limits';
 import { Page } from '@/components/shell/app-shell';
 import { Loading } from '@/components/ui/feedback';
 import { WorkFailure } from '@/components/work/work-frame';
 import { naira, shortDate } from '@/lib/api';
 import { offerPage } from '@/lib/rewards';
 import { useApiRead } from '@/lib/use-api-read';
+
+// Acticlaim's own ways to earn, shown above the business offers.
+function InviteBanner() {
+  const { limits, loaded } = useLimits();
+  const top = Math.max(
+    limits.referrals.friend?.rewardKobo ?? 0,
+    limits.referrals.business?.rewardKobo ?? 0,
+  );
+  if (!loaded || top === 0) return null;
+  return (
+    <Link className="invite-banner" href="/invite">
+      <span className="pick-icon" aria-hidden>
+        <Gift size={20} />
+      </span>
+      <span className="grid">
+        <strong>Invite a friend or a business</strong>
+        <span className="small-note">
+          Acticlaim pays you up to {nairaOfKobo(top)} when they start using it.
+        </span>
+      </span>
+      <ChevronRight size={18} aria-hidden />
+    </Link>
+  );
+}
 
 export function OfferList() {
   const offers = useApiRead('work/tasks?kind=offers&limit=24', offerPage);
@@ -16,6 +41,7 @@ export function OfferList() {
       title="Offers"
       intro="Buy where you already shop and get money back. The business locks every naira before the offer goes live."
     >
+      <InviteBanner />
       {offers.loading && !offers.data ? (
         <Loading>Loading offers…</Loading>
       ) : offers.error ? (

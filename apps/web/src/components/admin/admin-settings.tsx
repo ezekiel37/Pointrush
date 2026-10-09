@@ -36,7 +36,13 @@ type Path =
   | [
       'referrals',
       'business',
-      'rewardKobo' | 'maxPercent' | 'minFundingKobo' | 'minPaidOutKobo',
+      (
+        | 'rewardKobo'
+        | 'maxPercent'
+        | 'minFundingKobo'
+        | 'minPaidOutKobo'
+        | 'minCustomers'
+      ),
     ];
 
 // Ceilings match the API: they stop an extra zero becoming a real loss.
@@ -144,6 +150,8 @@ function problems(s: PlatformSettings) {
     out['referrals.friend.maxPercent'] = 'Between 1 and 100';
   if (r.business.maxPercent < 1 || r.business.maxPercent > 50)
     out['referrals.business.maxPercent'] = 'Between 1 and 50';
+  if (r.business.minCustomers < 1 || r.business.minCustomers > 1000)
+    out['referrals.business.minCustomers'] = 'Between 1 and 1,000';
   if (r.monthlyCount < 0 || r.monthlyCount > 1000)
     out['referrals.monthlyCount'] = 'Between 0 and 1,000';
   return out;
@@ -536,11 +544,18 @@ export function AdminSettings() {
                     label="And paid its customers at least"
                     hint="Paid only after real customers were paid, so a fake business cannot fund, cancel and cash in."
                   />
+                  <Count
+                    {...common(['referrals', 'business', 'minCustomers'])}
+                    label="Paid to at least this many different customers"
+                    hint="The inviter and the owner never count"
+                  />
                 </div>
                 <p className="settings-example">
                   Example: once the business has funded{' '}
-                  {nairaOf(r.business.minFundingKobo)} and paid customers{' '}
-                  {nairaOf(r.business.minPaidOutKobo)}, the inviter gets{' '}
+                  {nairaOf(r.business.minFundingKobo)} and paid{' '}
+                  {nairaOf(r.business.minPaidOutKobo)} to{' '}
+                  {r.business.minCustomers} different customers, the inviter
+                  gets{' '}
                   <strong>
                     {nairaOf(
                       pay(

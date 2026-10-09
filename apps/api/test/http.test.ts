@@ -64,6 +64,10 @@ class ProbeController {
   invalid(): never {
     throw new BadRequestException({ message: 'Bad', reason: 'internal_hint' });
   }
+  @Get('minimum')
+  minimum(): never {
+    throw new BadRequestException({ message: 'Low', reason: 'below_minimum' });
+  }
 }
 
 let app: NestExpressApplication;
@@ -222,6 +226,11 @@ test('stable reasons are exposed only for conflicts and unavailable features', a
     .get('/api/v1/probe/invalid')
     .expect(400);
   assert.equal(invalid.body.reason, undefined);
+  // Limits forms explain are public.
+  const minimum = await request(server)
+    .get('/api/v1/probe/minimum')
+    .expect(400);
+  assert.equal(minimum.body.reason, 'below_minimum');
 });
 
 test('unknown endpoints do not expose stack traces', async () => {

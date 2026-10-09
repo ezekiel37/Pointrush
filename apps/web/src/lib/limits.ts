@@ -39,6 +39,7 @@ export const limitsSchema = z.object({
         maxPercent: z.number(),
         minFundingKobo: kobo,
         minPaidOutKobo: kobo,
+        minCustomers: z.number(),
       })
       .nullable(),
     monthlyCount: z.number(),

@@ -126,6 +126,7 @@ export const settingsShape = z.object({
       maxPercent: z.number(),
       minFundingKobo: kobo,
       minPaidOutKobo: kobo,
+      minCustomers: z.number(),
     }),
     monthlyCount: z.number(),
     monthlyKobo: kobo,
@@ -149,3 +150,34 @@ export const settingsRead = z.object({
 // Naira from whole kobo numbers, for settings shown as plain amounts.
 export const nairaOf = (kobo: number) =>
   `₦${(kobo / 100).toLocaleString('en-NG', { maximumFractionDigits: 2 })}`;
+
+export const referralPool = z.object({
+  balanceKobo: money,
+  fundedKobo: money,
+  paidKobo: money,
+  paidThisMonthKobo: money,
+  rewards: z.number(),
+  invites: z.number(),
+  canFund: z.boolean(),
+  topups: z.array(
+    z.object({
+      id: z.uuid(),
+      amountKobo: money,
+      bankReference: z.string(),
+      reason: z.string(),
+      by: z.string().nullable(),
+      at: date,
+    }),
+  ),
+  recent: z.array(
+    z.object({
+      id: z.uuid(),
+      kind: z.string(),
+      amountKobo: money,
+      basisKobo: money,
+      inviter: z.string().nullable(),
+      invited: z.string().nullable(),
+      at: date,
+    }),
+  ),
+});

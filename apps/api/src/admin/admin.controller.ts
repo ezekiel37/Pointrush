@@ -32,6 +32,14 @@ export class AdminController {
   analytics(@Req() r: AuthenticatedRequest) {
     return this.admin.analytics(r[AUTH_USER_ID]);
   }
+  @Get('referrals')
+  referralPool(@Req() r: AuthenticatedRequest) {
+    return this.admin.referralPool(r[AUTH_USER_ID]);
+  }
+  @Post('referrals/topups')
+  fundReferralPool(@Req() r: AuthenticatedRequest, @Body() body: unknown) {
+    return this.admin.fundReferralPool(r[AUTH_USER_ID], body);
+  }
   @Get('settings')
   settings(@Req() r: AuthenticatedRequest) {
     return this.admin.settings(r[AUTH_USER_ID]);

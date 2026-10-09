@@ -146,6 +146,7 @@ test('verified users without a linked account receive onboarding status without 
     onboarding: 'required',
     account: null,
     accountType: 'personal',
+    invitedBy: null,
   });
   assert.equal(result.headers['cache-control'], 'no-store');
   assert.equal((await db.select().from(schema.accounts)).length, 0);
@@ -294,6 +295,7 @@ test('a second authenticated user cannot read the first user account by supplyin
     onboarding: 'required',
     account: null,
     accountType: 'business',
+    invitedBy: null,
   });
 });
 

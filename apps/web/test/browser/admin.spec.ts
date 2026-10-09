@@ -47,6 +47,7 @@ const settings = {
       maxPercent: 10,
       minFundingKobo: 2000000,
       minPaidOutKobo: 1000000,
+      minCustomers: 5,
     },
     monthlyCount: 10,
     monthlyKobo: 1000000,

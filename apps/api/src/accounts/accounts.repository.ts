@@ -43,13 +43,22 @@ export class AccountsRepository {
       .where(eq(schema.authAccountLinks.authUserId, authUserId));
     // Where the account opens after signing in, chosen at sign-up.
     const [identity] = await this.database.db
-      .select({ accountType: schema.authUsers.accountType })
+      .select({
+        accountType: schema.authUsers.accountType,
+        invitedBy: schema.authUsers.invitedBy,
+      })
       .from(schema.authUsers)
       .where(eq(schema.authUsers.id, authUserId));
     const accountType =
       identity?.accountType === 'business' ? 'business' : 'personal';
     if (!linked)
-      return { onboarding: 'required' as const, account: null, accountType };
+      return {
+        onboarding: 'required' as const,
+        account: null,
+        accountType,
+        // Pre-fills "who invited you" during set-up.
+        invitedBy: identity?.invitedBy ?? null,
+      };
     // Missing profile data is corruption, not permission to create another account.
     if (linked.username === null || linked.displayName === null)
       throw new Error('Account identity is incomplete');
@@ -103,6 +112,7 @@ export class AccountsRepository {
     authUserId: string;
     username: string;
     displayName: string;
+    invitedBy?: string | undefined;
   }): Promise<AccountIdentity> {
     try {
       return await this.database.db.transaction(async (tx) => {
@@ -180,6 +190,39 @@ export class AccountsRepository {
         await tx
           .insert(schema.authAccountLinks)
           .values({ accountId: account.id, authUserId: input.authUserId });
+        // The inviter, typed in or saved from the invite link at sign-up.
+        const inviter = input.invitedBy ?? user.invitedBy ?? undefined;
+        if (inviter) {
+          const [referrer] = await tx
+            .select({ accountId: usernames.accountId })
+            .from(usernames)
+            .where(
+              and(
+                eq(usernames.username, inviter.toLowerCase()),
+                eq(usernames.isCurrent, true),
+              ),
+            );
+          if (!referrer?.accountId) {
+            // A typo is worth fixing; a stale link is not worth blocking on.
+            if (input.invitedBy)
+              throw new AccountError(
+                'INVALID_ACCOUNT_INPUT',
+                'Nobody has that username. Check it, or leave it empty.',
+                'invitedBy',
+              );
+          } else {
+            // The database decides whether the invite counts (a verified
+            // inviter, no circular invites); a refusal never blocks sign-up.
+            await tx
+              .transaction(async (inner) => {
+                await inner.insert(schema.referrals).values({
+                  refereeId: account.id,
+                  referrerId: referrer.accountId!,
+                });
+              })
+              .catch(() => undefined);
+          }
+        }
         return {
           id: account.id,
           username: input.username,

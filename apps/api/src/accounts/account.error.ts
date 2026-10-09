@@ -11,7 +11,7 @@ export class AccountError extends Error {
   constructor(
     readonly code: AccountErrorCode,
     message: string,
-    readonly field?: 'username' | 'displayName' | 'accountId',
+    readonly field?: 'username' | 'displayName' | 'accountId' | 'invitedBy',
     readonly eligibleAt?: Date,
   ) {
     super(message);

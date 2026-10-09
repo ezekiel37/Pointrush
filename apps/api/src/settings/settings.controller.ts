@@ -34,6 +34,7 @@ export class SettingsController {
               maxPercent: s.referrals.business.maxPercent,
               minFundingKobo: s.referrals.business.minFundingKobo,
               minPaidOutKobo: s.referrals.business.minPaidOutKobo,
+              minCustomers: s.referrals.business.minCustomers,
             }
           : null,
         monthlyCount: s.referrals.monthlyCount,

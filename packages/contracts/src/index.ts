@@ -26,6 +26,8 @@ export const displayNameSchema = z
 export const createAccountSchema = z.strictObject({
   username: usernameSchema,
   displayName: displayNameSchema,
+  // Who invited them, from an invite link or typed in. Optional.
+  invitedBy: usernameSchema.optional(),
 });
 export const renameAccountSchema = z.strictObject({ username: usernameSchema });
 export const accountIdSchema = z.uuid();

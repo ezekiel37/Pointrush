@@ -9,6 +9,7 @@ import {
   CircleHelp,
   ClipboardCheck,
   CreditCard,
+  Gift,
   LayoutGrid,
   Landmark,
   Menu,
@@ -71,6 +72,7 @@ const reviewGroups = [
     links: [
       { href: '/admin', label: 'Overview', icon: LayoutGrid, exact: true },
       { href: '/admin/people', label: 'People', icon: Search },
+      { href: '/admin/referrals', label: 'Referrals', icon: Gift },
       { href: '/admin/settings', label: 'Settings', icon: SlidersHorizontal },
     ],
   },
@@ -157,7 +159,7 @@ export function DashShell({
     business || review ? null : 'sponsor/profile',
     sponsorName,
   );
-  const name = review ? 'Acticlaim review' : (business ?? profile.data?.name);
+  const name = review ? 'Acticlaim admin' : (business ?? profile.data?.name);
   return (
     <div className="dash">
       <aside className="dash-side">

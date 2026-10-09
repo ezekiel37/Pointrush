@@ -3,7 +3,8 @@ import { Suspense } from 'react';
 import { Store, UserRound } from 'lucide-react';
 import { AuthFrame } from '@/components/auth/auth-frame';
 import { SignupForm } from '@/components/auth/signup-form';
-import { Loading } from '@/components/ui/feedback';
+import { Feedback, Loading } from '@/components/ui/feedback';
+import { usernameSchema } from '@pointrush/contracts';
 export const metadata = { title: 'Create account' };
 export default async function Page({
   searchParams,
@@ -12,7 +13,11 @@ export default async function Page({
 }) {
   // Businesses sign up from their own page; the account then opens on
   // business setup instead of the earner app.
-  const business = (await searchParams).as === 'business';
+  const query = await searchParams;
+  const business = query.as === 'business';
+  const ref = usernameSchema.safeParse(query.ref);
+  const invitedBy = ref.success ? ref.data : null;
+  const keep = invitedBy ? `ref=${invitedBy}` : '';
   return (
     <AuthFrame
       title={
@@ -32,7 +37,7 @@ export default async function Page({
     >
       <nav className="account-kind" aria-label="Account type">
         <Link
-          href="/signup"
+          href={`/signup${keep ? `?${keep}` : ''}`}
           replace
           aria-current={business ? undefined : 'page'}
         >
@@ -43,7 +48,7 @@ export default async function Page({
           </span>
         </Link>
         <Link
-          href="/signup?as=business"
+          href={`/signup?as=business${keep ? `&${keep}` : ''}`}
           replace
           aria-current={business ? 'page' : undefined}
         >
@@ -54,8 +59,14 @@ export default async function Page({
           </span>
         </Link>
       </nav>
+      {invitedBy && (
+        <Feedback>
+          <strong>@{invitedBy}</strong> invited you. Sign up and they are
+          thanked once you start using Acticlaim.
+        </Feedback>
+      )}
       <Suspense fallback={<Loading>Loading form…</Loading>}>
-        <SignupForm business={business} />
+        <SignupForm business={business} invitedBy={invitedBy} />
       </Suspense>
     </AuthFrame>
   );

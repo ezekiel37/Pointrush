@@ -36,6 +36,9 @@ export const authUsers = pgTable(
     // Chosen at sign-up: where the account opens after signing in. A routing
     // preference only; business tools still require owning a business.
     accountType: text('account_type').notNull().default('personal'),
+    // The username on the invite link used at sign-up, recorded as the
+    // referrer when the account is set up.
+    invitedBy: text('invited_by'),
     ...dates(),
   },
   (table) => [

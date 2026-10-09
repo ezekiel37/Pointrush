@@ -16,6 +16,8 @@ import { StaffService } from '../sponsors/staff.service.js';
 import { AdminController } from '../admin/admin.controller.js';
 import { AdminService } from '../admin/admin.service.js';
 import { SettingsController } from '../settings/settings.controller.js';
+import { ReferralsController } from '../referrals/referrals.controller.js';
+import { ReferralsService } from '../referrals/referrals.service.js';
 
 @Module({
   controllers: [
@@ -27,8 +29,14 @@ import { SettingsController } from '../settings/settings.controller.js';
     StaffController,
     AdminController,
     SettingsController,
+    ReferralsController,
   ],
   providers: [
+    {
+      provide: ReferralsService,
+      inject: [DatabaseService],
+      useFactory: (db: DatabaseService) => new ReferralsService(db.db),
+    },
     {
       provide: AdminService,
       inject: [DatabaseService],

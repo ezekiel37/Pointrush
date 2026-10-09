@@ -15,7 +15,13 @@ import { Feedback } from '@/components/ui/feedback';
 import { Celebrate } from '@/components/ui/celebrate';
 import { PASSWORD_MIN_LENGTH } from '@pointrush/contracts';
 import { SIGNUP_EMAIL_KEY } from '@/components/landing/email-capture';
-export function SignupForm({ business = false }: { business?: boolean }) {
+export function SignupForm({
+  business = false,
+  invitedBy = null,
+}: {
+  business?: boolean;
+  invitedBy?: string | null;
+}) {
   const [sent, setSent] = useState(false);
   const next =
     safeNext(useSearchParams().get('next')) ??
@@ -80,6 +86,8 @@ export function SignupForm({ business = false }: { business?: boolean }) {
                 // Saved on the account, so every sign-in opens the right
                 // home on any device.
                 accountType: business ? 'business' : 'personal',
+                // Saved on the account and recorded as the inviter at set-up.
+                ...(invitedBy ? { invitedBy } : {}),
                 callbackURL: `${window.location.origin}/login?verified=1${next ? `&next=${encodeURIComponent(next)}` : ''}`,
               }),
             );

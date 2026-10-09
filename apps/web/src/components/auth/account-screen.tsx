@@ -118,7 +118,11 @@ export function AccountScreen({ goHome = false }: { goHome?: boolean }) {
         step={3}
       >
         {errorPanel}
-        <OnboardingForm onSaved={refresh} blocked={Boolean(error)} />
+        <OnboardingForm
+          onSaved={refresh}
+          blocked={Boolean(error)}
+          invitedBy={status.invitedBy}
+        />
         <Button variant="ghost" onClick={signOut} loading={logout.busy}>
           Sign out
         </Button>

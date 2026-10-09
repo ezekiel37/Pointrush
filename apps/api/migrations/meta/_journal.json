@@ -253,6 +253,13 @@
       "when": 1791564401060,
       "tag": "0035_platform_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1791565903343,
+      "tag": "0036_cash_referrals",
+      "breakpoints": true
     }
   ]
 }

@@ -81,6 +81,8 @@ export const settingsSchema = z
             maxPercent: percent(50),
             minFundingKobo: kobo(naira(10_000_000)),
             minPaidOutKobo: kobo(naira(10_000_000)).min(1),
+            // Paid to at least this many different customers.
+            minCustomers: z.number().int().min(1).max(1000),
           })
           .strict(),
         // Per inviter, per calendar month (Lagos).
@@ -207,6 +209,7 @@ export const defaultSettings: Settings = {
       maxPercent: 10,
       minFundingKobo: naira(20_000),
       minPaidOutKobo: naira(10_000),
+      minCustomers: 5,
     },
     monthlyCount: 10,
     monthlyKobo: naira(10_000),

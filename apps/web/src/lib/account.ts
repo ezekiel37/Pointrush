@@ -6,6 +6,7 @@ const statusSchema = z.discriminatedUnion('onboarding', [
     onboarding: z.literal('required'),
     account: z.null(),
     accountType,
+    invitedBy: z.string().nullable().default(null),
   }),
   z.object({
     onboarding: z.literal('complete'),
@@ -33,6 +34,7 @@ export async function getAccount(signal?: AbortSignal): Promise<AccountStatus> {
 export async function createAccount(input: {
   username: string;
   displayName: string;
+  invitedBy?: string;
 }) {
   const response = await fetch(`${apiOrigin()}/api/v1/accounts/me`, {
     method: 'POST',
@@ -42,5 +44,14 @@ export async function createAccount(input: {
     body: JSON.stringify(input),
     signal: AbortSignal.timeout(15000),
   });
-  if (!response.ok) throw new RequestError(response.status);
+  if (!response.ok) {
+    // The API names the field when "who invited you" is wrong.
+    const body = (await response.json().catch(() => null)) as {
+      field?: string;
+    } | null;
+    throw new RequestError(
+      response.status,
+      body?.field === 'invitedBy' ? 'INVITED_BY' : undefined,
+    );
+  }
 }

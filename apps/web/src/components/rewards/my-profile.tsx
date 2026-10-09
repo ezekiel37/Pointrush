@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import { Copy, Eye, EyeOff, Store } from 'lucide-react';
+import { ChevronRight, Copy, Eye, EyeOff, Gift, Store } from 'lucide-react';
 import { Page } from '@/components/shell/app-shell';
 import { Button } from '@/components/ui/button';
 import { Feedback, Loading } from '@/components/ui/feedback';
@@ -120,34 +120,19 @@ export function MyProfile() {
 
             {points.data && <PointsAndTier data={points.data} />}
 
-            {points.data?.referral.code && (
-              <section className="card grid gap-2">
-                <p className="eyebrow">Invite someone</p>
-                <p className="small-note">
-                  New members can enter your username when they join. You both
-                  earn points after their first verified purchase or paid job at
-                  a business you do not own.
-                </p>
-                <div className="row">
-                  <span className="amount" style={{ fontSize: '1.3rem' }}>
-                    {points.data.referral.code}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    type="button"
-                    onClick={() =>
-                      void copy(points.data!.referral.code!, 'Username')
-                    }
-                  >
-                    <Copy size={16} aria-hidden /> Copy
-                  </Button>
-                </div>
-                <p className="small-note num">
-                  {points.data.referral.referred} invited ·{' '}
-                  {points.data.referral.rewarded} rewarded
-                </p>
-              </section>
-            )}
+            <Link className="pick-row" href="/invite">
+              <span className="pick-icon" aria-hidden>
+                <Gift size={20} />
+              </span>
+              <span className="grid">
+                <strong>Invite and earn</strong>
+                <span className="small-note">
+                  Share your link with friends and businesses. Acticlaim pays
+                  you when they start using it for real.
+                </span>
+              </span>
+              <ChevronRight size={18} aria-hidden />
+            </Link>
             <BusinessLink />
             <Link className="text-link" href="/account">
               Account settings

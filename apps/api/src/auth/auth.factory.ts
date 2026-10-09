@@ -1,4 +1,8 @@
-import { PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH } from '@pointrush/contracts';
+import {
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  usernameSchema,
+} from '@pointrush/contracts';
 import { betterAuth } from 'better-auth';
 import {
   APIError,
@@ -57,6 +61,8 @@ export function createAuth(
           defaultValue: 'personal',
           input: true,
         },
+        // Username from an invite link; checked again at account set-up.
+        invitedBy: { type: 'string', required: false, input: true },
       },
     },
     secret: config.secret,
@@ -94,6 +100,15 @@ export function createAuth(
         )
           throw new APIError('BAD_REQUEST', {
             message: 'Account type must be personal or business',
+          });
+        if (
+          (ctx.path === '/sign-up/email' || ctx.path === '/update-user') &&
+          ctx.body?.invitedBy !== undefined &&
+          (ctx.path === '/update-user' ||
+            !usernameSchema.safeParse(ctx.body.invitedBy).success)
+        )
+          throw new APIError('BAD_REQUEST', {
+            message: 'Invalid invite',
           });
         if (ctx.path.startsWith('/two-factor/')) {
           if (

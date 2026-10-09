@@ -17,7 +17,10 @@ type AuthClientOptions = {
 };
 // Fields the API adds to the sign-up form (see the API's auth factory).
 const accountFields = inferAdditionalFields({
-  user: { accountType: { type: 'string', required: false } },
+  user: {
+    accountType: { type: 'string', required: false },
+    invitedBy: { type: 'string', required: false },
+  },
 });
 type PointRushAuthClient = ReturnType<
   typeof createAuthClient<AuthClientOptions>
