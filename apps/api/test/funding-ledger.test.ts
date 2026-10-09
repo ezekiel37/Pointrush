@@ -1,3 +1,4 @@
+import { lowLimits } from './helpers/settings.js';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
@@ -19,6 +20,7 @@ const db = drizzle(pg, { schema });
 let clearing: string;
 before(async () => {
   await migrate(db, { migrationsFolder: resolve('migrations') });
+  await lowLimits(db);
   const [row] = await db
     .insert(schema.fundingAccounts)
     .values({ bucket: 'clearing' })

@@ -1,3 +1,5 @@
+import { readSettings } from '../src/settings/settings.js';
+import { lowLimits } from './helpers/settings.js';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { after, test } from 'node:test';
@@ -138,7 +140,7 @@ test('business funding credits only a verified, matching, first-seen confirmatio
   await assert.rejects(
     payments.createFundingIntent(merchant.user, {
       id: randomUUID(),
-      amountKobo: '99',
+      amountKobo: '10000000001',
     }),
     { status: 400 },
   );
@@ -474,4 +476,54 @@ test('a person can withdraw at most N1,000,000 a day in total', async () => {
     amountKobo: '30000000',
   });
   assert.equal(await balance(person.account, 'reward_wallet'), 80000000n);
+});
+
+test('withdrawal limits come from settings, lower while an account is new', async () => {
+  const person = await verifiedPerson();
+  await earn(person, '2000000');
+  const limits = {
+    ...(await readSettings(db)),
+    withdrawals: {
+      minKobo: 100000,
+      maxKobo: 500000,
+      dailyKobo: 5000000,
+      dailyCount: 5,
+    },
+    newAccounts: { days: 30, dailyWithdrawalKobo: 800000 },
+  };
+  await db.insert(s.platformSettings).values({
+    settings: limits,
+    reason: 'Test limits',
+  });
+  try {
+    assert.equal(
+      await reason(
+        payments.requestWithdrawal(person.user, {
+          id: randomUUID(),
+          amountKobo: '600000',
+        }),
+      ),
+      'above_maximum',
+    );
+    await payments.requestWithdrawal(person.user, {
+      id: randomUUID(),
+      amountKobo: '500000',
+    });
+    // ₦5,000 + ₦5,000 is over the ₦8,000 a day a new account may take.
+    assert.equal(
+      await reason(
+        payments.requestWithdrawal(person.user, {
+          id: randomUUID(),
+          amountKobo: '500000',
+        }),
+      ),
+      'withdrawal_daily_limit',
+    );
+    await payments.requestWithdrawal(person.user, {
+      id: randomUUID(),
+      amountKobo: '300000',
+    });
+  } finally {
+    await lowLimits(db);
+  }
 });

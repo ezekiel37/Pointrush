@@ -449,23 +449,37 @@
   .spinner {
     animation: spin 0.9s linear infinite;
   }
-  /* Standalone action links read as actions, not as underlined text.
-     Inside a sentence they keep the underline so they stand out from it. */
+  /* Standalone action links are real buttons: a soft brand pill. Inside a
+     sentence they stay underlined text so they stand out from it. */
   .text-link {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
-    padding: 0.65rem 0;
-    font-weight: 600;
+    justify-content: center;
+    gap: 0.4rem;
+    width: fit-content;
+    min-height: 42px;
+    padding: 0 1.1rem;
+    border-radius: var(--radius-control);
+    background: var(--color-brand-soft);
     color: var(--color-brand-text);
+    font-size: 0.92rem;
+    font-weight: 600;
     text-decoration: none;
+    transition: background 140ms;
   }
   .text-link:hover {
-    text-decoration: underline;
+    background: color-mix(
+      in srgb,
+      var(--color-brand-soft) 70%,
+      var(--color-brand) 30%
+    );
   }
   :is(p, .feedback) .text-link {
     display: inline;
+    min-height: 0;
     padding: 0;
+    border-radius: 0;
+    background: none;
     text-decoration: underline;
   }
   .back-link {
@@ -924,6 +938,80 @@
     display: grid;
     grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
     gap: 1rem;
+  }
+  /* Admin settings: fields in pairs, switches, worked examples. */
+  .form-pair {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    gap: 0 1rem;
+  }
+  .settings-sub {
+    display: grid;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-radius: 14px;
+    background: var(--color-canvas);
+    border: 1px solid var(--color-line);
+  }
+  .settings-sub h3 {
+    margin: 0;
+    font-size: 1rem;
+  }
+  .settings-example {
+    margin: 0;
+    padding: 0.75rem 0.9rem;
+    border-radius: 12px;
+    background: var(--color-brand-soft);
+    color: var(--color-ink);
+    font-size: 0.9rem;
+  }
+  .switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    width: fit-content;
+    font-weight: 550;
+    cursor: pointer;
+  }
+  .switch input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+  }
+  .switch-track {
+    position: relative;
+    width: 44px;
+    height: 26px;
+    border-radius: 999px;
+    background: var(--color-line);
+    transition: background 140ms;
+    flex-shrink: 0;
+  }
+  .switch-track::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+    transition: transform 140ms;
+  }
+  .switch input:checked + .switch-track {
+    background: var(--color-brand);
+  }
+  .switch input:checked + .switch-track::after {
+    transform: translateX(18px);
+  }
+  .switch input:focus-visible + .switch-track {
+    outline: 2.5px solid var(--color-brand);
+    outline-offset: 3px;
+  }
+  .switch input:disabled + .switch-track {
+    opacity: 0.5;
   }
   /* Sign-up: personal or business, chosen before the form. */
   .account-kind {
@@ -1724,7 +1812,6 @@
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    padding-bottom: 0;
   }
   /* Airtime, data and bills */
   .bills-balance {
@@ -3560,7 +3647,8 @@
     padding-top: 0;
   }
   .help-answer-links .text-link {
-    padding: 0.25rem 0;
+    min-height: 36px;
+    padding: 0 0.9rem;
   }
   .help-contact {
     display: grid;

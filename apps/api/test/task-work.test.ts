@@ -1,3 +1,4 @@
+import { lowLimits } from './helpers/settings.js';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
@@ -25,6 +26,7 @@ let clearing: string;
 let reviewer: string;
 before(async () => {
   await migrate(db, { migrationsFolder: resolve('migrations') });
+  await lowLimits(db);
   clearing = (
     await db
       .insert(s.fundingAccounts)

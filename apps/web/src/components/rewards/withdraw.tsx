@@ -7,12 +7,11 @@ import { Feedback } from '@/components/ui/feedback';
 import { Field } from '@/components/ui/field';
 import { apiRequest, naira, newId, shortDate, toKobo } from '@/lib/api';
 import { RequestError } from '@/lib/auth-client';
+import { nairaOfKobo, useLimits } from '@/lib/limits';
+import type { Limits } from '@/lib/limits';
 import { withdrawal } from '@/lib/rewards';
 
 type Withdrawal = z.infer<typeof withdrawal>;
-export const minWithdrawKobo = 100000n;
-const minKobo = minWithdrawKobo;
-const maxKobo = 100000000n;
 
 export const withdrawalState = {
   held: ['Processing', 'chip chip-pending'],
@@ -21,7 +20,7 @@ export const withdrawalState = {
   failed: ['Returned to wallet', 'chip chip-muted'],
 } as const;
 
-function withdrawError(error: unknown) {
+function withdrawError(error: unknown, limits: Limits) {
   if (error instanceof RequestError) {
     switch (error.code) {
       case 'payments_unavailable':
@@ -29,7 +28,7 @@ function withdrawError(error: unknown) {
       case 'insufficient_balance':
         return 'That is more than your wallet balance.';
       case 'withdrawal_daily_limit':
-        return 'You can withdraw up to ₦1,000,000 a day, in up to three withdrawals. Try a smaller amount or try again tomorrow.';
+        return `You can withdraw up to ${nairaOfKobo(limits.withdrawals.dailyKobo)} a day, in up to ${limits.withdrawals.dailyCount} withdrawals${limits.newAccounts.days ? ` (${nairaOfKobo(limits.newAccounts.dailyWithdrawalKobo)} a day for your first ${limits.newAccounts.days} days)` : ''}. Try a smaller amount or try again tomorrow.`;
       case 'destination_required':
         return 'Add a bank account first.';
       case 'destination_cooling':
@@ -42,7 +41,7 @@ function withdrawError(error: unknown) {
         return 'Withdrawals need an active account with a verified phone number. Verify it from your wallet.';
     }
     if (error.status === 400)
-      return 'Enter an amount between ₦1,000 and ₦1,000,000.';
+      return `Enter an amount between ${nairaOfKobo(limits.withdrawals.minKobo)} and ${nairaOfKobo(limits.withdrawals.maxKobo)}.`;
   }
   return 'We could not confirm the withdrawal. Check your connection and try again; it will never be taken twice.';
 }
@@ -58,6 +57,10 @@ export function WithdrawPanel({
   onDone: (result: Withdrawal) => void;
   onCancel: () => void;
 }) {
+  const { limits } = useLimits();
+  const minKobo = BigInt(limits.withdrawals.minKobo);
+  const maxKobo = BigInt(limits.withdrawals.maxKobo);
+  const range = `Enter an amount between ${nairaOfKobo(limits.withdrawals.minKobo)} and ${nairaOfKobo(limits.withdrawals.maxKobo)}.`;
   const [amount, setAmount] = useState('');
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
@@ -73,7 +76,7 @@ export function WithdrawPanel({
     event.preventDefault();
     if (busy) return;
     if (!kobo || BigInt(kobo) < minKobo || BigInt(kobo) > maxKobo) {
-      setInvalid('Enter an amount between ₦1,000 and ₦1,000,000.');
+      setInvalid(range);
       return;
     }
     if (BigInt(kobo) > BigInt(walletKobo)) {
@@ -101,8 +104,8 @@ export function WithdrawPanel({
         attempt.current = null;
       if (cause instanceof RequestError && cause.code === 'password_required') {
         setPassword('');
-        setPasswordError(withdrawError(cause));
-      } else setError(withdrawError(cause));
+        setPasswordError(withdrawError(cause, limits));
+      } else setError(withdrawError(cause, limits));
     } finally {
       setBusy(false);
     }
@@ -130,7 +133,7 @@ export function WithdrawPanel({
             setAmount(e.target.value);
             setInvalid('');
           }}
-          hint="From ₦1,000 to ₦1,000,000 a day, in up to three withdrawals."
+          hint={`From ${nairaOfKobo(limits.withdrawals.minKobo)} to ${nairaOfKobo(limits.withdrawals.maxKobo)} each, up to ${nairaOfKobo(limits.withdrawals.dailyKobo)} a day in ${limits.withdrawals.dailyCount} withdrawals.`}
           error={invalid}
         />
         {all >= minKobo && (

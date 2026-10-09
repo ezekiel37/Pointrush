@@ -12,10 +12,9 @@ import { apiRequest, naira, newId, toKobo } from '@/lib/api';
 import { RequestError } from '@/lib/auth-client';
 import { businessOverview, fundingIntent } from '@/lib/rewards';
 import { useApiRead } from '@/lib/use-api-read';
+import { nairaOfKobo, useLimits } from '@/lib/limits';
 
 const presets = ['5000000', '10000000', '25000000', '50000000'];
-const minKobo = 100000n;
-const maxKobo = 10000000000n;
 
 function fundingError(error: unknown) {
   if (error instanceof RequestError) {
@@ -23,13 +22,19 @@ function fundingError(error: unknown) {
       return 'Payments are not live yet. No money has moved, and nothing will be charged.';
     if (error.code === 'checkout_started')
       return 'A checkout for this request already started. Press continue again to start a fresh one.';
-    if (error.status === 400)
-      return 'Enter an amount between ₦1,000 and ₦100,000,000.';
+    if (error.code === 'above_maximum')
+      return 'That is more than you can add at once. New businesses have a lower limit for their first days.';
+    if (error.code === 'below_minimum' || error.status === 400)
+      return 'That amount is outside the limits shown above.';
   }
   return 'We could not reach the payment page. Check your connection and try again; you will not be charged twice.';
 }
 
 export function AddFunds() {
+  const { limits } = useLimits();
+  const minKobo = BigInt(limits.funding.minKobo);
+  const maxKobo = BigInt(limits.funding.maxKobo);
+  const range = `Enter an amount between ${nairaOfKobo(limits.funding.minKobo)} and ${nairaOfKobo(limits.funding.maxKobo)}.`;
   const overview = useApiRead('business/overview?days=7', businessOverview);
   const [amount, setAmount] = useState('');
   const [busy, setBusy] = useState(false);
@@ -46,7 +51,7 @@ export function AddFunds() {
     event.preventDefault();
     if (busy) return;
     if (!kobo || BigInt(kobo) < minKobo || BigInt(kobo) > maxKobo) {
-      setInvalid('Enter an amount between ₦1,000 and ₦100,000,000.');
+      setInvalid(range);
       return;
     }
     setInvalid('');
@@ -115,21 +120,23 @@ export function AddFunds() {
                   role="group"
                   aria-label="Suggested amounts"
                 >
-                  {presets.map((preset) => (
-                    <button
-                      key={preset}
-                      type="button"
-                      aria-pressed={kobo === preset}
-                      onClick={() => {
-                        setAmount(
-                          (BigInt(preset) / 100n).toLocaleString('en-NG'),
-                        );
-                        setInvalid('');
-                      }}
-                    >
-                      {naira(preset)}
-                    </button>
-                  ))}
+                  {presets
+                    .filter((p) => BigInt(p) >= minKobo && BigInt(p) <= maxKobo)
+                    .map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        aria-pressed={kobo === preset}
+                        onClick={() => {
+                          setAmount(
+                            (BigInt(preset) / 100n).toLocaleString('en-NG'),
+                          );
+                          setInvalid('');
+                        }}
+                      >
+                        {naira(preset)}
+                      </button>
+                    ))}
                 </div>
                 <Field
                   id="fund-amount"

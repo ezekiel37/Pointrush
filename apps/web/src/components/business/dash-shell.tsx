@@ -15,6 +15,8 @@ import {
   Scale,
   ShieldAlert,
   ScanLine,
+  Search,
+  SlidersHorizontal,
   Tags,
   TicketCheck,
   Undo2,
@@ -64,6 +66,14 @@ const groups = [
 ];
 // Reviewers get their own tools, not the shopper or business menus.
 const reviewGroups = [
+  {
+    title: 'Admin',
+    links: [
+      { href: '/admin', label: 'Overview', icon: LayoutGrid, exact: true },
+      { href: '/admin/people', label: 'People', icon: Search },
+      { href: '/admin/settings', label: 'Settings', icon: SlidersHorizontal },
+    ],
+  },
   {
     title: 'Review',
     links: [
@@ -157,7 +167,7 @@ export function DashShell({
             <strong style={{ color: 'var(--color-ink)', fontWeight: 600 }}>
               {name}
             </strong>
-            {review ? 'Reviewer tools' : 'Business account'}
+            {review ? 'Admin and review' : 'Business account'}
           </div>
         )}
         <nav aria-label={review ? 'Review' : 'Business'} className="grid gap-5">
@@ -230,9 +240,11 @@ function PhoneNav({ review, pathname }: { review: boolean; pathname: string }) {
     window.addEventListener('keydown', close);
     return () => window.removeEventListener('keydown', close);
   }, [open]);
-  const tabs = review ? reviewGroups.flatMap((g) => g.links) : businessTabs;
-  const more = review
-    ? []
+  // Four tabs fit a phone; everything else sits under More.
+  const all = review ? reviewGroups.flatMap((g) => g.links) : null;
+  const tabs = all ? all.slice(0, 4) : businessTabs;
+  const more = all
+    ? all.slice(4)
     : groups
         .flatMap((g) => g.links)
         .filter((l) => !businessTabs.some((t) => t.href === l.href));
@@ -244,7 +256,7 @@ function PhoneNav({ review, pathname }: { review: boolean; pathname: string }) {
           className="more-sheet"
           role="dialog"
           aria-modal="true"
-          aria-label="More business tools"
+          aria-label={review ? 'More admin tools' : 'More business tools'}
           onClick={(event) => {
             if (event.target === event.currentTarget) setOpen(false);
           }}
@@ -261,7 +273,10 @@ function PhoneNav({ review, pathname }: { review: boolean; pathname: string }) {
                 <X size={20} aria-hidden />
               </button>
             </div>
-            <nav aria-label="More business tools" className="dash-group">
+            <nav
+              aria-label={review ? 'More admin tools' : 'More business tools'}
+              className="dash-group"
+            >
               {more.map(({ href, label, icon: Icon }) => (
                 <Link
                   key={href}

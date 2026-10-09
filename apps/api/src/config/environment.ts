@@ -44,6 +44,18 @@ const schema = z.object({
   // Airtime, data, electricity and TV from the wallet. Off until a provider
   // is chosen; only the test provider exists so far.
   BILLS_PROVIDER: z.enum(['off', 'test']).default('off'),
+  // Reviewer account IDs that may change minimums and referral rewards in
+  // the admin settings, comma separated. Empty: settings are read-only.
+  SETTINGS_ADMIN_ACCOUNT_IDS: z
+    .string()
+    .default('')
+    .transform((v) =>
+      v
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean),
+    )
+    .pipe(z.array(z.uuid())),
   // Country calling codes SMS may go to, e.g. "+234,+233". Limits SMS fraud.
   SMS_ALLOWED_PREFIXES: z
     .string()

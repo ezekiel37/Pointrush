@@ -55,8 +55,8 @@ const denied = (error: unknown) =>
   error instanceof RequestError &&
   (error.status === 401 || error.status === 403);
 
-export function AccountTools() {
-  const [username, setUsername] = useState('');
+export function AccountTools({ initial = '' }: { initial?: string }) {
+  const [username, setUsername] = useState(initial.slice(0, 21));
   const [found, setFound] = useState<Account | null>(null);
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);

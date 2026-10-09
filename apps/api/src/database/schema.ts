@@ -187,3 +187,4 @@ export {
 } from '../admin/admin.schema.js';
 export { billPurchases, billOutcomes } from '../bills/bill.schema.js';
 export { auditEvents } from '../audit/audit.schema.js';
+export { platformSettings } from '../settings/settings.schema.js';

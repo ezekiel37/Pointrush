@@ -15,6 +15,7 @@ import { StaffController } from '../sponsors/staff.controller.js';
 import { StaffService } from '../sponsors/staff.service.js';
 import { AdminController } from '../admin/admin.controller.js';
 import { AdminService } from '../admin/admin.service.js';
+import { SettingsController } from '../settings/settings.controller.js';
 
 @Module({
   controllers: [
@@ -25,6 +26,7 @@ import { AdminService } from '../admin/admin.service.js';
     NotificationsController,
     StaffController,
     AdminController,
+    SettingsController,
   ],
   providers: [
     {

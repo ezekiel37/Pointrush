@@ -1,5 +1,6 @@
 // Browser-test fixture only. Never imported by src/ or included in production dist.
 import 'reflect-metadata';
+import { lowLimits } from './settings.js';
 import { randomBytes } from 'node:crypto';
 import { resolve } from 'node:path';
 import { Test } from '@nestjs/testing';
@@ -21,6 +22,7 @@ if (process.env.POINTRUSH_BROWSER_TEST !== '1')
 const pg = new PGlite();
 const db = drizzle(pg, { schema });
 await migrate(db, { migrationsFolder: resolve('migrations') });
+await lowLimits(db);
 const origin = 'http://localhost:3100';
 const config = {
   secret: randomBytes(32).toString('hex'),

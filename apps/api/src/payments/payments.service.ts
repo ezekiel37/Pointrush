@@ -1,5 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import {
+  aboveMaximum,
+  belowMinimum,
+  isNewBusiness,
+  nairaText,
+  readSettings,
+} from '../settings/settings.js';
+import {
   BadRequestException,
   ConflictException,
   NotFoundException,
@@ -28,10 +35,10 @@ const money = (min: bigint, max: bigint) =>
     .transform(BigInt)
     .refine((v) => v >= min && v <= max);
 const intentInput = z
-  .object({ id: z.uuid(), amountKobo: money(100000n, 10000000000n) })
+  .object({ id: z.uuid(), amountKobo: money(1n, 10000000000n) })
   .strict();
 const withdrawalInput = z
-  .object({ id: z.uuid(), amountKobo: money(100000n, 100000000n) })
+  .object({ id: z.uuid(), amountKobo: money(1n, 500000000n) })
   .strict();
 const pageInput = z
   .object({
@@ -80,6 +87,12 @@ export class PaymentsService {
   async createFundingIntent(user: string, input: unknown) {
     const provider = this.requireProvider();
     const value = parse(intentInput, input);
+    const settings = await readSettings(this.db);
+    const { funding } = settings;
+    if (value.amountKobo < BigInt(funding.minKobo))
+      throw belowMinimum(`Add at least ${nairaText(funding.minKobo)}`);
+    if (value.amountKobo > BigInt(funding.maxKobo))
+      throw aboveMaximum(`Add at most ${nairaText(funding.maxKobo)} at a time`);
     const intent = await actorTransaction(this.db, user, async (tx, actor) => {
       const [existing] = await tx
         .select()
@@ -94,10 +107,25 @@ export class PaymentsService {
         return existing;
       }
       const [profile] = await tx
-        .select({ id: s.sponsorProfiles.id })
+        .select({
+          id: s.sponsorProfiles.id,
+          since: s.sponsorProfiles.termsAcceptedAt,
+          now: sql<string>`clock_timestamp()`,
+        })
         .from(s.sponsorProfiles)
         .where(eq(s.sponsorProfiles.ownerId, actor));
       if (!profile) throw new NotFoundException();
+      if (
+        isNewBusiness(
+          settings,
+          profile.since,
+          Date.parse(String(profile.now)),
+        ) &&
+        value.amountKobo > BigInt(settings.newBusinesses.maxFundingKobo)
+      )
+        throw aboveMaximum(
+          `For your first ${settings.newBusinesses.days} days, add at most ${nairaText(settings.newBusinesses.maxFundingKobo)} at a time`,
+        );
       return (
         await tx
           .insert(s.fundingIntents)
@@ -273,6 +301,15 @@ export class PaymentsService {
     // Without a provider a hold could never be paid out or returned.
     this.requireProvider();
     const value = parse(withdrawalInput, input);
+    // Per-withdrawal limits from settings; daily totals are checked by the
+    // database against the same settings.
+    const { withdrawals } = await readSettings(this.db);
+    if (value.amountKobo < BigInt(withdrawals.minKobo))
+      throw belowMinimum(`Withdraw at least ${nairaText(withdrawals.minKobo)}`);
+    if (value.amountKobo > BigInt(withdrawals.maxKobo))
+      throw aboveMaximum(
+        `Withdraw at most ${nairaText(withdrawals.maxKobo)} at a time`,
+      );
     return actorTransaction(this.db, user, async (tx, actor) => {
       const [existing] = await tx
         .select()

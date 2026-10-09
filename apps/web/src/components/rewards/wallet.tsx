@@ -32,7 +32,8 @@ import {
 } from '@/lib/rewards';
 import { BankAccount, usable } from './bank-account';
 import { useApiRead } from '@/lib/use-api-read';
-import { minWithdrawKobo, WithdrawalList, WithdrawPanel } from './withdraw';
+import { WithdrawalList, WithdrawPanel } from './withdraw';
+import { nairaOfKobo, useLimits } from '@/lib/limits';
 import { WithdrawalLock } from './withdrawal-lock';
 import { VoidDispute } from './void-dispute';
 
@@ -153,6 +154,8 @@ export function Wallet() {
     .filter((p) => p.state === 'pending' || p.state === 'releasable')
     .reduce((sum, p) => sum + BigInt(p.payoutKobo ?? p.cashbackKobo), 0n);
   const data = summary.data;
+  const { limits } = useLimits();
+  const minWithdrawKobo = BigInt(limits.withdrawals.minKobo);
   const canWithdraw = Boolean(
     data?.phoneVerified &&
     !bank.data?.locked &&
@@ -164,7 +167,7 @@ export function Wallet() {
     : bank.data?.locked
       ? 'Withdrawals are locked while support checks your account.'
       : BigInt(data.walletKobo) < minWithdrawKobo
-        ? 'You can withdraw once you have ₦1,000 or more.'
+        ? `You can withdraw once you have ${nairaOfKobo(limits.withdrawals.minKobo)} or more.`
         : bank.data?.destination
           ? 'Your new bank account can receive money 24 hours after you added it.'
           : 'Add a bank account below to withdraw.';
@@ -284,7 +287,7 @@ export function Wallet() {
                   </Step>
                   <Step
                     done={BigInt(data.walletKobo) >= minWithdrawKobo}
-                    title="Have ₦1,000 or more in your wallet"
+                    title={`Have ${nairaOfKobo(limits.withdrawals.minKobo)} or more in your wallet`}
                   />
                 </ol>
               </section>

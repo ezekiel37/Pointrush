@@ -32,7 +32,7 @@ export const fundingIntents = pgTable(
   (t) => [
     check(
       'funding_intent_amount',
-      sql`${t.amountKobo} between 100000 and 10000000000`,
+      sql`${t.amountKobo} between 10000 and 10000000000`,
     ),
     check('funding_intent_currency', sql`${t.currency} = 'NGN'`),
     index('funding_intent_account').on(t.accountId, t.createdAt),
@@ -111,7 +111,7 @@ export const withdrawals = pgTable(
   (t) => [
     check(
       'withdrawal_amount',
-      sql`${t.amountKobo} between 100000 and 100000000`,
+      sql`${t.amountKobo} between 10000 and 500000000`,
     ),
     index('withdrawal_account').on(t.accountId, t.createdAt),
   ],

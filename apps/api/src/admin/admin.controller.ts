@@ -20,6 +20,26 @@ export class AdminController {
   find(@Req() r: AuthenticatedRequest, @Query('username') username: unknown) {
     return this.admin.findAccount(r[AUTH_USER_ID], username);
   }
+  @Get('search')
+  search(@Req() r: AuthenticatedRequest, @Query('q') q: unknown) {
+    return this.admin.search(r[AUTH_USER_ID], q);
+  }
+  @Get('accounts/:id')
+  detail(@Req() r: AuthenticatedRequest, @Param('id') id: string) {
+    return this.admin.accountDetail(r[AUTH_USER_ID], id);
+  }
+  @Get('analytics')
+  analytics(@Req() r: AuthenticatedRequest) {
+    return this.admin.analytics(r[AUTH_USER_ID]);
+  }
+  @Get('settings')
+  settings(@Req() r: AuthenticatedRequest) {
+    return this.admin.settings(r[AUTH_USER_ID]);
+  }
+  @Post('settings')
+  updateSettings(@Req() r: AuthenticatedRequest, @Body() body: unknown) {
+    return this.admin.updateSettings(r[AUTH_USER_ID], body);
+  }
   @Post('accounts/:id/access')
   access(
     @Req() r: AuthenticatedRequest,

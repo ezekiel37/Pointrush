@@ -1,3 +1,4 @@
+import { lowLimits } from './helpers/settings.js';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
@@ -26,6 +27,7 @@ const service = new TaskReviewService(db);
 let clearing: string;
 before(async () => {
   await migrate(db, { migrationsFolder: resolve('migrations') });
+  await lowLimits(db);
   clearing = (
     await db
       .insert(schema.fundingAccounts)

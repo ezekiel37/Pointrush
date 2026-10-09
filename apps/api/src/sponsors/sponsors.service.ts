@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { checkTaskMinimums, readSettings } from '../settings/settings.js';
 import {
   BadRequestException,
   ConflictException,
@@ -119,6 +120,7 @@ export class SponsorsService {
         message: 'Jobs are not available yet',
         reason: 'jobs_unavailable',
       });
+    const settings = await readSettings(this.database.db);
     const requestHash = createHash('sha256')
       .update(
         JSON.stringify(value, (_key, item: unknown) =>
@@ -150,6 +152,17 @@ export class SponsorsService {
           );
         return this.taskResult(existing);
       }
+      // The database clock decides how old the business is.
+      const [clockNow] = await tx
+        .select({ now: sql<string>`clock_timestamp()` })
+        .from(sponsorProfiles)
+        .where(eq(sponsorProfiles.id, sponsor.id));
+      checkTaskMinimums(
+        settings,
+        value,
+        sponsor.termsAcceptedAt,
+        Date.parse(String(clockNow!.now)),
+      );
       if (!this.termsVersion || sponsor.termsVersion !== this.termsVersion)
         throw new ConflictException({
           statusCode: 409,

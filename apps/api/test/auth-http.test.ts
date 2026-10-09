@@ -1,3 +1,4 @@
+import { lowLimits } from './helpers/settings.js';
 import 'reflect-metadata';
 import assert from 'node:assert/strict';
 import { randomBytes, randomUUID } from 'node:crypto';
@@ -57,6 +58,7 @@ const password = 'An actual HTTP test password 123!';
 
 before(async () => {
   await migrate(db, { migrationsFolder: resolve('migrations') });
+  await lowLimits(db);
   const module = await Test.createTestingModule({
     imports: [
       AppModule.forRoot(undefined, config, 'test-v1'),
@@ -579,7 +581,8 @@ test('review HTTP boundary rejects missing MFA, expired assurance and missing gr
       rejectionCriteria: 'Copied work',
       model: 'capped_fixed',
       capacity: 1,
-      rewardKobo: '9007199254740993',
+      // The largest payment settings allow, sent and read back exactly.
+      rewardKobo: '1000000000',
       startsAt: new Date(Date.now() + 86400000).toISOString(),
       endsAt: new Date(Date.now() + 172800000).toISOString(),
     })
@@ -588,8 +591,8 @@ test('review HTTP boundary rejects missing MFA, expired assurance and missing gr
     .get(`/api/v1/admin/reviews/tasks/${created.body.id}`)
     .set('Cookie', cookie)
     .expect(200);
-  assert.equal(detail.body.rewardKobo, '9007199254740993');
-  assert.equal(detail.body.budgetKobo, '9007199254740993');
+  assert.equal(detail.body.rewardKobo, '1000000000');
+  assert.equal(detail.body.budgetKobo, '1000000000');
   await request(server).get('/api/v1/work/tasks').expect(401);
   await request(server).get('/api/v1/work/appeals').expect(401);
   await request(server)

@@ -23,6 +23,7 @@ const reasons: Record<string, string> = {
   'Batch action unavailable': 'batch_unavailable',
   'Withdrawal unavailable': 'withdrawal_unavailable',
   'Daily withdrawal limit reached': 'withdrawal_daily_limit',
+  'Withdrawal amount out of range': 'withdrawal_amount',
   'Insufficient wallet balance': 'insufficient_balance',
   'Insufficient available sponsor funds': 'insufficient_balance',
   'Funding unavailable': 'funding_unavailable',

@@ -14,6 +14,7 @@ import { apiRequest, naira, newId, toKobo } from '@/lib/api';
 import { RequestError } from '@/lib/auth-client';
 import { businessOverview } from '@/lib/rewards';
 import { useApiRead } from '@/lib/use-api-read';
+import { nairaOfKobo, useLimits } from '@/lib/limits';
 
 type Model = 'purchase_cashback' | 'claim_code';
 const created = z.object({ id: z.uuid() });
@@ -71,6 +72,10 @@ function createError(error: unknown) {
       return 'Your available balance does not cover this campaign. Add funds or lower the amount.';
     if (error.code === 'terms_required')
       return 'Accept the current business terms before creating campaigns.';
+    if (error.code === 'below_minimum')
+      return 'An amount is below the minimum. Check the limits under each field.';
+    if (error.code === 'above_maximum')
+      return 'This campaign is larger than allowed. New businesses have a lower limit for their first days; try fewer places.';
     if (error.status === 400)
       return 'Check the details: the start must be in the future and the end after it.';
     if (error.status === 403)
@@ -94,6 +99,11 @@ export function CampaignForm({ model }: { model: Model }) {
   const router = useRouter();
   const text = copy[model];
   const overview = useApiRead('business/overview?days=7', businessOverview);
+  const { limits } = useLimits();
+  const floor =
+    model === 'purchase_cashback'
+      ? limits.campaigns.minCashbackKobo
+      : limits.campaigns.minPrizeKobo;
   const [start] = useState(defaultStart);
   const [form, setForm] = useState({
     title: '',
@@ -145,7 +155,15 @@ export function CampaignForm({ model }: { model: Model }) {
     if (!form.instructions.trim())
       next.instructions = 'Tell people what to do.';
     if (!rewardKobo) next.reward = 'Enter an amount in naira.';
+    else if (BigInt(rewardKobo) < BigInt(floor))
+      next.reward = `At least ${nairaOfKobo(floor)}.`;
+    else if (BigInt(rewardKobo) > BigInt(limits.campaigns.maxRewardKobo))
+      next.reward = `At most ${nairaOfKobo(limits.campaigns.maxRewardKobo)}.`;
     if (!capacity) next.capacity = 'Enter a whole number from 1.';
+    else if (total !== null && total < BigInt(limits.campaigns.minBudgetKobo))
+      next.capacity = `In total the campaign must lock at least ${nairaOfKobo(limits.campaigns.minBudgetKobo)}. Add places or raise the amount.`;
+    else if (total !== null && total > BigInt(limits.campaigns.maxBudgetKobo))
+      next.capacity = `In total a campaign can lock at most ${nairaOfKobo(limits.campaigns.maxBudgetKobo)}.`;
     const startsAt = new Date(form.startsAt);
     const endsAt = new Date(form.endsAt);
     if (Number.isNaN(startsAt.getTime()) || !inFuture(startsAt))
@@ -380,11 +398,13 @@ export function CampaignForm({ model }: { model: Model }) {
                   {
                     inputMode: 'decimal',
                     placeholder: model === 'claim_code' ? '5,000' : '500',
+                    hint: `From ${nairaOfKobo(floor)} to ${nairaOfKobo(limits.campaigns.maxRewardKobo)}.`,
                   },
                 )}
                 {field('capacity', text.capacity, {
                   inputMode: 'numeric',
                   placeholder: '100',
+                  hint: `The total locked must be at least ${nairaOfKobo(limits.campaigns.minBudgetKobo)}.`,
                 })}
               </div>
               {model === 'purchase_cashback' &&

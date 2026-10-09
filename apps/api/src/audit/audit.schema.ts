@@ -30,7 +30,7 @@ export const auditEvents = pgTable(
   (t) => [
     check(
       'audit_event_kind',
-      sql`${t.kind} in ('sign_in', 'money_password_failed', 'sessions_revoked', 'session_revoked', 'admin_account_viewed', 'admin_payments_viewed', 'admin_disputes_viewed')`,
+      sql`${t.kind} in ('sign_in', 'money_password_failed', 'sessions_revoked', 'session_revoked', 'admin_account_viewed', 'admin_payments_viewed', 'admin_disputes_viewed', 'admin_settings_changed', 'admin_search', 'referral_pool_funded')`,
     ),
     index('audit_subject_recent').on(t.subject, t.kind, t.createdAt),
   ],

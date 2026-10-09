@@ -1,3 +1,4 @@
+import { lowLimits } from './settings.js';
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
@@ -26,6 +27,7 @@ export async function campaignFixture() {
   const pg = new PGlite();
   const db = drizzle(pg, { schema: s });
   await migrate(db, { migrationsFolder: resolve('migrations') });
+  await lowLimits(db);
   await pg.exec(`
     create schema test_clock;
     create function test_clock.clock_timestamp() returns timestamptz language sql volatile as

@@ -9,6 +9,12 @@ import * as s from '../database/schema.js';
 import type { FundingDatabase } from '../funding/funding-ledger.js';
 import { recordAudit } from '../audit/audit.js';
 import { actorTransaction } from '../tasks/actor-transaction.js';
+import {
+  defaultSettings,
+  parseSettings,
+  readSettings,
+} from '../settings/settings.js';
+import { platformSettings } from '../settings/settings.schema.js';
 
 type Row = Record<string, unknown>;
 const rows = (result: unknown) =>
@@ -25,6 +31,23 @@ const accessInput = z
 const noteInput = z
   .object({ note: z.string().trim().min(3).max(1000) })
   .strict();
+
+const settingsChange = z
+  .object({
+    settings: z.unknown(),
+    reason: z.string().trim().min(3).max(500),
+  })
+  .strict();
+const searchInput = z.string().trim().min(2).max(80);
+
+// Who may change settings: named reviewer accounts only (see
+// SETTINGS_ADMIN_ACCOUNT_IDS). Read at each change so a removal applies at once.
+function settingsAdmins() {
+  return (process.env.SETTINGS_ADMIN_ACCOUNT_IDS ?? '')
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
 
 const rulingInput = z
   .object({
@@ -277,6 +300,249 @@ export class AdminService {
         reason: parsed.data.reason,
       });
       return { id: confirmationId, decision: parsed.data.decision };
+    });
+  }
+
+  // Minimums and referral rewards, with who changed them and why.
+  async settings(user: string) {
+    return this.reviewer(user, async (tx, actor) => {
+      const current = await readSettings(tx);
+      const history = rows(
+        await tx.execute(sql`
+          select ps.id, ps.reason, ps.created_at, u.username as actor
+          from platform_settings ps
+          left join usernames u on u.account_id = ps.actor_id and u.is_current
+          order by ps.version desc limit 20`),
+      ).map((r) => ({
+        id: String(r.id),
+        reason: String(r.reason),
+        by: r.actor == null ? null : String(r.actor),
+        at: iso(r.created_at),
+      }));
+      return {
+        current,
+        defaults: defaultSettings,
+        canEdit: settingsAdmins().includes(actor),
+        history,
+      };
+    });
+  }
+
+  async updateSettings(user: string, input: unknown) {
+    const parsed = settingsChange.safeParse(input);
+    if (!parsed.success)
+      throw new BadRequestException('Give the new settings and a reason');
+    const next = parseSettings(parsed.data.settings);
+    return this.reviewer(user, async (tx, actor) => {
+      if (!settingsAdmins().includes(actor))
+        throw new ForbiddenException({
+          statusCode: 403,
+          message: 'You can view settings but not change them',
+          reason: 'settings_read_only',
+        });
+      const [row] = await tx
+        .insert(platformSettings)
+        .values({ settings: next, actorId: actor, reason: parsed.data.reason })
+        .returning();
+      await recordAudit(tx, {
+        kind: 'admin_settings_changed',
+        subject: row!.id,
+        actor,
+      });
+      return { id: row!.id, current: next };
+    });
+  }
+
+  // Platform totals from the ledger and records; nothing is estimated.
+  async analytics(user: string) {
+    return this.reviewer(user, async (tx) => {
+      const [r] = rows(
+        await tx.execute(sql`
+          with lagos as (select clock_timestamp() as now)
+          select
+            (select count(*) from accounts)::int as accounts,
+            (select count(*) from accounts, lagos where created_at > lagos.now - interval '7 days')::int as accounts_7d,
+            (select count(*) from accounts, lagos where created_at > lagos.now - interval '30 days')::int as accounts_30d,
+            (select count(*) from verified_phones)::int as verified_phones,
+            (select count(*) from sponsor_profiles)::int as businesses,
+            (select count(*) from sponsor_profiles, lagos where terms_accepted_at > lagos.now - interval '30 days')::int as businesses_30d,
+            (select count(*) from sponsor_tasks t where exists (select 1 from task_publications p where p.task_id = t.id)
+              and t.ends_at > clock_timestamp())::int as live_campaigns,
+            (select count(*) from purchase_confirmations)::int as purchases,
+            (select count(*) from purchase_confirmations, lagos where created_at > lagos.now - interval '7 days')::int as purchases_7d,
+            (select count(*) from claim_redemptions)::int as prize_claims,
+            coalesce((select sum(amount_kobo) from funding_transfers where kind = 'funding_confirmed'), 0)::text as funded,
+            coalesce((select sum(amount_kobo) from funding_transfers where kind = 'funding_confirmed'
+              and created_at > clock_timestamp() - interval '30 days'), 0)::text as funded_30d,
+            coalesce((select sum(case when f.destination_id = a.id then f.amount_kobo else -f.amount_kobo end)
+              from funding_accounts a join funding_transfers f on f.source_id = a.id or f.destination_id = a.id
+              where a.bucket = 'task_locked'), 0)::text as locked,
+            coalesce((select sum(amount_kobo) from funding_transfers
+              where kind in ('purchase_cashback', 'prize_claim', 'task_reward', 'void_reversal', 'prize_cash_value', 'referral_cashback')), 0)::text as paid_to_users,
+            coalesce((select sum(case when f.destination_id = a.id then f.amount_kobo else -f.amount_kobo end)
+              from funding_accounts a join funding_transfers f on f.source_id = a.id or f.destination_id = a.id
+              where a.bucket = 'reward_wallet'), 0)::text as in_wallets,
+            coalesce((select sum(amount_kobo) from funding_transfers where kind = 'payout_paid'), 0)::text as withdrawn,
+            coalesce((select sum(amount_kobo) from funding_transfers where kind = 'bill_paid'), 0)::text as bills_paid,
+            (select count(*) from withdrawals w where not exists (select 1 from withdrawal_outcomes o where o.withdrawal_id = w.id))::int as withdrawals_pending,
+            (select count(*) from bill_purchases b where not exists (select 1 from bill_outcomes o where o.bill_id = b.id))::int as bills_pending,
+            (select count(*) from sponsor_tasks where review_state = 'pending_review')::int as campaigns_to_review,
+            (select count(*) from purchase_voids v where exists (select 1 from purchase_void_disputes d where d.confirmation_id = v.confirmation_id)
+              and not exists (select 1 from purchase_void_rulings r where r.confirmation_id = v.confirmation_id))::int as disputes_open
+        `),
+      );
+      const series = rows(
+        await tx.execute(sql`
+          with days as (
+            select generate_series((clock_timestamp() at time zone 'Africa/Lagos')::date - 13,
+              (clock_timestamp() at time zone 'Africa/Lagos')::date, interval '1 day')::date as day)
+          select d.day::text as day,
+            (select count(*) from accounts a where (a.created_at at time zone 'Africa/Lagos')::date = d.day)::int as signups,
+            (select count(*) from purchase_confirmations p where (p.created_at at time zone 'Africa/Lagos')::date = d.day)::int as purchases
+          from days d order by d.day`),
+      ).map((x) => ({
+        day: String(x.day),
+        signups: Number(x.signups),
+        purchases: Number(x.purchases),
+      }));
+      const n = (k: string) => Number(r?.[k] ?? 0);
+      const k = (key: string) => String(r?.[key] ?? '0');
+      return {
+        people: {
+          accounts: n('accounts'),
+          new7d: n('accounts_7d'),
+          new30d: n('accounts_30d'),
+          verifiedPhones: n('verified_phones'),
+        },
+        businesses: {
+          total: n('businesses'),
+          new30d: n('businesses_30d'),
+          liveCampaigns: n('live_campaigns'),
+        },
+        activity: {
+          purchases: n('purchases'),
+          purchases7d: n('purchases_7d'),
+          prizeClaims: n('prize_claims'),
+        },
+        money: {
+          fundedKobo: k('funded'),
+          funded30dKobo: k('funded_30d'),
+          lockedKobo: k('locked'),
+          paidToUsersKobo: k('paid_to_users'),
+          inWalletsKobo: k('in_wallets'),
+          withdrawnKobo: k('withdrawn'),
+          billsPaidKobo: k('bills_paid'),
+        },
+        queues: {
+          campaignsToReview: n('campaigns_to_review'),
+          disputesOpen: n('disputes_open'),
+          withdrawalsPending: n('withdrawals_pending'),
+          billsPending: n('bills_pending'),
+        },
+        series,
+      };
+    });
+  }
+
+  // People and businesses by username, name, email or business name.
+  async search(user: string, query: unknown) {
+    const parsed = searchInput.safeParse(query);
+    if (!parsed.success)
+      throw new BadRequestException('Type at least 2 characters');
+    const term = parsed.data.replace(/^@/, '').toLowerCase();
+    const like = `%${term.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+    return this.reviewer(user, async (tx, actor) => {
+      const found = rows(
+        await tx.execute(sql`
+          select a.id, a.access_state, a.created_at, u.username, p.display_name,
+            au.email, sp.name as business_name,
+            exists (select 1 from verified_phones v where v.account_id = a.id) as phone_verified
+          from accounts a
+          left join usernames u on u.account_id = a.id and u.is_current
+          left join account_profiles p on p.account_id = a.id
+          left join auth_account_links l on l.account_id = a.id
+          left join auth_users au on au.id = l.auth_user_id
+          left join sponsor_profiles sp on sp.owner_id = a.id
+          where u.username like ${like} or lower(p.display_name) like ${like}
+            or lower(au.email) like ${like} or lower(sp.name) like ${like}
+          order by (u.username = ${term}) desc, (lower(au.email) = ${term}) desc, a.created_at desc
+          limit 25`),
+      ).map((r) => ({
+        id: String(r.id),
+        username: r.username == null ? null : String(r.username),
+        displayName: r.display_name == null ? null : String(r.display_name),
+        email: r.email == null ? null : String(r.email),
+        businessName: r.business_name == null ? null : String(r.business_name),
+        accessState: String(r.access_state),
+        phoneVerified: Boolean(r.phone_verified),
+        createdAt: iso(r.created_at),
+      }));
+      // Searches are recorded like any other look-up.
+      await recordAudit(tx, {
+        kind: 'admin_search',
+        subject: actor,
+        actor,
+        detail: { results: found.length },
+      });
+      return { items: found };
+    });
+  }
+
+  // One account in full: identity, business, money and recent changes.
+  async accountDetail(user: string, accountId: string) {
+    if (!z.uuid().safeParse(accountId).success) throw new NotFoundException();
+    return this.reviewer(user, async (tx, actor) => {
+      const view = await this.accountView(tx, accountId);
+      await recordAudit(tx, {
+        kind: 'admin_account_viewed',
+        subject: accountId,
+        actor,
+      });
+      const [money] = rows(
+        await tx.execute(sql`
+          select
+            coalesce((select sum(case when f.destination_id = a.id then f.amount_kobo else -f.amount_kobo end)
+              from funding_accounts a join funding_transfers f on f.source_id = a.id or f.destination_id = a.id
+              where a.owner_id = ${accountId} and a.bucket = 'reward_wallet'), 0)::text as wallet,
+            coalesce((select sum(case when f.destination_id = a.id then f.amount_kobo else -f.amount_kobo end)
+              from funding_accounts a join funding_transfers f on f.source_id = a.id or f.destination_id = a.id
+              where a.owner_id = ${accountId} and a.bucket = 'available'), 0)::text as business_available,
+            coalesce((select sum(case when f.destination_id = a.id then f.amount_kobo else -f.amount_kobo end)
+              from funding_accounts a join funding_transfers f on f.source_id = a.id or f.destination_id = a.id
+              where a.owner_id = ${accountId} and a.bucket = 'task_locked'), 0)::text as business_locked,
+            coalesce((select sum(f.amount_kobo) from funding_transfers f join funding_accounts a on a.id = f.destination_id
+              where a.owner_id = ${accountId} and f.kind = 'funding_confirmed'), 0)::text as funded,
+            (select count(*) from purchase_confirmations where account_id = ${accountId})::int as purchases,
+            (select email from auth_users au join auth_account_links l on l.auth_user_id = au.id
+              where l.account_id = ${accountId}) as email,
+            (select account_type from auth_users au join auth_account_links l on l.auth_user_id = au.id
+              where l.account_id = ${accountId}) as account_type`),
+      );
+      const business = rows(
+        await tx.execute(sql`
+          select sp.id, sp.name, sp.terms_accepted_at as created_at,
+            (select count(*) from sponsor_tasks t where t.sponsor_id = sp.id)::int as campaigns
+          from sponsor_profiles sp where sp.owner_id = ${accountId}`),
+      )[0];
+      return {
+        ...view,
+        email: money?.email == null ? null : String(money.email),
+        accountType:
+          money?.account_type === 'business' ? 'business' : 'personal',
+        walletKobo: String(money?.wallet ?? '0'),
+        purchases: Number(money?.purchases ?? 0),
+        businessProfile: business
+          ? {
+              id: String(business.id),
+              name: String(business.name),
+              createdAt: iso(business.created_at),
+              campaigns: Number(business.campaigns),
+              fundedKobo: String(money?.funded ?? '0'),
+              availableKobo: String(money?.business_available ?? '0'),
+              lockedKobo: String(money?.business_locked ?? '0'),
+            }
+          : null,
+      };
     });
   }
 }

@@ -246,6 +246,13 @@
       "when": 1791561141473,
       "tag": "0034_account_type",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1791564401060,
+      "tag": "0035_platform_settings",
+      "breakpoints": true
     }
   ]
 }
