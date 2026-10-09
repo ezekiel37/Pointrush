@@ -10,6 +10,11 @@ import { Field } from '@/components/ui/field';
 import { toast } from '@/components/ui/toast';
 import { apiRequest } from '@/lib/api';
 import { RequestError } from '@/lib/auth-client';
+import { FileButton } from '@/components/ui/file-button';
+import { publicFileUrl } from '@/lib/files';
+import { useApiRead } from '@/lib/use-api-read';
+
+const avatarRead = z.object({ fileId: z.uuid().nullable() });
 
 type Kind = 'displayName' | 'username';
 const copy = {
@@ -51,6 +56,8 @@ export function IdentityPanel({
   username: string;
   onSaved: () => void;
 }) {
+  const avatar = useApiRead('accounts/me/avatar', avatarRead);
+  const [pictureError, setPictureError] = useState('');
   const [editing, setEditing] = useState<Kind | null>(null);
   const [value, setValue] = useState('');
   const [busy, setBusy] = useState(false);
@@ -82,9 +89,62 @@ export function IdentityPanel({
     }
   }
 
+  async function setPicture(fileId: string | null) {
+    try {
+      await apiRequest('accounts/me/avatar', avatarRead, {
+        method: 'POST',
+        body: { fileId },
+      });
+      toast(fileId ? 'Picture updated' : 'Picture removed');
+      avatar.refresh();
+    } catch {
+      setPictureError('We could not save your picture. Try again.');
+    }
+  }
+
+  const fileId = avatar.data?.fileId ?? null;
   return (
     <section className="account-panel">
       <h2>Your profile</h2>
+      <div className="avatar-row">
+        {fileId ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            className="avatar avatar-lg"
+            src={publicFileUrl(fileId)}
+            alt="Your profile picture"
+          />
+        ) : (
+          <span className="avatar avatar-lg" aria-hidden>
+            {displayName.slice(0, 1).toUpperCase()}
+          </span>
+        )}
+        <div className="grid gap-2">
+          <div className="row" style={{ justifyContent: 'flex-start' }}>
+            <FileButton
+              purpose="avatar"
+              onError={setPictureError}
+              onUploaded={(file) => void setPicture(file.id)}
+            >
+              {fileId ? 'Change picture' : 'Add a picture'}
+            </FileButton>
+            {fileId && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => void setPicture(null)}
+              >
+                Remove
+              </Button>
+            )}
+          </div>
+          <p className="small-note" style={{ margin: 0 }}>
+            JPEG, PNG or WebP up to 2 MB. Location details in photos are
+            removed.
+          </p>
+          {pictureError && <Feedback error>{pictureError}</Feedback>}
+        </div>
+      </div>
       <dl>
         {(
           [

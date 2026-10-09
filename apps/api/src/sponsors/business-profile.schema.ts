@@ -64,7 +64,7 @@ export const businessProfileChanges = pgTable(
   (t) => [
     check(
       'business_profile_change_field',
-      sql`${t.field} in ('name', 'contact_email', 'description')`,
+      sql`${t.field} in ('name', 'contact_email', 'description', 'logo')`,
     ),
     index('business_profile_change_sponsor').on(t.sponsorId, t.createdAt),
   ],

@@ -198,3 +198,9 @@ export {
   businessProfileDecisions,
   displayNameChanges,
 } from '../sponsors/business-profile.schema.js';
+export {
+  files,
+  fileDeletions,
+  accountAvatars,
+  taskProofFiles,
+} from '../files/files.schema.js';

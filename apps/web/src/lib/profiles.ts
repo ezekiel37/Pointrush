@@ -13,6 +13,7 @@ export const businessDetails = z.object({
   name: z.string(),
   contactEmail: z.string(),
   description: z.string().nullable(),
+  logoFileId: z.string().nullable().default(null),
   handle: z.string().nullable(),
   since: date,
   canChangeHandle: z.boolean(),
@@ -37,6 +38,7 @@ export const publicBusiness = z.union([
     handle: z.string(),
     name: z.string(),
     description: z.string().nullable(),
+    logoFileId: z.string().nullable().default(null),
     since: date,
     formerly: z.array(z.object({ name: z.string(), until: date })),
     offers: z.array(

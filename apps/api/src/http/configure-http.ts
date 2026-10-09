@@ -42,6 +42,11 @@ export function configureHttp(
     app.use('/api/v1/auth', authHandler);
   }
   app.useBodyParser('json', { limit: '64kb' });
+  // Uploads arrive as the raw file; the files service checks the bytes.
+  app.useBodyParser('raw', {
+    type: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
+    limit: '5mb',
+  });
   app.useBodyParser('urlencoded', { limit: '64kb', extended: false });
   app.use(
     (

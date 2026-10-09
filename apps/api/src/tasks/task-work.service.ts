@@ -4,7 +4,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { FundingDatabase } from '../funding/funding-ledger.js';
 import * as s from '../database/schema.js';
@@ -17,6 +17,8 @@ const proofInput = z
     id,
     revision: z.number().int().min(1).max(2),
     evidence: z.string().trim().min(1).max(10000),
+    // Up to 3 uploaded photos or PDFs, fixed once submitted.
+    files: z.array(z.uuid()).max(3).optional(),
   })
   .strict();
 const decisionInput = z
@@ -240,12 +242,21 @@ export class TaskWorkService {
           throw new ConflictException('Proof ID already used');
         return existing;
       }
-      return (
-        await tx
-          .insert(s.taskProofs)
-          .values({ ...value, claimId })
-          .returning()
-      )[0]!;
+      const { files = [], ...proof } = value;
+      if (new Set(files).size !== files.length)
+        throw new ConflictException('Each file can be attached once');
+      const [created] = await tx
+        .insert(s.taskProofs)
+        .values({ ...proof, claimId })
+        .returning();
+      // The database checks each file is the worker's own evidence upload.
+      for (const [index, fileId] of files.entries())
+        await tx.insert(s.taskProofFiles).values({
+          proofId: created!.id,
+          fileId,
+          position: index + 1,
+        });
+      return created!;
     });
   }
 
@@ -426,11 +437,18 @@ export class TaskWorkService {
         .select()
         .from(s.appealResolutions)
         .where(eq(s.appealResolutions.appealId, appealId));
+      const attached = await this.proofFiles(
+        tx,
+        history.map((h) => h.proof.id),
+      );
       return {
         resolution: resolution ?? null,
         appeal: row.appeal,
         claim: row.claim,
-        history,
+        history: history.map((h) => ({
+          ...h,
+          files: attached.get(h.proof.id) ?? [],
+        })),
         task: {
           ...row.task,
           rewardKobo: row.task.rewardKobo.toString(),
@@ -438,6 +456,32 @@ export class TaskWorkService {
         },
       };
     });
+  }
+
+  // Files attached to proofs, by proof. Deleted files show as removed.
+  private async proofFiles(tx: FundingDatabase, proofIds: string[]) {
+    const byProof = new Map<
+      string,
+      { id: string; contentType: string; removed: boolean }[]
+    >();
+    if (!proofIds.length) return byProof;
+    const found = await tx
+      .select({
+        proofId: s.taskProofFiles.proofId,
+        id: s.files.id,
+        contentType: s.files.contentType,
+        removed: sql<boolean>`exists (select 1 from ${s.fileDeletions} d where d.file_id = ${s.files.id})`,
+      })
+      .from(s.taskProofFiles)
+      .innerJoin(s.files, eq(s.files.id, s.taskProofFiles.fileId))
+      .where(inArray(s.taskProofFiles.proofId, proofIds))
+      .orderBy(s.taskProofFiles.position);
+    for (const f of found) {
+      const list = byProof.get(f.proofId) ?? [];
+      list.push({ id: f.id, contentType: f.contentType, removed: f.removed });
+      byProof.set(f.proofId, list);
+    }
+    return byProof;
   }
 
   async readClaim(user: string, claimId: string) {
@@ -478,9 +522,16 @@ export class TaskWorkService {
         .select()
         .from(s.sponsorTasks)
         .where(eq(s.sponsorTasks.id, claim.taskId));
+      const attached = await this.proofFiles(
+        tx,
+        proofs.map((p) => p.proof.id),
+      );
       return {
         claim,
-        proofs,
+        proofs: proofs.map((p) => ({
+          ...p,
+          files: attached.get(p.proof.id) ?? [],
+        })),
         participant: claim.accountId === actor,
         observedAt: new Date().toISOString(),
         task: {

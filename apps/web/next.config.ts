@@ -11,7 +11,8 @@ const contentSecurityPolicy = [
   // Next.js inlines its startup scripts; outside scripts are never allowed.
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  // Logos, profile pictures and evidence are served by the API.
+  `img-src 'self' data: blob: ${apiOrigins.join(' ')}`,
   "font-src 'self' data:",
   `connect-src 'self' ${apiOrigins.join(' ')}`,
   "worker-src 'self'",

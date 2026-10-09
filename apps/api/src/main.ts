@@ -9,6 +9,8 @@ import { AuthService } from './auth/auth.service.js';
 import { paymentProvider } from './payments/payments.module.js';
 import { smsProvider } from './phone/phone.module.js';
 import { billProvider } from './bills/bills.module.js';
+import { fileStorage } from './files/files.module.js';
+import { FilesService } from './files/files.service.js';
 import { BillsService } from './bills/bills.service.js';
 import { safeErrorSummary } from './database/safe-error.js';
 import { DatabaseService } from './database/database.service.js';
@@ -18,6 +20,7 @@ async function bootstrap(): Promise<void> {
   const config = readEnvironment(process.env);
   const payments = paymentProvider(config.payments);
   const bills = billProvider(config.bills);
+  const storage = fileStorage(config.storage);
   const app = await NestFactory.create<NestExpressApplication>(
     AppModule.forRoot(
       config.database,
@@ -30,6 +33,7 @@ async function bootstrap(): Promise<void> {
       },
       { jobs: config.jobsEnabled ?? true },
       bills,
+      storage,
     ),
     {
       logger: new ConsoleLogger({ json: true }),
@@ -66,6 +70,7 @@ async function bootstrap(): Promise<void> {
           : {}),
         ...(payments ? { payments } : {}),
         ...(bills ? { bills: app.get(BillsService) } : {}),
+        ...(storage ? { files: app.get(FilesService) } : {}),
       }),
     );
     if (config.auth && !config.resendApiKey)

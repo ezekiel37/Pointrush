@@ -942,6 +942,75 @@
   .rename-row .small-note {
     margin: 0.2rem 0 0;
   }
+  /* Pictures: profile photos and business logos. */
+  .avatar {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    object-fit: cover;
+    background: var(--color-brand-soft);
+    color: var(--color-brand-text);
+    font-weight: 700;
+  }
+  .avatar-lg {
+    width: 72px;
+    height: 72px;
+    font-size: 1.6rem;
+  }
+  .avatar-row {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  .logo-img {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+  }
+  /* Evidence: photo thumbnails and PDF links on a proof. */
+  .evidence-files {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .evidence-files img {
+    display: block;
+    width: 96px;
+    height: 96px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid var(--color-line);
+  }
+  .evidence-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: 100%;
+    padding: 0.35rem 0.4rem 0.35rem 0.4rem;
+    border: 1px solid var(--color-line);
+    border-radius: 12px;
+    background: var(--color-surface);
+  }
+  .evidence-chip img {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+  }
+  .evidence-chip .truncate {
+    max-width: 12rem;
+    font-size: 0.86rem;
+  }
   /* Public business page */
   .business-hero {
     display: flex;

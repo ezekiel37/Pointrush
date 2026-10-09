@@ -6,6 +6,7 @@ import { EmailWorker } from '../auth/email-worker.js';
 import { PaymentsService } from '../payments/payments.service.js';
 import type { PaymentProvider } from '../payments/provider.js';
 import type { BillsService } from '../bills/bills.service.js';
+import type { FilesService } from '../files/files.service.js';
 
 export interface PeriodicTask {
   name: string;
@@ -76,6 +77,7 @@ export function inlineWorkerTasks(options: {
   email?: { resendApiKey: string; encryptionKey: string };
   payments?: PaymentProvider;
   bills?: Pick<BillsService, 'settlePending'>;
+  files?: Pick<FilesService, 'purge'>;
 }): PeriodicTask[] {
   const tasks: PeriodicTask[] = [];
   if (options.email) {
@@ -126,6 +128,18 @@ export function inlineWorkerTasks(options: {
       run: async () => {
         const result = await bills.settlePending(25);
         return result.checked ? result : undefined;
+      },
+    });
+  }
+  if (options.files) {
+    const files = options.files;
+    // Evidence past its keeping time and uploads never used are removed.
+    tasks.push({
+      name: 'file_purge',
+      everyMs: 3_600_000,
+      run: async () => {
+        const result = await files.purge(100);
+        return result.removed ? result : undefined;
       },
     });
   }

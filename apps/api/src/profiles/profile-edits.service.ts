@@ -46,6 +46,14 @@ const changeInput = z.discriminatedUnion('field', [
       value: plain(500),
     })
     .strict(),
+  // A new logo is an uploaded file's ID; an empty value removes the logo.
+  z
+    .object({
+      id: z.uuid(),
+      field: z.literal('logo'),
+      value: z.union([z.uuid(), z.literal('')]),
+    })
+    .strict(),
 ]);
 const decisionInput = z
   .object({
@@ -97,7 +105,7 @@ export class ProfileEditsService {
   private async business(tx: FundingDatabase, actor: string) {
     const [b] = rows(
       await tx.execute(sql`
-        select sp.id, sp.name, sp.contact_email, sp.description, sp.terms_accepted_at,
+        select sp.id, sp.name, sp.contact_email, sp.description, sp.terms_accepted_at, sp.logo_file_id,
           (select handle from business_handles h where h.sponsor_id = sp.id order by seq desc limit 1) as handle,
           (select count(*) from business_handles h where h.sponsor_id = sp.id)::int as handles,
           business_has_approved_campaign(sp.id) as approved
@@ -142,6 +150,7 @@ export class ProfileEditsService {
         name: String(b.name),
         contactEmail: String(b.contact_email),
         description: text(b.description),
+        logoFileId: text(b.logo_file_id),
         handle: text(b.handle),
         since: iso(b.terms_accepted_at),
         // One change, until the first campaign is approved.
@@ -189,7 +198,9 @@ export class ProfileEditsService {
           ? b.name
           : value.field === 'contact_email'
             ? b.contact_email
-            : b.description;
+            : value.field === 'logo'
+              ? b.logo_file_id
+              : b.description;
       const next = value.value === '' ? null : value.value;
       const [row] = rows(
         await tx.execute(sql`
@@ -207,7 +218,7 @@ export class ProfileEditsService {
     tx: FundingDatabase,
     changeId: string,
     sponsorId: string,
-    field: 'name' | 'contact_email' | 'description',
+    field: 'name' | 'contact_email' | 'description' | 'logo',
     value: string | null,
   ) {
     await tx.execute(
@@ -216,6 +227,10 @@ export class ProfileEditsService {
     if (field === 'name')
       await tx.execute(
         sql`update sponsor_profiles set name = ${value} where id = ${sponsorId}`,
+      );
+    else if (field === 'logo')
+      await tx.execute(
+        sql`update sponsor_profiles set logo_file_id = ${value}::uuid where id = ${sponsorId}`,
       );
     else if (field === 'contact_email')
       await tx.execute(
@@ -283,7 +298,7 @@ export class ProfileEditsService {
     if (!parsed.success) throw new NotFoundException();
     const [b] = rows(
       await this.db.execute(sql`
-        select sp.id, sp.name, sp.description, sp.terms_accepted_at,
+        select sp.id, sp.name, sp.description, sp.terms_accepted_at, sp.logo_file_id,
           (select handle from business_handles h2 where h2.sponsor_id = sp.id order by seq desc limit 1) as current
         from business_handles h
         join sponsor_profiles sp on sp.id = h.sponsor_id
@@ -320,6 +335,7 @@ export class ProfileEditsService {
       handle: String(b.current),
       name: String(b.name),
       description: text(b.description),
+      logoFileId: text(b.logo_file_id),
       since: iso(b.terms_accepted_at),
       formerly,
       offers,
@@ -372,7 +388,7 @@ export class ProfileEditsService {
         tx,
         changeId,
         String(change.sponsor_id),
-        change.field as 'name',
+        change.field as 'name' | 'logo',
         text(change.new_value),
       );
     return { decision: value.decision };

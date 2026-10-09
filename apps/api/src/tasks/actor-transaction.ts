@@ -61,6 +61,9 @@ const reasons: Record<string, string> = {
   'Profile decision unavailable': 'profile_decision_unavailable',
   'Display name changed recently': 'display_name_too_soon',
   'Display name change unavailable': 'display_name_unavailable',
+  'Upload limit reached': 'upload_limit',
+  'Picture unavailable': 'picture_unavailable',
+  'Evidence unavailable': 'evidence_unavailable',
 };
 
 // The same mapping for transactions that do not resolve an actor first.

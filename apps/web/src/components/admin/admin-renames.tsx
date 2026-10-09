@@ -10,6 +10,7 @@ import { Feedback, Loading } from '@/components/ui/feedback';
 import { Field } from '@/components/ui/field';
 import { toast } from '@/components/ui/toast';
 import { apiRequest, shortDate } from '@/lib/api';
+import { privateFileUrl } from '@/lib/files';
 import { profileChanges } from '@/lib/admin';
 import { useApiRead } from '@/lib/use-api-read';
 import { AdminFailure, AdminFrame } from './admin-frame';
@@ -42,9 +43,7 @@ export function AdminRenames() {
           body: { decision: deciding.decision, reason: reason.trim() },
         },
       );
-      toast(
-        deciding.decision === 'applied' ? 'Rename approved' : 'Rename refused',
-      );
+      toast(deciding.decision === 'applied' ? 'Approved' : 'Refused');
       setDeciding(null);
       setReason('');
       read.refresh();
@@ -59,8 +58,8 @@ export function AdminRenames() {
 
   return (
     <AdminFrame
-      title="Business renames"
-      intro="A business that already has an approved campaign needs a reviewer to change its name. Customers see the old name for 90 days either way."
+      title="Names and logos"
+      intro="Renames by businesses with an approved campaign, and every new logo. Approve a real rebrand; refuse anything that borrows another brand. Customers see an old name for 90 days."
     >
       {read.loading && !read.data ? (
         <Loading>Loading renames…</Loading>
@@ -71,15 +70,39 @@ export function AdminRenames() {
           {read.data.items.map((item) => (
             <li key={item.id}>
               <div className="rename-row">
-                <p className="tx-title" style={{ margin: 0 }}>
-                  {item.oldValue}{' '}
-                  <ArrowRight
-                    size={15}
-                    aria-hidden
-                    style={{ verticalAlign: '-2px' }}
-                  />{' '}
-                  {item.newValue}
-                </p>
+                {item.field === 'logo' ? (
+                  <div className="icon-line" style={{ gap: '0.75rem' }}>
+                    {item.oldValue ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        className="logo-img"
+                        src={privateFileUrl(item.oldValue)}
+                        alt="Current logo"
+                      />
+                    ) : (
+                      <span className="small-note">No logo yet</span>
+                    )}
+                    <ArrowRight size={15} aria-hidden />
+                    {item.newValue && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        className="logo-img"
+                        src={privateFileUrl(item.newValue)}
+                        alt="New logo"
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <p className="tx-title" style={{ margin: 0 }}>
+                    {item.oldValue}{' '}
+                    <ArrowRight
+                      size={15}
+                      aria-hidden
+                      style={{ verticalAlign: '-2px' }}
+                    />{' '}
+                    {item.newValue}
+                  </p>
+                )}
                 <p className="small-note">
                   {item.handle && (
                     <Link href={`/b/${item.handle}`} target="_blank">
@@ -115,15 +138,19 @@ export function AdminRenames() {
           ))}
         </ul>
       ) : (
-        <p className="small-note">No renames waiting.</p>
+        <p className="small-note">Nothing waiting.</p>
       )}
       <Dialog
         open={deciding !== null}
         onClose={() => !busy && setDeciding(null)}
         title={
-          deciding?.decision === 'applied'
-            ? `Approve “${deciding.item.newValue}”?`
-            : `Refuse “${deciding?.item.newValue ?? ''}”?`
+          deciding?.item.field === 'logo'
+            ? deciding.decision === 'applied'
+              ? 'Approve this logo?'
+              : 'Refuse this logo?'
+            : deciding?.decision === 'applied'
+              ? `Approve “${deciding.item.newValue}”?`
+              : `Refuse “${deciding?.item.newValue ?? ''}”?`
         }
         description="The business sees your reason."
       >

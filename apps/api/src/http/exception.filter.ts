@@ -10,6 +10,7 @@ const publicReasons = new Set([
   'above_maximum',
   'invalid_settings',
   'settings_read_only',
+  'file_rejected',
 ]);
 
 @Catch()

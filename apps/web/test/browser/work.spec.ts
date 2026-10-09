@@ -194,6 +194,103 @@ test('proof retries retain their identity and text after a dropped response', as
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
 
+test('proof can carry photos, uploaded first and shown back as thumbnails', async ({
+  page,
+}) => {
+  const fileId = '9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b';
+  const bodies: Record<string, unknown>[] = [];
+  const uploads: string[] = [];
+  await page.route(`**/api/v1/work/claims/${id}`, (route) =>
+    route.fulfill({
+      json: {
+        participant: true,
+        observedAt: '2026-10-02T12:00:00Z',
+        claim: { id, taskId: id, accountId: id, createdAt: task.startsAt },
+        task: {
+          ...task,
+          instructions: 'Photograph our sign.',
+          proofRequirements: 'A clear photo.',
+          rejectionCriteria: 'Blurry photos.',
+          workTerms: { reviewHours: 48, correctionHours: 24, appealHours: 48 },
+        },
+        proofs: bodies.length
+          ? [
+              {
+                proof: {
+                  id: bodies[0]!.id,
+                  revision: 1,
+                  evidence: bodies[0]!.evidence,
+                  claimId: id,
+                  createdAt: task.startsAt,
+                },
+                decision: null,
+                receipt: null,
+                appeal: null,
+                resolution: null,
+                files: [
+                  { id: fileId, contentType: 'image/png', removed: false },
+                ],
+              },
+            ]
+          : [],
+      },
+    }),
+  );
+  await page.route('**/api/v1/files?purpose=evidence', (route) => {
+    uploads.push(route.request().headers()['content-type'] ?? '');
+    return route.fulfill({
+      status: 201,
+      json: {
+        id: fileId,
+        purpose: 'evidence',
+        contentType: 'image/png',
+        sizeBytes: 68,
+      },
+    });
+  });
+  await page.route(`**/api/v1/files/${fileId}`, (route) =>
+    route.fulfill({
+      contentType: 'image/png',
+      body: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+        'base64',
+      ),
+    }),
+  );
+  await page.route(`**/api/v1/work/claims/${id}/proofs`, (route) => {
+    bodies.push(route.request().postDataJSON());
+    return route.fulfill({
+      json: { ...bodies[0], claimId: id, createdAt: task.startsAt },
+    });
+  });
+  await page.goto(`/my-tasks/${id}`);
+  await page.getByRole('button', { name: 'Submit proof', exact: true }).click();
+  await page
+    .getByLabel('Submit proof', { exact: true })
+    .fill('Photo of the sign attached');
+  await page.locator('input[type=file]').setInputFiles({
+    name: 'sign.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+      'base64',
+    ),
+  });
+  await expect(page.getByText('sign.png')).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: /Attach a photo or PDF \(1\/3\)/ }),
+  ).toBeVisible();
+  expect(uploads).toEqual(['image/png']);
+  await page.getByRole('button', { name: 'Submit proof', exact: true }).click();
+  await expect(page.getByAltText('Photo 1 of the proof')).toBeVisible();
+  expect(bodies[0]).toMatchObject({
+    revision: 1,
+    evidence: 'Photo of the sign attached',
+    files: [fileId],
+  });
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+});
+
 test('viewing a rejection never acknowledges it automatically', async ({
   page,
 }) => {

@@ -17,6 +17,12 @@ export const appealRecord = z.object({
   reason: z.string(),
   createdAt: timestamp,
 });
+// Photos or PDFs attached to a proof; removed ones were past keeping time.
+export const proofFiles = z
+  .array(
+    z.object({ id: z.uuid(), contentType: z.string(), removed: z.boolean() }),
+  )
+  .default([]);
 export const claimView = z.object({
   participant: z.boolean(),
   observedAt: timestamp,
@@ -57,6 +63,7 @@ export const claimView = z.object({
           createdAt: timestamp,
         })
         .nullable(),
+      files: proofFiles,
     }),
   ),
 });

@@ -18,16 +18,24 @@ import { Button } from '@/components/ui/button';
 import { Feedback, Loading } from '@/components/ui/feedback';
 import { WorkFrame, WorkFailure } from './work-frame';
 import { EvidenceForm } from './evidence-form';
+import type { Attachment } from './evidence-form';
 import { ProofHistory } from './proof-history';
 
 type Command = {
   kind: 'proof' | 'appeal' | 'acknowledge';
   path: string;
-  body?: { id: string; revision?: number; evidence?: string; reason?: string };
+  body?: {
+    id: string;
+    revision?: number;
+    evidence?: string;
+    reason?: string;
+    files?: string[];
+  };
 };
 export function ClaimScreen({ id }: { id: string }) {
   const read = useWorkRead(`claims/${id}`, claimView);
   const [draft, setDraft] = useState('');
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [pending, setPending] = useState<Command | null>(null);
   const [message, setMessage] = useState('');
   const submit = useSubmit((error) => {
@@ -58,6 +66,9 @@ export function ClaimScreen({ id }: { id: string }) {
               id: crypto.randomUUID(),
               revision: action.revision,
               evidence: draft.trim(),
+              ...(attachments.length
+                ? { files: attachments.map((file) => file.id) }
+                : {}),
             },
           };
         else if (action?.kind === 'appeal')
@@ -101,6 +112,7 @@ export function ClaimScreen({ id }: { id: string }) {
         throw error;
       }
       setDraft('');
+      setAttachments([]);
       setPending(null);
       setMessage(
         command.kind === 'acknowledge'
@@ -214,6 +226,9 @@ export function ClaimScreen({ id }: { id: string }) {
                   }
                   busy={submit.busy}
                   locked={Boolean(pending)}
+                  {...((pending?.kind ?? action?.kind) === 'proof'
+                    ? { attachments, onAttachments: setAttachments }
+                    : {})}
                 />
               </section>
             )}

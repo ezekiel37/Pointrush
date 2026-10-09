@@ -25,6 +25,8 @@ import type { SmsProvider } from './phone/sms.js';
 import { RateLimitGuard } from './http/rate-limit.js';
 import { BillsModule } from './bills/bills.module.js';
 import type { BillProvider } from './bills/provider.js';
+import { FilesModule } from './files/files.module.js';
+import type { FileStorage } from './files/storage.js';
 
 @Module({})
 export class AppModule {
@@ -36,6 +38,7 @@ export class AppModule {
     sms?: { provider?: SmsProvider; config?: PhoneConfig },
     features: { jobs: boolean } = { jobs: true },
     bills?: BillProvider,
+    storage?: FileStorage,
   ): DynamicModule {
     const imports: DynamicModule['imports'] = [
       DatabaseModule.forRoot(database),
@@ -49,6 +52,7 @@ export class AppModule {
         PaymentsModule.forRoot(payments, auth),
         PhoneModule.forRoot(sms?.provider, sms?.config),
         BillsModule.forRoot(bills),
+        FilesModule.forRoot(storage),
       );
     if (auth) {
       imports.push(

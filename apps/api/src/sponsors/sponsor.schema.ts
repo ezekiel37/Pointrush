@@ -31,6 +31,8 @@ export const sponsorProfiles = pgTable(
     // Shown on the public business page. Changed only through
     // business_profile_changes, which keep the history.
     description: varchar('description', { length: 500 }),
+    // Approved logo (see business_profile_changes with field 'logo').
+    logoFileId: uuid('logo_file_id'),
     termsVersion: varchar('terms_version', { length: 80 }).notNull(),
     termsAcceptedAt: timestamp('terms_accepted_at', { withTimezone: true })
       .notNull()

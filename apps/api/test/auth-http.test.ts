@@ -26,6 +26,8 @@ import type { AuthEmail } from '../src/auth/auth.email.js';
 import { DatabaseService } from '../src/database/database.service.js';
 import * as schema from '../src/database/schema.js';
 import { configureHttp } from '../src/http/configure-http.js';
+import { FilesModule } from '../src/files/files.module.js';
+import { MemoryStorage } from '../src/files/storage.js';
 
 @Controller('private-probe')
 class PrivateProbe {
@@ -53,6 +55,7 @@ const payments = new TestPaymentProvider(randomBytes(32).toString('hex'));
 let app: NestExpressApplication;
 let server: Parameters<typeof request>[0];
 let cookie: string;
+const storage = new MemoryStorage();
 const email = 'http@example.test';
 const password = 'An actual HTTP test password 123!';
 
@@ -67,6 +70,7 @@ before(async () => {
       CampaignsModule,
       PaymentsModule.forRoot(payments),
       PhoneModule.forRoot(),
+      FilesModule.forRoot(storage),
     ],
     controllers: [PrivateProbe],
   })
@@ -894,4 +898,97 @@ test('withdrawing needs the account password again', async () => {
   // has not finished setting up an account, so those refuse it).
   const checked = await attempt({ password }).expect(403);
   assert.equal(checked.body.message, 'Active linked account required');
+});
+
+test('uploads arrive as raw files and are served safely', async () => {
+  const uploadEmail = 'upload-http@example.test';
+  await request(server)
+    .post('/api/v1/auth/sign-up/email')
+    .set('Origin', origin)
+    .send({ email: uploadEmail, password, name: 'Upload User' })
+    .expect(200);
+  const message = mailbox.find((item) => item.to === uploadEmail);
+  assert.ok(message);
+  const url = new URL(message.url);
+  await request(server)
+    .get(url.pathname + url.search)
+    .expect(302);
+  const login = await request(server)
+    .post('/api/v1/auth/sign-in/email')
+    .set('Origin', origin)
+    .send({ email: uploadEmail, password })
+    .expect(200);
+  const uploader = (login.headers['set-cookie'] as unknown as string[])
+    .find((item) => item.includes('session_token'))
+    ?.split(';')[0];
+  assert.ok(uploader);
+  await request(server)
+    .post('/api/v1/accounts/me')
+    .set('Origin', origin)
+    .set('Cookie', uploader)
+    .send({ username: 'upload_user', displayName: 'Upload User' })
+    .expect(201);
+  // A PNG with a text chunk holding an address.
+  const chunk = (type: string, data: Buffer) => {
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(data.length);
+    return Buffer.concat([length, Buffer.from(type), data, Buffer.alloc(4)]);
+  };
+  const png = Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk('IHDR', Buffer.alloc(13, 1)),
+    chunk('tEXt', Buffer.from('Address\0Allen Avenue')),
+    chunk('IDAT', Buffer.alloc(8, 2)),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
+  // Uploads need the trusted origin, like every write.
+  await request(server)
+    .post('/api/v1/files?purpose=avatar')
+    .set('Cookie', uploader)
+    .set('Content-Type', 'image/png')
+    .send(png)
+    .expect(403);
+  const uploaded = await request(server)
+    .post('/api/v1/files?purpose=avatar')
+    .set('Origin', origin)
+    .set('Cookie', uploader)
+    .set('Content-Type', 'image/png')
+    .send(png)
+    .expect(201);
+  assert.equal(uploaded.body.contentType, 'image/png');
+  const id = String(uploaded.body.id);
+  // Not public until it is the profile picture.
+  await request(server).get(`/api/v1/files/public/${id}`).expect(404);
+  await request(server)
+    .post('/api/v1/accounts/me/avatar')
+    .set('Origin', origin)
+    .set('Cookie', uploader)
+    .send({ fileId: id })
+    .expect(201);
+  const served = await request(server)
+    .get(`/api/v1/files/public/${id}`)
+    .buffer(true)
+    .parse((res, done) => {
+      const parts: Buffer[] = [];
+      res.on('data', (part: Buffer) => parts.push(part));
+      res.on('end', () => done(null, Buffer.concat(parts)));
+    })
+    .expect(200);
+  assert.equal(served.headers['content-type'], 'image/png');
+  assert.equal(served.headers['x-content-type-options'], 'nosniff');
+  assert.equal(
+    served.headers['content-security-policy'],
+    "default-src 'none'; sandbox",
+  );
+  assert.equal(served.headers['cross-origin-resource-policy'], 'cross-origin');
+  assert.match(String(served.headers['cache-control']), /^public/);
+  assert.ok(!(served.body as Buffer).includes('Allen Avenue'));
+  // A file that is not an image is refused, whatever its label says.
+  await request(server)
+    .post('/api/v1/files?purpose=avatar')
+    .set('Origin', origin)
+    .set('Cookie', uploader)
+    .set('Content-Type', 'image/png')
+    .send(Buffer.from('<svg onload="alert(1)"/>'))
+    .expect(400);
 });

@@ -85,7 +85,7 @@ const reviewGroups = [
       { href: '/review/campaigns', label: 'Campaigns', icon: ClipboardCheck },
       { href: '/review/appeals', label: 'Appeals', icon: Scale },
       { href: '/review/disputes', label: 'Void disputes', icon: Undo2 },
-      { href: '/admin/renames', label: 'Renames', icon: PenLine },
+      { href: '/admin/renames', label: 'Names & logos', icon: PenLine },
     ],
   },
   {

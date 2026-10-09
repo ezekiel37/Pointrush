@@ -8,6 +8,7 @@ import { Loading } from '@/components/ui/feedback';
 import { naira, shortDate } from '@/lib/api';
 import { RequestError } from '@/lib/auth-client';
 import { publicBusiness } from '@/lib/profiles';
+import { publicFileUrl } from '@/lib/files';
 import { useApiRead } from '@/lib/use-api-read';
 
 const month = (iso: string) =>
@@ -68,9 +69,18 @@ export function PublicBusiness({ handle }: { handle: string }) {
           b && (
             <div className="grid gap-5">
               <section className="business-hero">
-                <span className="business-mark" aria-hidden>
-                  <Store size={28} />
-                </span>
+                {b.logoFileId ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    className="logo-img"
+                    src={publicFileUrl(b.logoFileId)}
+                    alt={`${b.name} logo`}
+                  />
+                ) : (
+                  <span className="business-mark" aria-hidden>
+                    <Store size={28} />
+                  </span>
+                )}
                 <div style={{ minWidth: 0 }}>
                   <h1>{b.name}</h1>
                   <p className="business-handle">@{b.handle}</p>

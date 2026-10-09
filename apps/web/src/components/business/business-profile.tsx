@@ -1,7 +1,9 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import { ExternalLink, Lock } from 'lucide-react';
+import { ExternalLink, Lock, Store } from 'lucide-react';
+import { FileButton } from '@/components/ui/file-button';
+import { privateFileUrl, publicFileUrl } from '@/lib/files';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/dialog';
@@ -19,6 +21,7 @@ import { HandleField } from './handle-field';
 
 const changed = z.object({ state: z.enum(['applied', 'pending']) });
 const fieldLabel: Record<string, string> = {
+  logo: 'Logo',
   name: 'Name',
   contact_email: 'Contact email',
   description: 'Description',
@@ -66,6 +69,35 @@ export function BusinessProfile() {
   const pendingName = data?.changes.find(
     (c) => c.field === 'name' && c.state === 'pending',
   );
+  const pendingLogo = data?.changes.find(
+    (c) => c.field === 'logo' && c.state === 'pending',
+  );
+
+  async function saveLogo(value: string) {
+    if (!data || busy) return;
+    setBusy('logo');
+    setError('');
+    try {
+      const result = await apiRequest('sponsor/profile/changes', changed, {
+        method: 'POST',
+        body: { id: newId(), field: 'logo', value },
+      });
+      toast(
+        result.state === 'pending'
+          ? 'Logo sent for review. It shows once a reviewer approves it.'
+          : 'Logo removed',
+      );
+      read.refresh();
+    } catch (cause) {
+      setError(
+        cause instanceof RequestError && cause.code === 'profile_change_pending'
+          ? 'A new logo is already waiting for review.'
+          : errorText(cause),
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
 
   async function save(field: 'name' | 'description' | 'contact_email') {
     if (!data || busy) return;
@@ -150,6 +182,61 @@ export function BusinessProfile() {
         data && (
           <div className="grid gap-5" style={{ maxWidth: 720 }}>
             {error && <Feedback error>{error}</Feedback>}
+            <section className="card grid gap-3">
+              <h2 style={{ margin: 0, fontSize: '1.05rem' }}>Logo</h2>
+              <div className="avatar-row" style={{ margin: 0 }}>
+                {data.logoFileId ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    className="logo-img"
+                    src={publicFileUrl(data.logoFileId)}
+                    alt={`${data.name} logo`}
+                  />
+                ) : (
+                  <span className="business-mark" aria-hidden>
+                    <Store size={28} />
+                  </span>
+                )}
+                {pendingLogo?.newValue && (
+                  <span
+                    className="grid gap-1"
+                    style={{ justifyItems: 'center' }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      className="logo-img"
+                      src={privateFileUrl(pendingLogo.newValue)}
+                      alt="New logo waiting for review"
+                    />
+                    <span className="chip chip-pending">In review</span>
+                  </span>
+                )}
+              </div>
+              <div className="row" style={{ justifyContent: 'flex-start' }}>
+                <FileButton
+                  purpose="logo"
+                  disabled={busy !== null || Boolean(pendingLogo)}
+                  onError={setError}
+                  onUploaded={(file) => void saveLogo(file.id)}
+                >
+                  {data.logoFileId ? 'Upload a new logo' : 'Upload your logo'}
+                </FileButton>
+                {data.logoFileId && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    loading={busy === 'logo'}
+                    onClick={() => void saveLogo('')}
+                  >
+                    Remove logo
+                  </Button>
+                )}
+              </div>
+              <p className="small-note" style={{ margin: 0 }}>
+                A square JPEG, PNG or WebP up to 2 MB. A reviewer checks each
+                new logo so nobody can use another brand’s.
+              </p>
+            </section>
             <section className="card grid gap-3">
               <h2 style={{ margin: 0, fontSize: '1.05rem' }}>Handle</h2>
               {data.canChangeHandle ? (
@@ -295,8 +382,12 @@ export function BusinessProfile() {
                               {fieldLabel[c.field] ?? c.field}
                             </p>
                             <p className="small-note">
-                              {c.oldValue ? `“${c.oldValue}” → ` : ''}“
-                              {c.newValue ?? ''}” · {shortDate(c.at)}
+                              {c.field === 'logo'
+                                ? c.newValue
+                                  ? 'New logo'
+                                  : 'Logo removed'
+                                : `${c.oldValue ? `“${c.oldValue}” → ` : ''}“${c.newValue ?? ''}”`}{' '}
+                              · {shortDate(c.at)}
                               {c.note && c.state === 'rejected'
                                 ? ` · ${c.note}`
                                 : ''}

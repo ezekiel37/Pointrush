@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { StorageConfig } from '../files/files.module.js';
 import { readDatabaseConfig } from '../database/database.config.js';
 import type { DatabaseConfig } from '../database/database.config.js';
 import {
@@ -44,6 +45,19 @@ const schema = z.object({
   // Airtime, data, electricity and TV from the wallet. Off until a provider
   // is chosen; only the test provider exists so far.
   BILLS_PROVIDER: z.enum(['off', 'test']).default('off'),
+  // Uploaded files (logos, profile pictures, task evidence). "memory" is
+  // for development and tests only; "r2" uses Cloudflare R2.
+  STORAGE_PROVIDER: z.enum(['off', 'memory', 'r2']).default('off'),
+  R2_ACCOUNT_ID: z
+    .string()
+    .regex(/^[a-f0-9]{32}$/)
+    .optional(),
+  R2_ACCESS_KEY_ID: z.string().min(16).max(128).optional(),
+  R2_SECRET_ACCESS_KEY: z.string().min(32).max(128).optional(),
+  R2_BUCKET: z
+    .string()
+    .regex(/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/)
+    .optional(),
   // Reviewer account IDs that may change minimums and referral rewards in
   // the admin settings, comma separated. Empty: settings are read-only.
   SETTINGS_ADMIN_ACCOUNT_IDS: z
@@ -123,6 +137,7 @@ export interface Environment {
   payments?: PaymentsEnvironment;
   sms?: SmsEnvironment;
   bills?: { provider: 'test' };
+  storage?: StorageConfig;
   nodeEnv: 'development' | 'test' | 'production';
   port: number;
   corsOrigins: string[];
@@ -139,6 +154,11 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
     PAYMENTS_PROVIDER,
     PAYMENTS_WEBHOOK_SECRET,
     BILLS_PROVIDER,
+    STORAGE_PROVIDER,
+    R2_ACCOUNT_ID,
+    R2_ACCESS_KEY_ID,
+    R2_SECRET_ACCESS_KEY,
+    R2_BUCKET,
     BACHS_API_KEY,
     PAYMENTS_RETURN_ORIGIN,
     SMS_PROVIDER,
@@ -185,6 +205,17 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
       throw new Error('A sk_live_ Bachs key can only be used in production');
   } else if (BACHS_API_KEY) {
     throw new Error('BACHS_API_KEY is set but PAYMENTS_PROVIDER is not bachs');
+  }
+  if (STORAGE_PROVIDER === 'memory' && NODE_ENV === 'production') {
+    throw new Error('In-memory file storage cannot run in production');
+  }
+  if (
+    STORAGE_PROVIDER === 'r2' &&
+    !(R2_ACCOUNT_ID && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY && R2_BUCKET)
+  ) {
+    throw new Error(
+      'R2 storage needs R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY and R2_BUCKET',
+    );
   }
   if (BILLS_PROVIDER === 'test' && NODE_ENV === 'production') {
     throw new Error('The test bills provider cannot run in production');
@@ -268,6 +299,19 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
     ...(BILLS_PROVIDER === 'test'
       ? { bills: { provider: 'test' as const } }
       : {}),
+    ...(STORAGE_PROVIDER === 'memory'
+      ? { storage: { provider: 'memory' as const } }
+      : STORAGE_PROVIDER === 'r2'
+        ? {
+            storage: {
+              provider: 'r2' as const,
+              accountId: R2_ACCOUNT_ID!,
+              accessKeyId: R2_ACCESS_KEY_ID!,
+              secretAccessKey: R2_SECRET_ACCESS_KEY!,
+              bucket: R2_BUCKET!,
+            },
+          }
+        : {}),
     nodeEnv: NODE_ENV,
     port: PORT,
     corsOrigins: [...new Set(origins)],

@@ -38,6 +38,7 @@ export const appealView = z.object({
     z.object({
       proof: proofRecord,
       decision: claimView.shape.proofs.element.shape.decision,
+      files: claimView.shape.proofs.element.shape.files,
     }),
   ),
   resolution: decisionResult.nullable(),

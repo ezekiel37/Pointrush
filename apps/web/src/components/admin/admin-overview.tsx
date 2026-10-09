@@ -73,7 +73,7 @@ export function AdminOverview() {
                       '/review/campaigns',
                     ],
                     [
-                      'Business renames',
+                      'Names and logos to review',
                       data.queues.profileChanges,
                       '/admin/renames',
                     ],
