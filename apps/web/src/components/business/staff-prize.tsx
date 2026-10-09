@@ -17,7 +17,7 @@ export function StaffPrize({ id }: { id: string }) {
       eyebrow={prize?.business ?? 'Staff'}
       title={prize?.title ?? 'Prize handover'}
     >
-      <Link className="text-link" href="/staff">
+      <Link className="back-link" href="/staff">
         Back to work
       </Link>
       <div style={{ maxWidth: 560, marginTop: '1rem' }}>

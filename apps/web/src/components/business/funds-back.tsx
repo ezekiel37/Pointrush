@@ -2,6 +2,7 @@
 import { useRef, useState } from 'react';
 import type { z } from 'zod';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/dialog';
 import { Feedback } from '@/components/ui/feedback';
 import { apiRequest, naira, newId } from '@/lib/api';
 import { RequestError } from '@/lib/auth-client';
@@ -90,7 +91,7 @@ export function FundsBack({
         </p>
       </div>
       {notice && <Feedback>{notice}</Feedback>}
-      {error && <Feedback error>{error}</Feedback>}
+      {error && !confirming && <Feedback error>{error}</Feedback>}
       <ul className="stack">
         {rows.map(({ campaign: c, kind }) => (
           <li key={c.id} className="grid gap-2">
@@ -103,52 +104,46 @@ export function FundsBack({
                     : `Ended · up to ${naira(c.balanceKobo!)} unused`}
                 </p>
               </div>
-              {confirming !== c.id && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={busy !== null}
-                  loading={busy === c.id}
-                  onClick={() =>
-                    kind === 'cancel' ? setConfirming(c.id) : void give(c.id)
-                  }
-                >
-                  {busy === c.id
-                    ? 'Returning…'
-                    : kind === 'cancel'
-                      ? 'Cancel and return'
-                      : 'Return unused money'}
-                </Button>
-              )}
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy !== null}
+                loading={busy === c.id}
+                onClick={() => {
+                  setError('');
+                  if (kind === 'cancel') setConfirming(c.id);
+                  else void give(c.id);
+                }}
+              >
+                {busy === c.id
+                  ? 'Returning…'
+                  : kind === 'cancel'
+                    ? 'Cancel and return'
+                    : 'Return unused money'}
+              </Button>
             </div>
-            {confirming === c.id && (
-              <div className="confirm-strip" role="group" aria-label="Confirm">
-                <p style={{ margin: 0 }}>
-                  Cancel “{c.title}”? It can never go live afterwards, and{' '}
-                  {naira(c.balanceKobo!)} returns to your balance.
-                </p>
-                <div className="row" style={{ justifyContent: 'flex-start' }}>
-                  <Button
-                    type="button"
-                    disabled={busy !== null}
-                    loading={busy === c.id}
-                    onClick={() => void give(c.id)}
-                  >
-                    {busy === c.id ? 'Cancelling…' : 'Yes, cancel it'}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setConfirming(null)}
-                  >
-                    Keep it
-                  </Button>
-                </div>
-              </div>
-            )}
           </li>
         ))}
       </ul>
+      {(() => {
+        const c = rows.find((r) => r.campaign.id === confirming)?.campaign;
+        return (
+          <ConfirmDialog
+            open={Boolean(c)}
+            onClose={() => setConfirming(null)}
+            onConfirm={() => c && void give(c.id)}
+            danger
+            busy={busy !== null}
+            title={`Cancel “${c?.title ?? ''}”?`}
+            description={`It can never go live afterwards, and ${c ? naira(c.balanceKobo!) : ''} returns to your available balance.`}
+            confirmLabel="Cancel campaign"
+            busyLabel="Cancelling…"
+            cancelLabel="Keep it"
+          >
+            {error && <Feedback error>{error}</Feedback>}
+          </ConfirmDialog>
+        );
+      })()}
     </section>
   );
 }

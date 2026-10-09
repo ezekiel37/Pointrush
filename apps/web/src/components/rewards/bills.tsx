@@ -100,7 +100,7 @@ export function Bills({ initialKind = 'airtime' }: { initialKind?: BillKind }) {
                   and TV subscriptions. Your balance is safe in your wallet
                   until then.
                 </p>
-                <Link className="text-link" href="/wallet">
+                <Link className="back-link" href="/wallet">
                   Back to wallet
                 </Link>
               </section>

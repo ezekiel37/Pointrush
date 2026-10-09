@@ -39,7 +39,7 @@ export function TaskDetail({ id }: { id: string }) {
     });
   return (
     <WorkFrame title={data?.title ?? 'Task details'}>
-      <Link className="text-link" href="/tasks">
+      <Link className="back-link" href="/tasks">
         Back to tasks
       </Link>
       {loading ? (

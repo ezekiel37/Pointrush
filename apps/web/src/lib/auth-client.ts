@@ -1,5 +1,8 @@
 import { createAuthClient } from 'better-auth/react';
-import { twoFactorClient } from 'better-auth/client/plugins';
+import {
+  inferAdditionalFields,
+  twoFactorClient,
+} from 'better-auth/client/plugins';
 import { apiOrigin } from './api-origin';
 export { apiOrigin };
 type AuthClientOptions = {
@@ -10,8 +13,12 @@ type AuthClientOptions = {
     timeout: number;
     retry: number;
   };
-  plugins: [ReturnType<typeof twoFactorClient>];
+  plugins: [ReturnType<typeof twoFactorClient>, typeof accountFields];
 };
+// Fields the API adds to the sign-up form (see the API's auth factory).
+const accountFields = inferAdditionalFields({
+  user: { accountType: { type: 'string', required: false } },
+});
 type PointRushAuthClient = ReturnType<
   typeof createAuthClient<AuthClientOptions>
 >;
@@ -19,7 +26,7 @@ let client: PointRushAuthClient | undefined;
 // Lazy: missing configuration produces a recoverable UI error, not a broken build.
 export function authClient() {
   return (client ??= createAuthClient<AuthClientOptions>({
-    plugins: [twoFactorClient({ twoFactorPage: '/two-factor' })],
+    plugins: [twoFactorClient({ twoFactorPage: '/two-factor' }), accountFields],
     baseURL: apiOrigin(),
     basePath: '/api/v1/auth',
     fetchOptions: { credentials: 'include', timeout: 15000, retry: 0 },

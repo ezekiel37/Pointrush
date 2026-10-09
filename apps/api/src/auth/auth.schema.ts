@@ -1,6 +1,8 @@
+import { sql } from 'drizzle-orm';
 import {
   bigint,
   boolean,
+  check,
   index,
   integer,
   pgTable,
@@ -22,15 +24,27 @@ const dates = () => ({
 });
 
 // Authentication identities are not Acticlaim accounts or verification badges.
-export const authUsers = pgTable('auth_users', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  email: text('email').notNull().unique(),
-  emailVerified: boolean('email_verified').notNull().default(false),
-  image: text('image'),
-  twoFactorEnabled: boolean('two_factor_enabled').notNull().default(false),
-  ...dates(),
-});
+export const authUsers = pgTable(
+  'auth_users',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    email: text('email').notNull().unique(),
+    emailVerified: boolean('email_verified').notNull().default(false),
+    image: text('image'),
+    twoFactorEnabled: boolean('two_factor_enabled').notNull().default(false),
+    // Chosen at sign-up: where the account opens after signing in. A routing
+    // preference only; business tools still require owning a business.
+    accountType: text('account_type').notNull().default('personal'),
+    ...dates(),
+  },
+  (table) => [
+    check(
+      'auth_users_account_type_check',
+      sql`${table.accountType} in ('personal', 'business')`,
+    ),
+  ],
+);
 
 export const authSessions = pgTable(
   'auth_sessions',

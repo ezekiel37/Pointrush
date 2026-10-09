@@ -440,6 +440,75 @@ test('till confirms a typed code with exact kobo and replays an uncertain confir
   expect(bodies[1]!.id).toBe(bodies[0]!.id);
 });
 
+test('voiding a purchase asks for a reason in a dialog', async ({ page }) => {
+  await phone(page);
+  const purchase = '7c1e2d3f-4a5b-4c6d-8e9f-0a1b2c3d4e61';
+  const reasons: string[] = [];
+  await page.route(`**/api/v1/campaigns/${offerId}/summary?*`, (route) =>
+    route.fulfill({
+      json: {
+        taskId: offerId,
+        title: 'Lunch cash back',
+        capacity: 100,
+        cashbackKobo: '50000',
+        budgetKobo: '5000000',
+        campaignTerms: offer.campaignTerms,
+        confirmed: 1,
+        voided: 0,
+        released: 0,
+        remaining: 99,
+        voidsLeft: 2,
+        returningShoppers: 0,
+        recent: {
+          items: [
+            {
+              id: purchase,
+              taskId: offerId,
+              title: 'Lunch cash back',
+              businessName: 'Mama Put Kitchen',
+              amountKobo: '450000',
+              cashbackKobo: '50000',
+              payoutKobo: null,
+              group: null,
+              releaseAt: '2026-10-07T12:00:00Z',
+              createdAt: '2026-10-04T12:00:00Z',
+              state: reasons.length ? 'voided' : 'pending',
+              voidReason: null,
+              disputeUntil: null,
+              dispute: null,
+            },
+          ],
+          nextCursor: null,
+          observedAt: '2026-10-04T12:00:00Z',
+        },
+      },
+    }),
+  );
+  await page.route(`**/api/v1/purchases/${purchase}/voids`, (route) => {
+    reasons.push(route.request().postDataJSON().reason);
+    return route.fulfill({ json: { confirmationId: purchase } });
+  });
+  await page.goto(`/business/campaigns/${offerId}`);
+  await page.getByRole('button', { name: 'Void' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Void this cash back?' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByLabel('Reason for voiding')).toBeFocused();
+  await healthy(page);
+  // Escape closes it without voiding.
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  expect(reasons).toHaveLength(0);
+
+  await page.getByRole('button', { name: 'Void' }).click();
+  await expect(
+    dialog.getByRole('button', { name: 'Void cash back' }),
+  ).toBeDisabled();
+  await dialog.getByLabel('Reason for voiding').fill('Refunded at the counter');
+  await dialog.getByRole('button', { name: 'Void cash back' }).click();
+  await expect(page.getByText('Cash back voided')).toBeVisible();
+  expect(reasons).toEqual(['Refunded at the counter']);
+});
+
 test('installable: manifest, icons and offline page are served', async ({
   page,
   request,

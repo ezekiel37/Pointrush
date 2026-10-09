@@ -6,7 +6,7 @@ export default function ErrorPage({ reset }: { reset: () => void }) {
       <h1>This page could not load</h1>
       <p>Please try again. If the problem continues, return to sign in.</p>
       <Button onClick={reset}>Try again</Button>
-      <a className="text-link" href="/login">
+      <a className="back-link" href="/login">
         Back to sign in
       </a>
     </main>

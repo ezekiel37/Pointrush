@@ -6,6 +6,8 @@ import { CheckCircle2, Undo2 } from 'lucide-react';
 import type { z } from 'zod';
 import { DashHead, DashShell } from './dash-shell';
 import { Button } from '@/components/ui/button';
+import { Dialog } from '@/components/ui/dialog';
+import { toast } from '@/components/ui/toast';
 import { Feedback, Loading } from '@/components/ui/feedback';
 import { Field } from '@/components/ui/field';
 import { WorkFailure } from '@/components/work/work-frame';
@@ -111,19 +113,21 @@ export function CampaignTill({ id }: { id: string }) {
   const [voiding, setVoiding] = useState<{ id: string; reason: string } | null>(
     null,
   );
+  const [voidError, setVoidError] = useState('');
   async function voidPurchase(event: FormEvent) {
     event.preventDefault();
     if (!voiding?.reason.trim() || busy) return;
     setBusy(true);
-    setError('');
+    setVoidError('');
     try {
       await apiRequest(`purchases/${voiding.id}/voids`, voidResult, {
         method: 'POST',
         body: { reason: voiding.reason.trim() },
       });
       setVoiding(null);
+      toast('Cash back voided');
     } catch (cause) {
-      setError(
+      setVoidError(
         cause instanceof RequestError && cause.code === 'void_rejected'
           ? 'This purchase can no longer be voided: its refund window has passed.'
           : cause instanceof RequestError && cause.code === 'void_limit'
@@ -262,58 +266,19 @@ export function CampaignTill({ id }: { id: string }) {
                             style={{ justifyContent: 'flex-end' }}
                           >
                             <span className={chip}>{label}</span>
-                            {item.state === 'pending' &&
-                              data.voidsLeft > 0 &&
-                              voiding?.id !== item.id && (
-                                <Button
-                                  variant="outline"
-                                  type="button"
-                                  onClick={() =>
-                                    setVoiding({ id: item.id, reason: '' })
-                                  }
-                                >
-                                  <Undo2 size={15} aria-hidden /> Void
-                                </Button>
-                              )}
+                            {item.state === 'pending' && data.voidsLeft > 0 && (
+                              <Button
+                                variant="outline"
+                                type="button"
+                                onClick={() => {
+                                  setVoidError('');
+                                  setVoiding({ id: item.id, reason: '' });
+                                }}
+                              >
+                                <Undo2 size={15} aria-hidden /> Void
+                              </Button>
+                            )}
                           </div>
-                          {voiding?.id === item.id && (
-                            <form
-                              className="grid gap-3"
-                              style={{ flexBasis: '100%' }}
-                              onSubmit={voidPurchase}
-                            >
-                              <Field
-                                id={`void-${item.id}`}
-                                label="Reason for voiding"
-                                hint={`The shopper sees your reason and can ask an Acticlaim reviewer to check it. The money stays locked for 7 days. Voids left: ${data.voidsLeft}.`}
-                                placeholder="Refunded at the counter"
-                                value={voiding.reason}
-                                onChange={(event) =>
-                                  setVoiding({
-                                    id: item.id,
-                                    reason: event.target.value,
-                                  })
-                                }
-                                disabled={busy}
-                              />
-                              <div className="flex flex-wrap gap-3">
-                                <Button
-                                  type="submit"
-                                  disabled={!voiding.reason.trim()}
-                                  loading={busy}
-                                >
-                                  Void cash back
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  type="button"
-                                  onClick={() => setVoiding(null)}
-                                >
-                                  Keep it
-                                </Button>
-                              </div>
-                            </form>
-                          )}
                         </li>
                       );
                     })}
@@ -321,10 +286,58 @@ export function CampaignTill({ id }: { id: string }) {
                 ) : (
                   <p className="small-note">Confirmed purchases appear here.</p>
                 )}
+                <Dialog
+                  open={voiding !== null}
+                  onClose={() => !busy && setVoiding(null)}
+                  title="Void this cash back?"
+                  description={`Use this only when the sale was refunded or was a mistake. The shopper sees your reason and can ask an Acticlaim reviewer to check it. Voids left: ${data.voidsLeft}.`}
+                >
+                  {voiding && (
+                    <form
+                      className="grid gap-4"
+                      onSubmit={voidPurchase}
+                      noValidate
+                    >
+                      <Field
+                        id="void-reason"
+                        label="Reason for voiding"
+                        placeholder="Refunded at the counter"
+                        value={voiding.reason}
+                        onChange={(event) =>
+                          setVoiding({
+                            id: voiding.id,
+                            reason: event.target.value,
+                          })
+                        }
+                        disabled={busy}
+                        data-autofocus
+                      />
+                      {voidError && <Feedback error>{voidError}</Feedback>}
+                      <div className="dialog-foot">
+                        <Button
+                          variant="ghost"
+                          type="button"
+                          onClick={() => setVoiding(null)}
+                          disabled={busy}
+                        >
+                          Keep it
+                        </Button>
+                        <Button
+                          variant="danger"
+                          type="submit"
+                          disabled={!voiding.reason.trim()}
+                          loading={busy}
+                        >
+                          Void cash back
+                        </Button>
+                      </div>
+                    </form>
+                  )}
+                </Dialog>
               </section>
             </div>
-            <Link className="text-link" href="/business">
-              All campaigns
+            <Link className="back-link" href="/business/campaigns">
+              All cash back offers
             </Link>
           </div>
         )

@@ -1,9 +1,15 @@
 import { z } from 'zod';
 import { apiOrigin, RequestError } from './auth-client';
+const accountType = z.enum(['personal', 'business']).default('personal');
 const statusSchema = z.discriminatedUnion('onboarding', [
-  z.object({ onboarding: z.literal('required'), account: z.null() }),
+  z.object({
+    onboarding: z.literal('required'),
+    account: z.null(),
+    accountType,
+  }),
   z.object({
     onboarding: z.literal('complete'),
+    accountType,
     account: z.object({
       id: z.uuid(),
       username: z.string(),

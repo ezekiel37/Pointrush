@@ -8,7 +8,6 @@ import { signupSchema } from '@/lib/forms';
 import { authClient, requireSuccess } from '@/lib/auth-client';
 import { useSubmit } from '@/lib/use-submit';
 import { safeNext, withNext } from '@/lib/next-path';
-import { rememberBusinessIntent } from '@/lib/role';
 import { Form } from '@/components/ui/form';
 import { Field } from '@/components/ui/field';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -73,12 +72,14 @@ export function SignupForm({ business = false }: { business?: boolean }) {
         aria-busy={submit.busy}
         onSubmit={handleSubmit(({ name, email, password }) =>
           submit.run(async () => {
-            if (business) rememberBusinessIntent();
             requireSuccess(
               await authClient().signUp.email({
                 name,
                 email,
                 password,
+                // Saved on the account, so every sign-in opens the right
+                // home on any device.
+                accountType: business ? 'business' : 'personal',
                 callbackURL: `${window.location.origin}/login?verified=1${next ? `&next=${encodeURIComponent(next)}` : ''}`,
               }),
             );

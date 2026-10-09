@@ -113,7 +113,7 @@ export function TwoFactorScreen() {
             <ArrowRight size={18} aria-hidden />
           </Button>
         </Form>
-        <Link className="text-link" href="/account">
+        <Link className="back-link" href="/account">
           Return to account
         </Link>
       </AuthFrame>

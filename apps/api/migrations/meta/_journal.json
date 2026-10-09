@@ -239,6 +239,13 @@
       "when": 1791553175943,
       "tag": "0033_security_audit",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1791561141473,
+      "tag": "0034_account_type",
+      "breakpoints": true
     }
   ]
 }

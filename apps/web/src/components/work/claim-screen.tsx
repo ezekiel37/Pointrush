@@ -112,7 +112,7 @@ export function ClaimScreen({ id }: { id: string }) {
   }
   return (
     <WorkFrame title={read.data?.task.title ?? 'Your task'}>
-      <Link className="text-link" href="/my-tasks">
+      <Link className="back-link" href="/my-tasks">
         Back to My tasks
       </Link>
       <DraftGuard

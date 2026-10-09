@@ -297,7 +297,7 @@ export function OfferDetail({
                 <ShieldCheck size={16} aria-hidden /> Cash back is paid from
                 money the business locked in advance. One per person.
               </p>
-              <Link className="text-link" href="/offers">
+              <Link className="back-link" href="/offers">
                 All offers
               </Link>
             </section>

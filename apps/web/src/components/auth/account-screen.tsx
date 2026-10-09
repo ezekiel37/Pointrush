@@ -128,7 +128,8 @@ export function AccountScreen({ goHome = false }: { goHome?: boolean }) {
   const { account } = status;
   // A set-up, active account goes straight to its home: the business
   // dashboard, the staff tills or the earner app.
-  if (goHome && account.accessState === 'active' && !error) return <GoHome />;
+  if (goHome && account.accessState === 'active' && !error)
+    return <GoHome accountType={status.accountType} />;
   return (
     <>
       <header className="account-header">
@@ -177,7 +178,7 @@ export function AccountScreen({ goHome = false }: { goHome?: boolean }) {
                     Find cash back offers near you, or claim a prize code from a
                     pack. What you earn goes to your wallet.
                   </p>
-                  <Link className="text-link" href="/offers">
+                  <Link className="button button-outline" href="/offers">
                     See offers
                   </Link>
                 </section>
@@ -226,19 +227,19 @@ export function AccountScreen({ goHome = false }: { goHome?: boolean }) {
   );
 }
 
-function GoHome() {
+function GoHome({ accountType }: { accountType: 'personal' | 'business' }) {
   const router = useRouter();
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     let live = true;
-    homePath().then(
+    homePath(accountType).then(
       (path) => live && router.replace(path),
       () => live && setFailed(true),
     );
     return () => {
       live = false;
     };
-  }, [router]);
+  }, [router, accountType]);
   return (
     <AuthFrame title="Welcome back" description="Taking you in…">
       {failed ? (

@@ -365,14 +365,26 @@
   .password-input {
     padding-right: 3.25rem;
   }
+  /* Centred without transform: the button press effect uses transform,
+     which made the eye icon jump on every tap. */
   .visibility {
     position: absolute;
     right: 0.25rem;
-    top: 50%;
-    transform: translateY(-50%);
-    min-height: 44px;
-    width: 44px;
+    top: 0;
+    bottom: 0;
+    margin: auto 0;
+    min-height: 40px;
+    height: 40px;
+    width: 40px;
     padding: 0;
+    border-radius: 999px;
+    color: var(--color-muted);
+  }
+  .visibility:active:not(:disabled) {
+    transform: none;
+  }
+  .visibility:hover:not(:disabled) {
+    color: var(--color-ink);
   }
   .field-help {
     min-height: 1.2rem;
@@ -437,11 +449,48 @@
   .spinner {
     animation: spin 0.9s linear infinite;
   }
+  /* Standalone action links read as actions, not as underlined text.
+     Inside a sentence they keep the underline so they stand out from it. */
   .text-link {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
     padding: 0.65rem 0;
-    font-weight: 550;
+    font-weight: 600;
+    color: var(--color-brand-text);
+    text-decoration: none;
+  }
+  .text-link:hover {
     text-decoration: underline;
+  }
+  :is(p, .feedback) .text-link {
+    display: inline;
+    padding: 0;
+    text-decoration: underline;
+  }
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 40px;
+    padding: 0 0.85rem 0 0.55rem;
+    border-radius: 999px;
+    background: var(--color-sunken);
+    color: var(--color-ink);
+    font-size: 0.88rem;
+    font-weight: 550;
+    text-decoration: none;
+  }
+  .back-link::before {
+    content: '';
+    width: 18px;
+    height: 18px;
+    background: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m15 18-6-6 6-6'/%3E%3C/svg%3E")
+      center / contain no-repeat;
+  }
+  .back-link:hover {
+    background: var(--color-line);
   }
   .small-note {
     font-size: 0.86rem;
@@ -875,6 +924,39 @@
     display: grid;
     grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
     gap: 1rem;
+  }
+  /* Sign-up: personal or business, chosen before the form. */
+  .account-kind {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .account-kind a {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.75rem 0.85rem;
+    border: 1.5px solid var(--color-line);
+    border-radius: 0.9rem;
+    color: var(--color-ink);
+    text-decoration: none;
+    background: var(--color-surface);
+  }
+  .account-kind a span {
+    display: grid;
+    line-height: 1.25;
+  }
+  .account-kind small {
+    color: var(--color-muted);
+    font-size: 0.78rem;
+  }
+  .account-kind a[aria-current='page'] {
+    border-color: var(--color-brand);
+    background: var(--color-brand-soft);
+  }
+  .account-kind a[aria-current='page'] svg {
+    color: var(--color-brand-text);
   }
   .segmented {
     display: inline-flex;
@@ -2864,6 +2946,130 @@
   .mono {
     font-family: var(--font-mono);
     overflow-wrap: anywhere;
+  }
+  /* Dialogs: centred on wide screens, a bottom sheet on phones. */
+  .dialog {
+    width: min(100% - 2rem, 460px);
+    max-height: calc(100svh - 2rem);
+    padding: 0;
+    border: 0;
+    border-radius: 1.25rem;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    box-shadow: 0 24px 60px rgb(0 0 0 / 0.25);
+  }
+  .dialog[open] {
+    animation: dialog-in 160ms ease-out;
+  }
+  .dialog::backdrop {
+    background: rgb(8 12 10 / 0.5);
+    backdrop-filter: blur(2px);
+  }
+  .dialog-panel {
+    display: grid;
+    gap: 1rem;
+    padding: 1.25rem;
+  }
+  .dialog-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .dialog-text {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    gap: 0.3rem;
+  }
+  .dialog-text h2 {
+    margin: 0;
+    font-size: 1.15rem;
+  }
+  .dialog-text p {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: 0.92rem;
+  }
+  .dialog-icon {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: var(--color-danger-surface);
+    color: var(--color-danger);
+  }
+  .dialog-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  @media (max-width: 560px) {
+    .dialog {
+      width: 100%;
+      max-width: none;
+      margin: auto 0 0;
+      border-radius: 1.25rem 1.25rem 0 0;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .dialog[open] {
+      animation-name: sheet-in;
+    }
+    .dialog-foot > * {
+      flex: 1;
+    }
+  }
+  @keyframes dialog-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+    }
+  }
+  @keyframes sheet-in {
+    from {
+      transform: translateY(100%);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dialog[open] {
+      animation: none;
+    }
+  }
+  .toaster {
+    position: fixed;
+    left: 50%;
+    bottom: calc(var(--tabbar-height) + 1rem + env(safe-area-inset-bottom));
+    z-index: 60;
+    translate: -50% 0;
+    display: grid;
+    gap: 0.5rem;
+    width: min(100% - 2rem, 420px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    pointer-events: none;
+  }
+  .toast {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.8rem 1rem;
+    border-radius: 0.9rem;
+    background: var(--color-ink-fill);
+    color: var(--color-on-fill);
+    font-size: 0.92rem;
+    font-weight: 550;
+    box-shadow: 0 12px 30px rgb(0 0 0 / 0.2);
+    animation: dialog-in 160ms ease-out;
+  }
+  .toast svg {
+    color: var(--color-lime);
+    flex-shrink: 0;
+  }
+  .toast-error svg {
+    color: #ff9b94;
   }
   .confirm-strip {
     display: grid;

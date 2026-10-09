@@ -381,7 +381,7 @@ export function PromotionManager({ id }: { id: string }) {
                 <p className="small-note">Issued batches appear here.</p>
               )}
             </section>
-            <Link className="text-link" href="/business">
+            <Link className="back-link" href="/business">
               All campaigns
             </Link>
           </div>

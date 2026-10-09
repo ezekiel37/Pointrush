@@ -41,11 +41,19 @@ export class AccountsRepository {
         ),
       )
       .where(eq(schema.authAccountLinks.authUserId, authUserId));
-    if (!linked) return { onboarding: 'required' as const, account: null };
+    // Where the account opens after signing in, chosen at sign-up.
+    const [identity] = await this.database.db
+      .select({ accountType: schema.authUsers.accountType })
+      .from(schema.authUsers)
+      .where(eq(schema.authUsers.id, authUserId));
+    const accountType =
+      identity?.accountType === 'business' ? 'business' : 'personal';
+    if (!linked)
+      return { onboarding: 'required' as const, account: null, accountType };
     // Missing profile data is corruption, not permission to create another account.
     if (linked.username === null || linked.displayName === null)
       throw new Error('Account identity is incomplete');
-    return { onboarding: 'complete' as const, account: linked };
+    return { onboarding: 'complete' as const, account: linked, accountType };
   }
 
   async assertAuthAccess(authUserId: string): Promise<void> {

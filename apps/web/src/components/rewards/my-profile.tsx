@@ -5,6 +5,7 @@ import { Copy, Eye, EyeOff, Store } from 'lucide-react';
 import { Page } from '@/components/shell/app-shell';
 import { Button } from '@/components/ui/button';
 import { Feedback, Loading } from '@/components/ui/feedback';
+import { toast } from '@/components/ui/toast';
 import { WorkFailure } from '@/components/work/work-frame';
 import { apiRequest } from '@/lib/api';
 import { ownProfile, pointsSummary } from '@/lib/rewards';
@@ -51,7 +52,7 @@ export function MyProfile() {
   async function copy(value: string, label: string) {
     try {
       await navigator.clipboard.writeText(value);
-      setMessage(`${label} copied.`);
+      toast(`${label} copied`);
     } catch {
       setMessage(`Copy failed. Your ${label.toLowerCase()} is: ${value}`);
     }

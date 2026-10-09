@@ -49,6 +49,16 @@ export function createAuth(
       twoFactor({ issuer: 'Acticlaim', skipVerificationOnEnable: false }),
     ],
     appName: 'Acticlaim',
+    user: {
+      additionalFields: {
+        accountType: {
+          type: 'string',
+          required: false,
+          defaultValue: 'personal',
+          input: true,
+        },
+      },
+    },
     secret: config.secret,
     baseURL: config.baseURL,
     basePath: '/api/v1/auth',
@@ -77,6 +87,14 @@ export function createAuth(
     },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
+        if (
+          (ctx.path === '/sign-up/email' || ctx.path === '/update-user') &&
+          ctx.body?.accountType !== undefined &&
+          !['personal', 'business'].includes(ctx.body.accountType)
+        )
+          throw new APIError('BAD_REQUEST', {
+            message: 'Account type must be personal or business',
+          });
         if (ctx.path.startsWith('/two-factor/')) {
           if (
             ctx.body?.trustDevice === true ||

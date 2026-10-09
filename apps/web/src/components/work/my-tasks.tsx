@@ -30,7 +30,7 @@ export function MyTasks() {
             {!data.items.length ? (
               <section className="account-panel">
                 <h2>No tasks on this page</h2>
-                <Link className="text-link" href="/tasks">
+                <Link className="button button-outline" href="/tasks">
                   Find a task
                 </Link>
               </section>

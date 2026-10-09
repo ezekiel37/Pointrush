@@ -1,0 +1,2 @@
+ALTER TABLE "auth_users" ADD COLUMN "account_type" text DEFAULT 'personal' NOT NULL;--> statement-breakpoint
+ALTER TABLE "auth_users" ADD CONSTRAINT "auth_users_account_type_check" CHECK ("auth_users"."account_type" in ('personal', 'business'));

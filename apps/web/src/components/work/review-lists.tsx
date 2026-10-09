@@ -92,7 +92,7 @@ export function SponsorParticipants({ id }: { id: string }) {
   const read = useWorkRead(`tasks/${id}/claims?${query}`, claimPage);
   return (
     <WorkFrame title="Participant work">
-      <Link className="text-link" href="/sponsor/tasks">
+      <Link className="back-link" href="/sponsor/tasks">
         Back to sponsored tasks
       </Link>
       {read.loading ? (

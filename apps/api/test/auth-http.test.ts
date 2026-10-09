@@ -140,7 +140,11 @@ test('verified users without a linked account receive onboarding status without 
     .get('/api/v1/accounts/me')
     .set('Cookie', cookie)
     .expect(200);
-  assert.deepEqual(result.body, { onboarding: 'required', account: null });
+  assert.deepEqual(result.body, {
+    onboarding: 'required',
+    account: null,
+    accountType: 'personal',
+  });
   assert.equal(result.headers['cache-control'], 'no-store');
   assert.equal((await db.select().from(schema.accounts)).length, 0);
 });
@@ -226,6 +230,7 @@ test('own account status stays readable across access states without authorizing
         username: 'http_user',
         displayName: 'HTTP User',
       },
+      accountType: 'personal',
     });
     await request(server)
       .get('/api/v1/private-probe')
@@ -244,10 +249,21 @@ test('own account status stays readable across access states without authorizing
 
 test('a second authenticated user cannot read the first user account by supplying its identifier', async () => {
   const otherEmail = 'other-http@example.test';
+  // Only personal or business is accepted as an account type.
   await request(server)
     .post('/api/v1/auth/sign-up/email')
     .set('Origin', origin)
-    .send({ email: otherEmail, password, name: 'Other User' })
+    .send({ email: otherEmail, password, name: 'Other', accountType: 'admin' })
+    .expect(400);
+  await request(server)
+    .post('/api/v1/auth/sign-up/email')
+    .set('Origin', origin)
+    .send({
+      email: otherEmail,
+      password,
+      name: 'Other User',
+      accountType: 'business',
+    })
     .expect(200);
   const message = mailbox.find((item) => item.to === otherEmail);
   assert.ok(message);
@@ -271,7 +287,12 @@ test('a second authenticated user cannot read the first user account by supplyin
     .get(`/api/v1/accounts/me?accountId=${victim.id}`)
     .set('Cookie', otherCookie)
     .expect(200);
-  assert.deepEqual(result.body, { onboarding: 'required', account: null });
+  // A business sign-up is remembered on the account, on any device.
+  assert.deepEqual(result.body, {
+    onboarding: 'required',
+    account: null,
+    accountType: 'business',
+  });
 });
 
 test('account status uses only the session identity and fails closed on incomplete profiles', async () => {

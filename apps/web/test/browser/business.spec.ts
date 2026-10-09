@@ -460,9 +460,15 @@ test('a business cancels a campaign that is not live and gets its money back onc
   await page.getByRole('button', { name: 'Cancel and return' }).click();
   await expect(page.getByText(/It can never go live afterwards/)).toBeVisible();
   await healthy(page);
-  await page.getByRole('button', { name: 'Yes, cancel it' }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Cancel campaign' })
+    .click();
   await expect(page.getByText(/never be returned twice/)).toBeVisible();
-  await page.getByRole('button', { name: 'Yes, cancel it' }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Cancel campaign' })
+    .click();
   await expect(
     page.getByText('₦20,000 is back in your available balance.'),
   ).toBeVisible();
@@ -530,7 +536,12 @@ test('an owner invites and removes till staff, sees their activity, and staff ac
   ).toBeVisible();
   await healthy(page);
   await page.getByRole('button', { name: 'Remove' }).click();
-  await page.getByRole('button', { name: 'Yes, remove' }).click();
+  // Removing asks first, in a dialog.
+  const removal = page.getByRole('dialog', { name: /Remove/ });
+  await expect(removal).toBeVisible();
+  await healthy(page);
+  await removal.getByRole('button', { name: 'Remove', exact: true }).click();
+  await expect(page.getByText(/removed$/)).toBeVisible();
   await expect(page.getByText('No staff yet.')).toBeVisible();
 
   let accepted = false;
@@ -802,6 +813,24 @@ test('business sign up has its own page and only owners see the business button'
     page.getByRole('heading', { name: 'Create your business account' }),
   ).toBeVisible();
   await expect(page.getByText('Add your business').first()).toBeVisible();
+  const kind = page.getByRole('navigation', { name: 'Account type' });
+  await expect(kind.getByRole('link', { name: /Business/ })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  // The eye button stays put while it is pressed.
+  const eye = page.getByRole('button', { name: 'Show password' }).first();
+  const before = await eye.boundingBox();
+  await eye.hover();
+  await page.mouse.down();
+  const pressed = await eye.boundingBox();
+  await page.mouse.up();
+  expect(pressed?.y).toBe(before?.y);
+  await kind.getByRole('link', { name: /Personal/ }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Start earning cash back' }),
+  ).toBeVisible();
+  await page.goBack();
 
   let owner = false;
   await page.route('**/api/v1/sponsor/profile', (route) =>

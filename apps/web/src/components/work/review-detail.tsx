@@ -43,7 +43,7 @@ export function SponsorReview({ id }: { id: string }) {
       : null;
   return (
     <WorkFrame title={read.data?.task.title ?? 'Review submitted work'}>
-      <Link className="text-link" href="/sponsor/tasks">
+      <Link className="back-link" href="/sponsor/tasks">
         Back to sponsored tasks
       </Link>
       <Button variant="outline" disabled={read.loading} onClick={read.refresh}>
@@ -88,7 +88,7 @@ export function AppealReview({ id }: { id: string }) {
       title={read.data?.task.title ?? 'Review appeal'}
       section={{ label: 'Appeals', href: '/review/appeals' }}
     >
-      <Link className="text-link" href="/review/appeals">
+      <Link className="back-link" href="/review/appeals">
         Back to pending appeals
       </Link>
       <ReviewAccess />

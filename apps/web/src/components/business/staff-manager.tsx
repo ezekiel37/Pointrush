@@ -4,6 +4,8 @@ import type { FormEvent } from 'react';
 import { DashHead, DashShell } from './dash-shell';
 import { NoBusiness } from './business-home';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/dialog';
+import { toast } from '@/components/ui/toast';
 import { Feedback, Loading } from '@/components/ui/feedback';
 import { Field } from '@/components/ui/field';
 import { WorkFailure } from '@/components/work/work-frame';
@@ -71,8 +73,12 @@ export function StaffManager() {
         method: 'POST',
         body: {},
       });
+      const removed = staff.data?.items.find((m) => m.id === id);
       setConfirming(null);
       staff.refresh();
+      toast(
+        `${removed?.displayName ?? removed?.username ?? 'Staff member'} removed`,
+      );
     } catch {
       setError(
         'We could not remove them. Check your connection and try again.',
@@ -127,16 +133,16 @@ export function StaffManager() {
                           Waiting to accept
                         </span>
                       )}
-                      {confirming !== m.id && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          loading={busy}
-                          onClick={() => setConfirming(m.id)}
-                        >
-                          Remove
-                        </Button>
-                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setError('');
+                          setConfirming(m.id);
+                        }}
+                      >
+                        Remove
+                      </Button>
                     </div>
                     {m.accepted && (
                       <p className="small-note" style={{ margin: 0 }}>
@@ -158,33 +164,6 @@ export function StaffManager() {
                         3 or more times this week. Check these were real sales.
                       </p>
                     )}
-                    {confirming === m.id && (
-                      <div className="confirm-strip">
-                        <p style={{ margin: 0 }}>
-                          Remove {m.displayName ?? m.username}? They lose access
-                          at once.
-                        </p>
-                        <div
-                          className="row"
-                          style={{ justifyContent: 'flex-start' }}
-                        >
-                          <Button
-                            type="button"
-                            loading={busy}
-                            onClick={() => void remove(m.id)}
-                          >
-                            Yes, remove
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => setConfirming(null)}
-                          >
-                            Keep
-                          </Button>
-                        </div>
-                      </div>
-                    )}
                   </li>
                 ))}
               </ul>
@@ -193,6 +172,25 @@ export function StaffManager() {
                 No staff yet. Only you can confirm purchases.
               </p>
             )}
+            {(() => {
+              const m = staff.data?.items.find((x) => x.id === confirming);
+              return (
+                <ConfirmDialog
+                  open={Boolean(m)}
+                  onClose={() => setConfirming(null)}
+                  onConfirm={() => m && void remove(m.id)}
+                  danger
+                  busy={busy}
+                  title={`Remove ${m?.displayName ?? m?.username ?? 'this person'}?`}
+                  description="They lose access at once and can no longer confirm purchases for you. You can invite them again later."
+                  confirmLabel="Remove"
+                  busyLabel="Removing…"
+                  cancelLabel="Keep"
+                >
+                  {error && <Feedback error>{error}</Feedback>}
+                </ConfirmDialog>
+              );
+            })()}
           </section>
           <form
             className="card grid gap-4"

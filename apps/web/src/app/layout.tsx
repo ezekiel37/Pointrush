@@ -4,6 +4,7 @@ import '@fontsource-variable/geist';
 import '@fontsource-variable/geist-mono';
 import './globals.css';
 import { ServiceWorker } from '@/components/shell/service-worker';
+import { Toaster } from '@/components/ui/toast';
 export const metadata: Metadata = {
   title: { default: 'Acticlaim', template: '%s | Acticlaim' },
   description:
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           Skip to content
         </a>
         {children}
+        <Toaster />
         <ServiceWorker />
       </body>
     </html>
