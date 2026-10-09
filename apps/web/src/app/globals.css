@@ -758,8 +758,109 @@
     color: var(--color-ink);
     font-weight: 550;
   }
-  .dash-tabs {
+  .dash-tabbar,
+  .more-sheet {
     display: none;
+  }
+  .tabbar button {
+    border: 0;
+    background: none;
+    font: inherit;
+    cursor: pointer;
+  }
+  .tabbar a,
+  .tabbar button {
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 0.2rem;
+    font-size: 0.7rem;
+    font-weight: 550;
+    text-decoration: none;
+    color: var(--color-muted);
+  }
+  .tabbar [aria-current='page'] {
+    color: var(--color-brand-text);
+  }
+  .tabbar [aria-current='page'] svg {
+    background: var(--color-brand-soft);
+    border-radius: 999px;
+    padding: 3px 12px;
+    box-sizing: content-box;
+  }
+  /* The everyday action sits raised in the middle of the bar. */
+  .tabbar .tab-main svg,
+  .tabbar .tab-main[aria-current='page'] svg {
+    width: 26px;
+    height: 26px;
+    padding: 11px;
+    margin-top: -22px;
+    border-radius: 999px;
+    background: var(--color-accent);
+    color: var(--color-on-accent, #fff);
+    box-shadow: 0 6px 18px
+      color-mix(in srgb, var(--color-accent) 40%, transparent);
+    box-sizing: content-box;
+  }
+  .more-sheet {
+    position: fixed;
+    inset: 0;
+    /* Under the tab bar, so More stays tappable to close it. */
+    z-index: 25;
+    background: color-mix(in srgb, #000 40%, transparent);
+    align-items: flex-end;
+  }
+  .more-panel {
+    width: 100%;
+    display: grid;
+    gap: 0.75rem;
+    padding: 1rem 1rem
+      calc(var(--tabbar-height) + 1rem + env(safe-area-inset-bottom));
+    background: var(--color-surface);
+    border-radius: 1.25rem 1.25rem 0 0;
+  }
+  .more-panel .dash-group a {
+    min-height: 48px;
+    font-size: 1rem;
+    color: var(--color-ink);
+  }
+  .icon-button {
+    display: inline-grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--color-sunken);
+    color: var(--color-ink);
+    cursor: pointer;
+  }
+  .pick-row {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.85rem;
+    border: 1px solid var(--color-line);
+    border-radius: 0.9rem;
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+  .pick-row > .grid {
+    flex: 1;
+    min-width: 0;
+  }
+  .pick-row:hover {
+    background: var(--color-sunken);
+  }
+  .pick-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 999px;
+    background: var(--color-brand-soft);
+    color: var(--color-brand-text);
+    flex-shrink: 0;
   }
   .dash-main {
     padding: 1.75rem clamp(1rem, 3vw, 2rem) 4rem;
@@ -1154,19 +1255,186 @@
     overflow-wrap: anywhere;
   }
   /* Wallet */
-  .eye-toggle {
+  /* Wallet: one balance card, round quick actions, then a plain list. */
+  .wallet-card {
+    position: relative;
+    overflow: hidden;
     display: grid;
+    gap: 0.35rem;
+    padding: 1.25rem;
+    border-radius: 1.4rem;
+    color: #ffffff;
+    background:
+      radial-gradient(
+        circle at 110% -10%,
+        rgb(212 242 90 / 0.35),
+        transparent 45%
+      ),
+      linear-gradient(135deg, #0f6e50 0%, #0b4d39 60%, #0e1512 100%);
+    box-shadow: 0 14px 34px rgb(11 77 57 / 0.25);
+  }
+  .wallet-card-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 550;
+    color: rgb(255 255 255 / 0.85);
+  }
+  .wallet-card-icon {
+    display: inline-grid;
     place-items: center;
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
+    border-radius: 0.7rem;
+    background: rgb(255 255 255 / 0.14);
+    color: var(--color-lime);
+  }
+  .wallet-card-amount {
+    margin: 0.5rem 0 0;
+    font-size: clamp(2.2rem, 9vw, 3rem);
+    line-height: 1.05;
+    color: #ffffff;
+  }
+  .wallet-card-held {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+    font-size: 0.88rem;
+    color: rgb(255 255 255 / 0.8);
+  }
+  .wallet-card-note {
+    margin: 0.5rem 0 0;
+    padding-top: 0.6rem;
+    border-top: 1px solid rgb(255 255 255 / 0.15);
+    font-size: 0.82rem;
+    color: rgb(255 255 255 / 0.8);
+  }
+  .wallet-card-note a {
+    color: var(--color-lime);
+    font-weight: 600;
+  }
+  .eye-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 36px;
+    padding: 0 0.8rem;
     border: 0;
-    border-radius: 50%;
-    background: rgb(255 255 255 / 0.1);
-    color: inherit;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.14);
+    color: #ffffff;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
     cursor: pointer;
   }
   .eye-toggle:hover {
-    background: rgb(255 255 255 / 0.18);
+    background: rgb(255 255 255 / 0.24);
+  }
+  .quick-actions {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+  .quick-action {
+    display: grid;
+    justify-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 550;
+    color: var(--color-ink);
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .quick-action-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 999px;
+    background: var(--color-brand-soft);
+    color: var(--color-brand-text);
+    transition: transform 120ms ease;
+  }
+  .quick-action:hover .quick-action-icon {
+    transform: translateY(-2px);
+  }
+  .quick-action[aria-disabled='true'] .quick-action-icon {
+    background: var(--color-sunken);
+    color: var(--color-muted);
+  }
+  .tx-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid var(--color-line);
+    border-radius: 1rem;
+    background: var(--color-surface);
+  }
+  .tx-list > li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.6rem;
+    padding: 0.85rem 1rem;
+  }
+  .tx-list > li + li {
+    border-top: 1px solid var(--color-divider);
+  }
+  .tx-row {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .tx-icon {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: var(--color-brand-soft);
+    color: var(--color-brand-text);
+  }
+  .tx-icon-pending {
+    background: var(--color-pending-surface);
+    color: var(--color-pending);
+  }
+  .tx-icon-voided {
+    background: var(--color-sunken);
+    color: var(--color-muted);
+  }
+  .tx-main {
+    flex: 1;
+    min-width: 0;
+  }
+  .tx-main .small-note {
+    margin: 0;
+  }
+  .tx-title {
+    margin: 0;
+    font-weight: 600;
+  }
+  .tx-end {
+    display: grid;
+    justify-items: end;
+    gap: 0.25rem;
+    flex-shrink: 0;
+  }
+  .tx-action {
+    justify-self: stretch;
+  }
+  @media (max-width: 480px) {
+    .quick-actions {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      row-gap: 0.9rem;
+    }
   }
   .ready h2 {
     margin: 0;
@@ -1488,18 +1756,6 @@
     display: grid;
     justify-items: end;
     gap: 0.25rem;
-  }
-  .wallet-spend {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    margin-top: 0.75rem;
-    color: var(--color-lime);
-    font-weight: 550;
-    text-decoration: none;
-  }
-  .wallet-spend:hover {
-    text-decoration: underline;
   }
   /* Customer loyalty counts on the business home: a plain list, no boxes. */
   .loyalty-list {
@@ -3579,31 +3835,24 @@
   .dash-side {
     display: none;
   }
-  .dash-tabs {
+  .dash-tabbar {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 30;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    height: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+    background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+    backdrop-filter: blur(14px);
+    border-top: 1px solid var(--color-line);
+  }
+  .dash-main {
+    padding-bottom: calc(var(--tabbar-height) + 2.5rem);
+  }
+  .more-sheet {
     display: flex;
-    gap: 0.35rem;
-    overflow-x: auto;
-    padding: 0.6rem clamp(1rem, 3vw, 2rem);
-    border-bottom: 1px solid var(--color-line);
-    background: var(--color-surface);
-    scrollbar-width: none;
-  }
-  .dash-tabs a {
-    flex-shrink: 0;
-    min-height: 36px;
-    display: inline-flex;
-    align-items: center;
-    padding: 0 0.9rem;
-    border-radius: 999px;
-    font-size: 0.86rem;
-    text-decoration: none;
-    color: var(--color-muted);
-    border: 1px solid var(--color-line);
-  }
-  .dash-tabs a[aria-current='page'] {
-    background: var(--color-ink-fill);
-    border-color: var(--color-ink-fill);
-    color: var(--color-on-fill);
   }
   .dash-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -3781,7 +4030,7 @@
   .tabbar,
   .dash-side,
   .dash-top,
-  .dash-tabs {
+  .dash-tabbar {
     display: none;
   }
 }

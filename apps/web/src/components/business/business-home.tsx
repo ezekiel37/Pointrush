@@ -48,7 +48,7 @@ export function NoBusiness() {
       <p className="small-note">
         Work at a business that uses Acticlaim?{' '}
         <Link className="text-link" href="/staff">
-          Open your till
+          Go to your staff page
         </Link>
       </p>
     </section>
@@ -258,7 +258,7 @@ function Customers({ customers }: { customers: CustomerCounts }) {
         <h2 id="customers-heading">Your customers</h2>
         <p>
           {customers.total.toLocaleString('en-NG')} people have bought with
-          Acticlaim. Only purchases confirmed at your till count.
+          Acticlaim. Only purchases you confirm on Acticlaim count.
         </p>
       </div>
       <dl className="loyalty-list">
@@ -296,7 +296,7 @@ const newHref: Record<string, string> = {
   claim_code: '/business/promotions/new',
 };
 const published = z.object({ taskId: z.uuid() });
-const notEnded = (endsAt: string) => Date.parse(endsAt) > Date.now();
+export const notEnded = (endsAt: string) => Date.parse(endsAt) > Date.now();
 
 export function CampaignListPage({
   model,

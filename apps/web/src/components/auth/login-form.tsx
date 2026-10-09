@@ -68,7 +68,7 @@ export function LoginForm() {
               result.data.twoFactorRedirect
             )
               return;
-            router.replace(next ?? '/account');
+            router.replace(next ?? '/account?home=1');
           }),
         )}
         aria-busy={submit.busy}

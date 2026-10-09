@@ -55,7 +55,7 @@ const audiences = [
     icon: Store,
     who: 'Shops, restaurants & salons',
     title: 'Turn first visits into regulars.',
-    body: 'Offer cash back on real purchases. Your staff confirm each sale at the till, so you only pay for customers who actually bought.',
+    body: 'Offer cash back on real purchases. Your staff scan a code on each sale, so you only pay for customers who actually bought.',
     cta: 'Start a cash back offer',
   },
   {
@@ -416,7 +416,7 @@ export default function Home() {
                 </p>
                 <h3>{title}</h3>
                 <p className="small-note">{body}</p>
-                <Link className="text-link" href="/signup">
+                <Link className="text-link" href="/signup?as=business">
                   {cta} <ArrowRight size={14} aria-hidden />
                 </Link>
               </li>

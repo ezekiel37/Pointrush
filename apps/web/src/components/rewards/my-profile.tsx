@@ -1,13 +1,14 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import { Copy, Eye, EyeOff } from 'lucide-react';
+import { Copy, Eye, EyeOff, Store } from 'lucide-react';
 import { Page } from '@/components/shell/app-shell';
 import { Button } from '@/components/ui/button';
 import { Feedback, Loading } from '@/components/ui/feedback';
 import { WorkFailure } from '@/components/work/work-frame';
 import { apiRequest } from '@/lib/api';
 import { ownProfile, pointsSummary } from '@/lib/rewards';
+import { useBusinessAccess } from '@/lib/role';
 import { useApiRead } from '@/lib/use-api-read';
 import { PointsAndTier } from './points-tier';
 import { ProfileCard } from './profile-card';
@@ -146,6 +147,7 @@ export function MyProfile() {
                 </p>
               </section>
             )}
+            <BusinessLink />
             <Link className="text-link" href="/account">
               Account settings
             </Link>
@@ -153,5 +155,46 @@ export function MyProfile() {
         )
       )}
     </Page>
+  );
+}
+
+// Personal and business are kept apart: a business is added from here, and
+// owners and staff get a way back to their business tools.
+function BusinessLink() {
+  const access = useBusinessAccess();
+  if (access.loading) return null;
+  const [title, body, href, action] = access.owner
+    ? [
+        'Your business',
+        'Run offers, confirm purchases and manage funds.',
+        '/business',
+        'Open business',
+      ]
+    : access.staff
+      ? [
+          'Work',
+          'Confirm purchases for the businesses you work for.',
+          '/staff',
+          'Open work',
+        ]
+      : [
+          'Run a business?',
+          'Create a business account to give your customers cash back.',
+          '/business/setup',
+          'Add your business',
+        ];
+  return (
+    <section className="pick-row" aria-label={title}>
+      <span className="pick-icon" aria-hidden>
+        <Store size={20} />
+      </span>
+      <span className="grid">
+        <strong>{title}</strong>
+        <span className="small-note">{body}</span>
+      </span>
+      <Link className="button button-outline" href={href}>
+        {action}
+      </Link>
+    </section>
   );
 }

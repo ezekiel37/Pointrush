@@ -62,7 +62,7 @@ const topics: Topic[] = [
     questions: [
       [
         'How does cash back work?',
-        'Pick an offer and get a code on your phone. Show it at the till when you buy; staff confirm the purchase. The cash back is held during the business’s refund window, then moves to your wallet.',
+        'Pick an offer and get a code on your phone. Show it when you pay; staff confirm the purchase. The cash back is held during the business’s refund window, then moves to your wallet.',
       ],
       [
         'How long is my purchase code valid?',
@@ -136,7 +136,7 @@ const topics: Topic[] = [
       ],
       [
         'Can my staff confirm purchases?',
-        'Yes. Invite till staff from Staff. They can confirm purchases at your till but cannot move your money.',
+        'Yes. Invite staff from Staff. They can confirm purchases for you but cannot move your money.',
       ],
       [
         'Do prize promotions need a lottery licence?',

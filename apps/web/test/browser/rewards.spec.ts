@@ -295,7 +295,7 @@ test('wallet separates paid money from held cash back and releases once', async 
   await page.goto('/wallet');
   await expect(page.getByText('₦1,000', { exact: true })).toBeVisible();
   // Held money shows its own total and a label, never as wallet money.
-  await expect(page.getByText('₦700', { exact: true })).toBeVisible();
+  await expect(page.getByText('₦700 cash back on hold')).toBeVisible();
   await expect(page.getByText('Held', { exact: true })).toBeVisible();
   await healthy(page);
   await page.getByRole('button', { name: 'Move to wallet' }).click();
@@ -622,10 +622,12 @@ test('a withdrawal holds money once across a dropped response and shows its stat
     locked = true;
     return route.fulfill({ json: { locked: true } });
   });
-  // Without a verified phone there is no withdraw action, only the reason.
+  // Without a verified phone the withdraw action is disabled with the reason.
   await page.goto('/wallet');
   await expect(page.getByText(/needs a verified phone number/)).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Withdraw' })).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Withdraw', exact: true }),
+  ).toHaveAttribute('aria-disabled', 'true');
 
   verified = true;
   await page.reload();
@@ -672,7 +674,7 @@ test('a withdrawal holds money once across a dropped response and shows its stat
   ).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Withdraw', exact: true }),
-  ).toHaveCount(0);
+  ).toHaveAttribute('aria-disabled', 'true');
   await expect(
     page.getByText('Withdrawals are locked while support checks your account.'),
   ).toBeVisible();
@@ -894,9 +896,14 @@ test('a bank account is checked with the bank before withdrawals go to it', asyn
   await expect(
     page.getByText('Add a bank account below to withdraw.'),
   ).toBeVisible();
+  const withdraw = page.getByRole('button', { name: 'Withdraw', exact: true });
+  await expect(withdraw).toHaveAttribute('aria-disabled', 'true');
+  // Tapping it explains why instead of opening the form.
+  await withdraw.dispatchEvent('click');
+  await expect(page.locator('#withdraw-panel')).toHaveCount(0);
   await expect(
-    page.getByRole('button', { name: 'Withdraw', exact: true }),
-  ).toHaveCount(0);
+    page.getByText('Add a bank account below to withdraw.'),
+  ).toHaveCount(2);
   await healthy(page);
   await page.getByLabel('Bank', { exact: true }).selectOption('058');
   await page.getByLabel('Account number').fill('0123450000');
@@ -908,7 +915,7 @@ test('a bank account is checked with the bank before withdrawals go to it', asyn
   await expect(page.getByText('Guaranty Trust Bank ••••6789')).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Withdraw', exact: true }),
-  ).toBeVisible();
+  ).toHaveAttribute('aria-disabled', 'false');
   expect(bodies.at(-1)).toEqual({
     bankCode: '058',
     accountNumber: '0123456789',
@@ -1014,10 +1021,8 @@ test('wallet pays airtime and electricity once, with the password, and shows the
   });
 
   await page.goto('/wallet');
-  await page
-    .getByRole('link', { name: /Buy airtime, data or pay bills/ })
-    .click();
-  await page.waitForURL('**/wallet/bills');
+  await page.getByRole('link', { name: 'Airtime', exact: true }).click();
+  await page.waitForURL('**/wallet/bills?kind=airtime');
   await expect(page.getByText('₦2,000')).toBeVisible();
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByText(/11-digit phone number/)).toBeVisible();

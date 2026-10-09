@@ -793,3 +793,93 @@ test('flagged payments take a note and then show it', async ({ page }) => {
   await expect(page.getByText(/Refunded by the provider\./)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Save note' })).toHaveCount(0);
 });
+
+test('business sign up has its own page and only owners see the business button', async ({
+  page,
+}) => {
+  await page.goto('/signup?as=business');
+  await expect(
+    page.getByRole('heading', { name: 'Create your business account' }),
+  ).toBeVisible();
+  await expect(page.getByText('Add your business').first()).toBeVisible();
+
+  let owner = false;
+  await page.route('**/api/v1/sponsor/profile', (route) =>
+    owner
+      ? route.fulfill({ json: { id: businessId, name: 'Mama Put Kitchen' } })
+      : route.fulfill({ status: 404, json: { statusCode: 404 } }),
+  );
+  await page.route('**/api/v1/staff/workplaces', (route) =>
+    route.fulfill({ json: { items: [], invitations: [] } }),
+  );
+  await page.goto('/offers');
+  await expect(page.getByRole('heading', { name: 'Offers' })).toBeVisible();
+  // A personal account has no business tools in its header.
+  await expect(page.getByRole('link', { name: 'My business' })).toHaveCount(0);
+  owner = true;
+  await page.reload();
+  await expect(page.getByRole('link', { name: 'My business' })).toHaveAttribute(
+    'href',
+    '/business',
+  );
+});
+
+test('on a phone the business has a tab bar, a More sheet and a quick confirm', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const offer = (id: string, title: string) => ({
+    id,
+    title,
+    model: 'purchase_cashback',
+    capacity: 40,
+    used: 4,
+    reviewState: 'approved',
+    lifecycle: 'published',
+    endsAt: '2099-12-10T18:00:00Z',
+    rewardKobo: '50000',
+  });
+  const second = '6c1f9e5f-2d3b-4f8b-8a4c-3e7d9b2f5a81';
+  let campaigns = [offer(businessId, 'Lunch cash back')];
+  await page.route('**/api/v1/business/overview?*', (route) =>
+    route.fulfill({ json: overview(campaigns) }),
+  );
+
+  await page.goto('/business');
+  const bar = page.getByRole('navigation', { name: 'Business sections' });
+  for (const name of ['Home', 'Offers', 'Confirm', 'Funds', 'More'])
+    await expect(bar.getByText(name, { exact: true })).toBeVisible();
+  await bar.getByRole('button', { name: 'More' }).click();
+  const sheet = page.getByRole('dialog', { name: 'More business tools' });
+  await expect(
+    sheet.getByRole('link', { name: 'Switch to personal' }),
+  ).toBeVisible();
+  await expect(sheet.getByRole('link', { name: 'Staff' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(sheet).toHaveCount(0);
+
+  // One live offer: Confirm opens its scanner straight away.
+  await bar.getByRole('link', { name: 'Confirm' }).click();
+  await page.waitForURL(`**/business/campaigns/${businessId}`);
+
+  // Several: pick which one the customer bought under.
+  campaigns = [
+    offer(businessId, 'Lunch cash back'),
+    offer(second, 'Weekend cash back'),
+  ];
+  await page.goto('/business/confirm');
+  await expect(
+    page.getByRole('heading', { name: 'Which offer did they buy under?' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: /Weekend cash back/ }),
+  ).toHaveAttribute('href', `/business/campaigns/${second}`);
+  await healthy(page);
+
+  // None live: explains how to start.
+  campaigns = [];
+  await page.reload();
+  await expect(
+    page.getByRole('link', { name: 'Create a cash back offer' }),
+  ).toBeVisible();
+});

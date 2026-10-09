@@ -8,7 +8,7 @@ export default function Page() {
       <CampaignListPage
         model="purchase_cashback"
         title="Cash back offers"
-        intro="Pay shoppers back for purchases you confirm at the till."
+        intro="Pay shoppers back for purchases you confirm in your shop."
       />
     </Suspense>
   );

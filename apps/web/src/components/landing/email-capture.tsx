@@ -11,7 +11,7 @@ export function EmailCapture() {
   return (
     <form
       className="lp-capture"
-      action="/signup"
+      action="/signup?as=business"
       onSubmit={(event) => {
         event.preventDefault();
         const email = new FormData(event.currentTarget).get('email');
@@ -21,7 +21,7 @@ export function EmailCapture() {
         } catch {
           // Storage can be blocked; the signup form simply starts empty.
         }
-        router.push('/signup');
+        router.push('/signup?as=business');
       }}
     >
       <label className="sr-only" htmlFor="cta-email">

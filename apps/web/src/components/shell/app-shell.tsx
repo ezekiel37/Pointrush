@@ -13,6 +13,7 @@ import {
 import { Brand } from '@/components/auth/auth-frame';
 import { NotificationBell } from './notification-bell';
 import { jobsEnabled } from '@/lib/features';
+import { useBusinessAccess } from '@/lib/role';
 
 const tabs = [
   { href: '/offers', label: 'Offers', icon: Tag },
@@ -34,6 +35,8 @@ function active(pathname: string, href: string) {
 // phones. Business tools sit apart from the earner tabs.
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  // Only business owners and their staff see the way into business tools.
+  const access = useBusinessAccess();
   return (
     <>
       <header className="app-bar">
@@ -52,14 +55,15 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
         <div className="app-bar-end">
           <NotificationBell />
-          <Link
-            href="/business"
-            className="button button-outline"
-            aria-current={pathname.startsWith('/business') ? 'page' : undefined}
-          >
-            <Store size={17} aria-hidden />
-            <span>Business</span>
-          </Link>
+          {(access.owner || access.staff) && (
+            <Link
+              href={access.owner ? '/business' : '/staff'}
+              className="button button-outline"
+            >
+              <Store size={17} aria-hidden />
+              <span>{access.owner ? 'My business' : 'My work'}</span>
+            </Link>
+          )}
         </div>
       </header>
       {children}

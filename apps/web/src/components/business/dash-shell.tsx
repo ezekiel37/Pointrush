@@ -11,12 +11,15 @@ import {
   CreditCard,
   LayoutGrid,
   Landmark,
+  Menu,
   Scale,
   ShieldAlert,
   ScanLine,
+  Tags,
   TicketCheck,
   Undo2,
   UsersRound,
+  X,
 } from 'lucide-react';
 import { z } from 'zod';
 import { jobsEnabled } from '@/lib/features';
@@ -29,7 +32,12 @@ const groups = [
     title: 'Operations',
     links: [
       { href: '/business', label: 'Overview', icon: LayoutGrid, exact: true },
-      { href: '/business/campaigns', label: 'Cash back', icon: ScanLine },
+      {
+        href: '/business/confirm',
+        label: 'Confirm a purchase',
+        icon: ScanLine,
+      },
+      { href: '/business/campaigns', label: 'Cash back offers', icon: Tags },
       {
         href: '/business/promotions',
         label: 'Prize promotions',
@@ -73,6 +81,14 @@ const reviewGroups = [
   },
 ];
 const sponsorName = z.object({ name: z.string() });
+
+// Phone tab bar: the four things a business does daily, the rest under More.
+const businessTabs = [
+  { href: '/business', label: 'Home', icon: LayoutGrid, exact: true },
+  { href: '/business/campaigns', label: 'Offers', icon: Tags },
+  { href: '/business/confirm', label: 'Confirm', icon: ScanLine, main: true },
+  { href: '/business/funds', label: 'Funds', icon: Landmark },
+];
 
 function isActive(pathname: string, href: string, exact?: boolean) {
   return exact
@@ -126,7 +142,6 @@ export function DashShell({
   const pathname = usePathname();
   const review = variant === 'review';
   const navGroups = review ? reviewGroups : groups;
-  const flat = navGroups.flatMap((g) => g.links);
   // Pages that already loaded the business pass its name; others look it up.
   const profile = useApiRead(
     business || review ? null : 'sponsor/profile',
@@ -167,7 +182,8 @@ export function DashShell({
         </nav>
         <div className="dash-foot dash-group">
           <Link href="/offers">
-            <ArrowLeftRight size={18} aria-hidden /> Switch to shopper app
+            <ArrowLeftRight size={18} aria-hidden />{' '}
+            {review ? 'Back to the app' : 'Switch to personal'}
           </Link>
         </div>
       </aside>
@@ -195,28 +211,104 @@ export function DashShell({
             <NotificationBell />
           </div>
         </header>
-        <nav
-          className="dash-tabs"
-          aria-label={review ? 'Review sections' : 'Business sections'}
-        >
-          {flat.map(({ href, label, ...rest }) => (
-            <Link
-              key={href}
-              href={href}
-              aria-current={
-                isActive(pathname, href, 'exact' in rest) ? 'page' : undefined
-              }
-            >
-              {label}
-            </Link>
-          ))}
-          <Link href="/offers">Shopper app</Link>
-        </nav>
         <main id="main-content" className="dash-main">
           {children}
         </main>
       </div>
+      <PhoneNav review={review} pathname={pathname} />
     </div>
+  );
+}
+
+function PhoneNav({ review, pathname }: { review: boolean; pathname: string }) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('keydown', close);
+    return () => window.removeEventListener('keydown', close);
+  }, [open]);
+  const tabs = review ? reviewGroups.flatMap((g) => g.links) : businessTabs;
+  const more = review
+    ? []
+    : groups
+        .flatMap((g) => g.links)
+        .filter((l) => !businessTabs.some((t) => t.href === l.href));
+  const moreActive = more.some((l) => isActive(pathname, l.href));
+  return (
+    <>
+      {open && (
+        <div
+          className="more-sheet"
+          role="dialog"
+          aria-modal="true"
+          aria-label="More business tools"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setOpen(false);
+          }}
+        >
+          <div className="more-panel">
+            <div className="row">
+              <strong>More</strong>
+              <button
+                type="button"
+                className="icon-button"
+                aria-label="Close"
+                onClick={() => setOpen(false)}
+              >
+                <X size={20} aria-hidden />
+              </button>
+            </div>
+            <nav aria-label="More business tools" className="dash-group">
+              {more.map(({ href, label, icon: Icon }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setOpen(false)}
+                  aria-current={isActive(pathname, href) ? 'page' : undefined}
+                >
+                  <Icon size={18} aria-hidden /> {label}
+                </Link>
+              ))}
+              <Link href="/offers" onClick={() => setOpen(false)}>
+                <ArrowLeftRight size={18} aria-hidden /> Switch to personal
+              </Link>
+            </nav>
+          </div>
+        </div>
+      )}
+      <nav
+        className="tabbar dash-tabbar"
+        aria-label={review ? 'Review sections' : 'Business sections'}
+      >
+        {tabs.map(({ href, label, icon: Icon, ...rest }) => (
+          <Link
+            key={href}
+            href={href}
+            className={'main' in rest ? 'tab-main' : undefined}
+            aria-current={
+              isActive(pathname, href, 'exact' in rest) ? 'page' : undefined
+            }
+          >
+            <Icon size={20} aria-hidden />
+            {label}
+          </Link>
+        ))}
+        {more.length > 0 && (
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-current={moreActive ? 'page' : undefined}
+            onClick={() => setOpen((v) => !v)}
+          >
+            <Menu size={20} aria-hidden />
+            More
+          </button>
+        )}
+      </nav>
+    </>
   );
 }
 

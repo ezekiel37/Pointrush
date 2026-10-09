@@ -70,7 +70,7 @@ const kind: Record<string, string> = {
 const checks = [
   ['permittedObjective', 'Lawful and allowed on Acticlaim'],
   ['clearInstructions', 'Instructions are clear to an ordinary customer'],
-  ['feasibleProof', 'The proof can really be checked (till, code or work)'],
+  ['feasibleProof', 'The proof can really be checked (scan, code or work)'],
   ['fairRewardTerms', 'Reward, hold and limits are fair and as advertised'],
   ['safeDestinations', 'No unsafe links, places or personal data requests'],
 ] as const;

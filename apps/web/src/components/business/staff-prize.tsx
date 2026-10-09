@@ -18,7 +18,7 @@ export function StaffPrize({ id }: { id: string }) {
       title={prize?.title ?? 'Prize handover'}
     >
       <Link className="text-link" href="/staff">
-        Back to your tills
+        Back to work
       </Link>
       <div style={{ maxWidth: 560, marginTop: '1rem' }}>
         {read.loading && !read.data ? (

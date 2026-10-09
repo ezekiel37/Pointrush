@@ -40,7 +40,7 @@ const copy = {
   purchase_cashback: {
     title: 'New cash back offer',
     intro:
-      'Pay shoppers back for purchases you confirm at your till. The full amount is locked now and reviewed before it goes live.',
+      'Pay shoppers back for purchases you confirm in your shop. The full amount is locked now and reviewed before it goes live.',
     list: '/business/campaigns',
     listLabel: 'Cash back',
     reward: 'Cash back per purchase',
@@ -201,7 +201,7 @@ export function CampaignForm({ model }: { model: Model }) {
     return model === 'purchase_cashback'
       ? {
           ...common,
-          proofRequirements: 'Purchase confirmed by the business at the till.',
+          proofRequirements: 'Purchase confirmed by the business in the shop.',
           rejectionCriteria: form.voidWhen.trim(),
           campaignTerms: {
             minSpendKobo: toKobo(form.minSpend) ?? '0',

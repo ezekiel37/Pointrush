@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { z } from 'zod';
 import { CampaignTill } from '@/components/business/campaign-till';
-export const metadata = { title: 'Till' };
+export const metadata = { title: 'Confirm a purchase' };
 export default async function Page({
   params,
 }: {

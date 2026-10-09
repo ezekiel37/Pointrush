@@ -87,7 +87,7 @@ export function TillIllustration() {
           textAnchor="middle"
           fontSize="11"
         >
-          Show at the till
+          Show when you pay
         </text>
         <text
           className="ill-ink ill-mono"

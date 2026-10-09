@@ -2,7 +2,21 @@
 import Link from 'next/link';
 import { useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
-import { ArrowRight, Check, Eye, EyeOff } from 'lucide-react';
+import {
+  ArrowUpRight,
+  Check,
+  Clock3,
+  Eye,
+  EyeOff,
+  Smartphone,
+  Store,
+  TicketCheck,
+  Tv,
+  Wallet as WalletIcon,
+  Wifi,
+  Zap,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Page } from '@/components/shell/app-shell';
 import { Button } from '@/components/ui/button';
 import { Feedback, Loading } from '@/components/ui/feedback';
@@ -28,6 +42,15 @@ const stateLabel = {
   released: ['In wallet', 'chip chip-done'],
   voided: ['Withdrawn by business', 'chip chip-muted'],
 } as const;
+
+// Everyday ways to use the balance, one tap from the wallet.
+const quickActions: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: '/wallet/bills?kind=airtime', label: 'Airtime', icon: Smartphone },
+  { href: '/wallet/bills?kind=data', label: 'Data', icon: Wifi },
+  { href: '/wallet/bills?kind=electricity', label: 'Electricity', icon: Zap },
+  { href: '/wallet/bills?kind=tv', label: 'TV', icon: Tv },
+  { href: '/claim', label: 'Claim', icon: TicketCheck },
+];
 
 const HIDE_KEY = 'acticlaim:hide-balances';
 
@@ -130,8 +153,23 @@ export function Wallet() {
     .filter((p) => p.state === 'pending' || p.state === 'releasable')
     .reduce((sum, p) => sum + BigInt(p.payoutKobo ?? p.cashbackKobo), 0n);
   const data = summary.data;
+  const canWithdraw = Boolean(
+    data?.phoneVerified &&
+    !bank.data?.locked &&
+    BigInt(data.walletKobo) >= minWithdrawKobo &&
+    usable(bank.data?.destination),
+  );
+  const withdrawBlock = !data?.phoneVerified
+    ? 'Withdrawing needs a verified phone number.'
+    : bank.data?.locked
+      ? 'Withdrawals are locked while support checks your account.'
+      : BigInt(data.walletKobo) < minWithdrawKobo
+        ? 'You can withdraw once you have ₦1,000 or more.'
+        : bank.data?.destination
+          ? 'Your new bank account can receive money 24 hours after you added it.'
+          : 'Add a bank account below to withdraw.';
   return (
-    <Page eyebrow="Wallet" title="Your money">
+    <Page title="Wallet">
       {summary.loading && !data ? (
         <Loading>Loading your wallet…</Loading>
       ) : summary.error && !data ? (
@@ -139,122 +177,85 @@ export function Wallet() {
       ) : (
         data && (
           <div className="grid gap-6">
-            <section
-              className="grid gap-3"
-              style={{
-                gridTemplateColumns:
-                  'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
-              }}
-            >
-              <div
-                className="card"
-                style={{
-                  background: 'var(--color-ink-fill)',
-                  color: 'var(--color-on-fill)',
-                  borderColor: 'var(--color-ink-fill)',
+            <section className="wallet-card" aria-labelledby="balance-heading">
+              <div className="row">
+                <p id="balance-heading" className="wallet-card-label">
+                  <span className="wallet-card-icon" aria-hidden>
+                    <WalletIcon size={18} />
+                  </span>
+                  Wallet balance
+                </p>
+                <button
+                  type="button"
+                  className="eye-toggle"
+                  aria-pressed={hidden}
+                  aria-label={hidden ? 'Show balances' : 'Hide balances'}
+                  onClick={toggleHidden}
+                >
+                  {hidden ? (
+                    <EyeOff size={18} aria-hidden />
+                  ) : (
+                    <Eye size={18} aria-hidden />
+                  )}
+                  <span>{hidden ? 'Show' : 'Hide'}</span>
+                </button>
+              </div>
+              <p className="amount wallet-card-amount">
+                {hidden ? (
+                  <span aria-label="Balance hidden">₦ ••••••</span>
+                ) : (
+                  naira(data.walletKobo)
+                )}
+              </p>
+              <p className="wallet-card-held">
+                <Clock3 size={15} aria-hidden />
+                {hidden ? '₦ ••••' : naira(held.toString())} cash back on hold
+              </p>
+              {!canWithdraw && (
+                <p className="wallet-card-note">
+                  {withdrawBlock}
+                  {!data.phoneVerified && (
+                    <>
+                      {' '}
+                      <Link href="/verify-phone?next=/wallet">
+                        Verify your phone
+                      </Link>
+                    </>
+                  )}
+                </p>
+              )}
+            </section>
+
+            <nav className="quick-actions" aria-label="Wallet actions">
+              <button
+                type="button"
+                className="quick-action"
+                aria-expanded={withdrawing}
+                aria-controls="withdraw-panel"
+                aria-disabled={!canWithdraw}
+                onClick={() => {
+                  if (!canWithdraw) {
+                    setNotice(withdrawBlock);
+                    return;
+                  }
+                  setWithdrawing(true);
+                  setNotice('');
                 }}
               >
-                <div className="row">
-                  <p
-                    className="eyebrow"
-                    style={{
-                      margin: 0,
-                      color:
-                        'color-mix(in srgb, var(--color-on-fill) 72%, transparent)',
-                    }}
-                  >
-                    In your wallet
-                  </p>
-                  <button
-                    type="button"
-                    className="eye-toggle"
-                    aria-pressed={hidden}
-                    aria-label={hidden ? 'Show balances' : 'Hide balances'}
-                    onClick={toggleHidden}
-                  >
-                    {hidden ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-                <p
-                  className="amount amount-xl"
-                  style={{ margin: '0.25rem 0 0.75rem' }}
-                >
-                  {hidden ? (
-                    <span aria-label="Balance hidden">₦ ••••••</span>
-                  ) : (
-                    naira(data.walletKobo)
-                  )}
-                </p>
-                {data.phoneVerified &&
-                !bank.data?.locked &&
-                BigInt(data.walletKobo) >= minWithdrawKobo &&
-                usable(bank.data?.destination) ? (
-                  <Button
-                    type="button"
-                    className="button-lime"
-                    aria-expanded={withdrawing}
-                    aria-controls="withdraw-panel"
-                    onClick={() => {
-                      setWithdrawing(true);
-                      setNotice('');
-                    }}
-                  >
-                    Withdraw
-                  </Button>
-                ) : (
-                  <p
-                    className="small-note"
-                    style={{
-                      color:
-                        'color-mix(in srgb, var(--color-on-fill) 72%, transparent)',
-                    }}
-                  >
-                    {data.phoneVerified ? (
-                      bank.data?.locked ? (
-                        'Withdrawals are locked while support checks your account.'
-                      ) : BigInt(data.walletKobo) < minWithdrawKobo ? (
-                        'You can withdraw once you have ₦1,000 or more.'
-                      ) : bank.data?.destination ? (
-                        'Your new bank account can receive money 24 hours after you added it.'
-                      ) : (
-                        'Add a bank account below to withdraw.'
-                      )
-                    ) : (
-                      <>
-                        Withdrawing needs a verified phone number.{' '}
-                        <Link
-                          href="/verify-phone?next=/wallet"
-                          style={{ color: 'var(--color-lime)' }}
-                        >
-                          Verify your phone
-                        </Link>
-                      </>
-                    )}
-                  </p>
-                )}
-                <Link className="wallet-spend" href="/wallet/bills">
-                  Buy airtime, data or pay bills{' '}
-                  <ArrowRight size={15} aria-hidden />
+                <span className="quick-action-icon" aria-hidden>
+                  <ArrowUpRight size={22} />
+                </span>
+                Withdraw
+              </button>
+              {quickActions.map(({ href, label, icon: Icon }) => (
+                <Link key={href} href={href} className="quick-action">
+                  <span className="quick-action-icon" aria-hidden>
+                    <Icon size={22} />
+                  </span>
+                  {label}
                 </Link>
-              </div>
-              <div className="card">
-                <p className="eyebrow">Held cash back</p>
-                <p
-                  className="amount amount-xl amount-pending"
-                  style={{ margin: '0.25rem 0 0.75rem' }}
-                >
-                  {hidden ? (
-                    <span aria-label="Balance hidden">₦ ••••</span>
-                  ) : (
-                    naira(held.toString())
-                  )}
-                </p>
-                <p className="small-note">
-                  Held during each business&apos;s refund window. Not yet yours
-                  to spend.
-                </p>
-              </div>
-            </section>
+              ))}
+            </nav>
 
             {!(data.phoneVerified && bank.data?.destination) && (
               <section className="card ready" aria-labelledby="ready-heading">
@@ -332,69 +333,71 @@ export function Wallet() {
             {error && <Feedback error>{error}</Feedback>}
 
             <section aria-labelledby="purchases-heading">
-              <h2 id="purchases-heading">Cash back</h2>
+              <h2 id="purchases-heading">Cash back history</h2>
               {purchases.loading && !purchases.data ? (
                 <Loading>Loading cash back…</Loading>
               ) : purchases.data?.items.length ? (
-                <ul className="stack">
+                <ul className="tx-list">
                   {purchases.data.items.map((item) => {
                     const [text, chip] = stateLabel[item.state];
                     return (
-                      <li
-                        key={item.id}
-                        className="card row"
-                        style={{ flexWrap: 'wrap' }}
-                      >
-                        <div style={{ minWidth: 0, flex: '1 1 12rem' }}>
-                          <p
-                            className="truncate"
-                            style={{ margin: 0, fontWeight: 600 }}
-                          >
-                            {item.businessName}
-                          </p>
-                          <p className="small-note truncate">
-                            {item.state === 'pending' &&
-                            item.group &&
-                            !item.payoutKobo
-                              ? `Group offer: ${naira(item.cashbackKobo)} if ${item.group.target} people buy, ${naira(item.group.baseKobo)} if not`
-                              : item.state === 'pending'
-                                ? `Unlocks ${shortDate(item.releaseAt)}`
-                                : `Bought ${shortDate(item.createdAt)}`}
-                          </p>
-                        </div>
-                        <div
-                          className="row"
-                          style={{ justifyContent: 'flex-end' }}
-                        >
+                      <li key={item.id}>
+                        <div className="tx-row">
                           <span
-                            className={`amount ${item.state === 'pending' ? 'amount-pending' : ''}`}
-                            style={
-                              item.state === 'voided'
-                                ? {
-                                    textDecoration: 'line-through',
-                                    color: 'var(--color-muted)',
-                                  }
-                                : undefined
-                            }
+                            className={`tx-icon tx-icon-${item.state}`}
+                            aria-hidden
                           >
-                            {item.payoutKobo || !item.group
-                              ? naira(item.payoutKobo ?? item.cashbackKobo)
-                              : `Up to ${naira(item.cashbackKobo)}`}
+                            <Store size={18} />
                           </span>
-                          {item.state === 'releasable' ? (
-                            <Button
-                              variant="accent"
-                              type="button"
-                              disabled={busy !== null}
-                              loading={busy === item.id}
-                              onClick={() => void release(item.id)}
+                          <div className="tx-main">
+                            <p className="tx-title truncate">
+                              {item.businessName}
+                            </p>
+                            <p className="small-note truncate">
+                              {item.state === 'pending' &&
+                              item.group &&
+                              !item.payoutKobo
+                                ? `Group offer: ${naira(item.cashbackKobo)} if ${item.group.target} people buy, ${naira(item.group.baseKobo)} if not`
+                                : item.state === 'pending'
+                                  ? `Unlocks ${shortDate(item.releaseAt)}`
+                                  : `Bought ${shortDate(item.createdAt)}`}
+                            </p>
+                          </div>
+                          <div className="tx-end">
+                            <span
+                              className={`amount ${item.state === 'pending' ? 'amount-pending' : ''}`}
+                              style={
+                                item.state === 'voided'
+                                  ? {
+                                      textDecoration: 'line-through',
+                                      color: 'var(--color-muted)',
+                                    }
+                                  : undefined
+                              }
                             >
-                              {busy === item.id ? 'Moving…' : 'Move to wallet'}
-                            </Button>
-                          ) : (
-                            <span className={chip}>{text}</span>
-                          )}
+                              {hidden
+                                ? '₦ ••••'
+                                : item.payoutKobo || !item.group
+                                  ? `+${naira(item.payoutKobo ?? item.cashbackKobo)}`
+                                  : `Up to ${naira(item.cashbackKobo)}`}
+                            </span>
+                            {item.state !== 'releasable' && (
+                              <span className={chip}>{text}</span>
+                            )}
+                          </div>
                         </div>
+                        {item.state === 'releasable' && (
+                          <Button
+                            variant="accent"
+                            type="button"
+                            className="tx-action"
+                            disabled={busy !== null}
+                            loading={busy === item.id}
+                            onClick={() => void release(item.id)}
+                          >
+                            {busy === item.id ? 'Moving…' : 'Move to wallet'}
+                          </Button>
+                        )}
                         {item.state === 'voided' && (
                           <VoidDispute
                             item={item}
@@ -418,8 +421,8 @@ export function Wallet() {
             ) : null}
 
             <p className="small-note">
-              Won a prize code? <Link href="/claim">Claim it here</Link>. Points
-              and your tier are on your <Link href="/profile">profile</Link>.
+              Points and your tier are on your{' '}
+              <Link href="/profile">profile</Link>.
             </p>
           </div>
         )

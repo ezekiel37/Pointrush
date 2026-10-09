@@ -50,7 +50,7 @@ export function TwoFactorScreen() {
       } else {
         requireSuccess(await authClient().twoFactor.verifyTotp({ code }));
       }
-      router.replace('/account');
+      router.replace('/account?home=1');
     });
   }
 

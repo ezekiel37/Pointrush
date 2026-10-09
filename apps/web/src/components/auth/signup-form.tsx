@@ -8,6 +8,7 @@ import { signupSchema } from '@/lib/forms';
 import { authClient, requireSuccess } from '@/lib/auth-client';
 import { useSubmit } from '@/lib/use-submit';
 import { safeNext, withNext } from '@/lib/next-path';
+import { rememberBusinessIntent } from '@/lib/role';
 import { Form } from '@/components/ui/form';
 import { Field } from '@/components/ui/field';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -15,9 +16,11 @@ import { Feedback } from '@/components/ui/feedback';
 import { Celebrate } from '@/components/ui/celebrate';
 import { PASSWORD_MIN_LENGTH } from '@pointrush/contracts';
 import { SIGNUP_EMAIL_KEY } from '@/components/landing/email-capture';
-export function SignupForm() {
+export function SignupForm({ business = false }: { business?: boolean }) {
   const [sent, setSent] = useState(false);
-  const next = safeNext(useSearchParams().get('next'));
+  const next =
+    safeNext(useSearchParams().get('next')) ??
+    (business ? '/business/setup' : null);
   const submit = useSubmit();
   const {
     register,
@@ -70,6 +73,7 @@ export function SignupForm() {
         aria-busy={submit.busy}
         onSubmit={handleSubmit(({ name, email, password }) =>
           submit.run(async () => {
+            if (business) rememberBusinessIntent();
             requireSuccess(
               await authClient().signUp.email({
                 name,

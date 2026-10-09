@@ -16,7 +16,8 @@ import {
   requireSuccess,
 } from '@/lib/auth-client';
 import { useSubmit } from '@/lib/use-submit';
-export function AccountScreen() {
+import { homePath } from '@/lib/role';
+export function AccountScreen({ goHome = false }: { goHome?: boolean }) {
   const router = useRouter();
   const [status, setStatus] = useState<AccountStatus | null>(null);
   const [error, setError] = useState('');
@@ -125,6 +126,9 @@ export function AccountScreen() {
       </AuthFrame>
     );
   const { account } = status;
+  // A set-up, active account goes straight to its home: the business
+  // dashboard, the staff tills or the earner app.
+  if (goHome && account.accessState === 'active' && !error) return <GoHome />;
   return (
     <>
       <header className="account-header">
@@ -219,5 +223,32 @@ export function AccountScreen() {
         )}
       </main>
     </>
+  );
+}
+
+function GoHome() {
+  const router = useRouter();
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let live = true;
+    homePath().then(
+      (path) => live && router.replace(path),
+      () => live && setFailed(true),
+    );
+    return () => {
+      live = false;
+    };
+  }, [router]);
+  return (
+    <AuthFrame title="Welcome back" description="Taking you in…">
+      {failed ? (
+        <Feedback error>
+          We could not load your account. Check your connection, or go to{' '}
+          <Link href="/offers">offers</Link>.
+        </Feedback>
+      ) : (
+        <Loading>Taking you in…</Loading>
+      )}
+    </AuthFrame>
   );
 }

@@ -38,7 +38,7 @@ export function StaffTills() {
   return (
     <Page
       eyebrow="Staff"
-      title="Your tills"
+      title="Work"
       intro="Businesses that added you as staff. Confirm customers' purchases here."
     >
       {invitations.length > 0 && (
@@ -96,7 +96,7 @@ export function StaffTills() {
                 <h2>{business.name}</h2>
                 <p>
                   {business.tills.length || business.prizes.length
-                    ? 'Tills and prize handovers you can run'
+                    ? 'Offers you can confirm and prizes you can hand over'
                     : 'Nothing live right now.'}
                 </p>
               </div>

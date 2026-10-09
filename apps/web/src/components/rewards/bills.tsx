@@ -62,11 +62,11 @@ function payError(error: unknown) {
   return 'We could not confirm the payment. Check your connection and try again; you will never be charged twice.';
 }
 
-export function Bills() {
+export function Bills({ initialKind = 'airtime' }: { initialKind?: BillKind }) {
   const options = useApiRead('wallet/bills/options', billOptions);
   const summary = useApiRead('points', pointsSummary);
   const history = useApiRead('wallet/bills?limit=10', billPage);
-  const [kind, setKind] = useState<BillKind>('airtime');
+  const [kind, setKind] = useState<BillKind>(initialKind);
   const [result, setResult] = useState<BillPurchase | null>(null);
 
   const loading =

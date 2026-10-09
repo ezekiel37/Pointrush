@@ -147,7 +147,7 @@ export function CampaignTill({ id }: { id: string }) {
     >
       <DashHead
         title={data?.title ?? 'Campaign'}
-        intro="Confirm purchases at the till and manage cash back."
+        intro="Scan your customer's code to confirm their purchase. Their cash back is held, then paid to them."
       />
       {summary.loading && !data ? (
         <Loading>Loading campaign…</Loading>

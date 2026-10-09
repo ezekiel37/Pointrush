@@ -82,6 +82,11 @@ test('signup, verification, onboarding, signout and recovery use the real API', 
   await page.getByLabel('Display name', { exact: true }).fill('Ezekiel');
   await page.getByLabel('Username', { exact: true }).fill('browser_user');
   await page.getByRole('button', { name: 'Complete setup' }).click();
+  // A personal account with no business lands on offers.
+  await expect(page).toHaveURL(/\/offers$/);
+  await expect(page.getByRole('heading', { name: 'Offers' })).toBeVisible();
+  await page.goto('/account');
+  await expect(page).toHaveURL(/\/account$/);
   await expect(
     page.getByRole('heading', { name: 'Hello, Ezekiel.' }),
   ).toBeVisible();
@@ -113,9 +118,7 @@ test('signup, verification, onboarding, signout and recovery use the real API', 
   await page.getByLabel('Email address').fill(email);
   await page.getByLabel('Password', { exact: true }).fill(newPassword);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  await expect(
-    page.getByRole('heading', { name: 'Hello, Ezekiel.' }),
-  ).toBeVisible();
+  await expect(page).toHaveURL(/\/offers$/);
   expect(
     await page.evaluate(() => ({
       local: localStorage.length,

@@ -88,7 +88,7 @@ export function StaffManager() {
     >
       <DashHead
         title="Staff"
-        intro="People who can confirm purchases at your till. They cannot void purchases, move money or change campaigns."
+        intro="People who can confirm customers' purchases for you. They cannot void purchases, move money or change campaigns."
       />
       {staff.loading && !staff.data ? (
         <Loading>Loading staff…</Loading>
@@ -161,8 +161,8 @@ export function StaffManager() {
                     {confirming === m.id && (
                       <div className="confirm-strip">
                         <p style={{ margin: 0 }}>
-                          Remove {m.displayName ?? m.username}? They lose till
-                          access at once.
+                          Remove {m.displayName ?? m.username}? They lose access
+                          at once.
                         </p>
                         <div
                           className="row"
@@ -215,7 +215,7 @@ export function StaffManager() {
                 setUsername(e.target.value);
                 setError('');
               }}
-              hint="They find it on their profile. They accept under Staff, then see your tills there."
+              hint="They find it on their profile. They accept under Staff, then confirm purchases from there."
             />
             {error && <Feedback error>{error}</Feedback>}
             <Button variant="accent" type="submit" loading={busy}>

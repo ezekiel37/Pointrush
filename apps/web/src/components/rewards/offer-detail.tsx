@@ -78,7 +78,7 @@ function Ticket({ code, onRenew }: { code: Code; onRenew: () => void }) {
   return (
     <section className="ticket" aria-labelledby="ticket-heading">
       <div className="ticket-head">
-        <p className="eyebrow">Show at the till</p>
+        <p className="eyebrow">Show when you pay</p>
         <h2 id="ticket-heading">Your purchase code</h2>
       </div>
       <div className="ticket-body">
