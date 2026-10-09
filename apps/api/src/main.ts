@@ -8,6 +8,8 @@ import { configureHttp } from './http/configure-http.js';
 import { AuthService } from './auth/auth.service.js';
 import { paymentProvider } from './payments/payments.module.js';
 import { smsProvider } from './phone/phone.module.js';
+import { billProvider } from './bills/bills.module.js';
+import { BillsService } from './bills/bills.service.js';
 import { safeErrorSummary } from './database/safe-error.js';
 import { DatabaseService } from './database/database.service.js';
 import { inlineWorkerTasks, PeriodicRunner } from './workers/inline-workers.js';
@@ -15,6 +17,7 @@ import { inlineWorkerTasks, PeriodicRunner } from './workers/inline-workers.js';
 async function bootstrap(): Promise<void> {
   const config = readEnvironment(process.env);
   const payments = paymentProvider(config.payments);
+  const bills = billProvider(config.bills);
   const app = await NestFactory.create<NestExpressApplication>(
     AppModule.forRoot(
       config.database,
@@ -26,6 +29,7 @@ async function bootstrap(): Promise<void> {
         ...(config.sms ? { config: config.sms } : {}),
       },
       { jobs: config.jobsEnabled ?? true },
+      bills,
     ),
     {
       logger: new ConsoleLogger({ json: true }),
@@ -61,6 +65,7 @@ async function bootstrap(): Promise<void> {
             }
           : {}),
         ...(payments ? { payments } : {}),
+        ...(bills ? { bills: app.get(BillsService) } : {}),
       }),
     );
     if (config.auth && !config.resendApiKey)

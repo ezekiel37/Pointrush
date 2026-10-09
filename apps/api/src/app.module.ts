@@ -23,6 +23,8 @@ import { PhoneModule } from './phone/phone.module.js';
 import type { PhoneConfig } from './phone/phone.service.js';
 import type { SmsProvider } from './phone/sms.js';
 import { RateLimitGuard } from './http/rate-limit.js';
+import { BillsModule } from './bills/bills.module.js';
+import type { BillProvider } from './bills/provider.js';
 
 @Module({})
 export class AppModule {
@@ -33,6 +35,7 @@ export class AppModule {
     payments?: PaymentProvider,
     sms?: { provider?: SmsProvider; config?: PhoneConfig },
     features: { jobs: boolean } = { jobs: true },
+    bills?: BillProvider,
   ): DynamicModule {
     const imports: DynamicModule['imports'] = [
       DatabaseModule.forRoot(database),
@@ -45,6 +48,7 @@ export class AppModule {
         CampaignsModule,
         PaymentsModule.forRoot(payments, auth),
         PhoneModule.forRoot(sms?.provider, sms?.config),
+        BillsModule.forRoot(bills),
       );
     if (auth) {
       imports.push(

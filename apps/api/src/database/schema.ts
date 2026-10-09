@@ -184,3 +184,4 @@ export {
   accountAccessChanges,
   paymentEventReviews,
 } from '../admin/admin.schema.js';
+export { billPurchases, billOutcomes } from '../bills/bill.schema.js';

@@ -40,27 +40,28 @@ Brimble's screens may name things slightly differently from these steps. If a st
 
 ## 4. Server settings (Brimble environment variables)
 
-| Name                        | Value                                                                                       |
-| --------------------------- | ------------------------------------------------------------------------------------------- |
-| `NODE_ENV`                  | `production`                                                                                |
-| `FEATURE_JOBS`              | `on`                                                                                        |
-| `DATABASE_URL`              | The Supabase session pooler string                                                          |
-| `MIGRATION_DATABASE_URL`    | The same string                                                                             |
-| `DATABASE_CA_CERT`          | The certificate text. If the box takes only one line, join the lines with `\n` between them |
-| `DATABASE_POOL_MAX`         | `3`                                                                                         |
-| `CORS_ORIGINS`              | `https://acticlaim.com`                                                                     |
-| `AUTH_BASE_URL`             | `https://api.acticlaim.com`                                                                 |
-| `AUTH_TRUSTED_ORIGINS`      | `https://acticlaim.com`                                                                     |
-| `AUTH_SECRET`               | A random 48-character string (a password manager can generate one)                          |
-| `AUTH_EMAIL_ENCRYPTION_KEY` | Exactly 64 characters using only `0-9` and `a-f` (see below)                                |
-| `EMAIL_FROM`                | `accounts@mail.acticlaim.com` (shown to people as "Acticlaim")                              |
-| `EMAIL_REPLY_TO`            | Optional. Where replies go, for example `support@acticlaim.com`                             |
-| `RESEND_API_KEY`            | The Resend key                                                                              |
-| `PAYMENTS_PROVIDER`         | `bachs`                                                                                     |
-| `BACHS_API_KEY`             | `sk_sandbox_…`                                                                              |
-| `PAYMENTS_WEBHOOK_SECRET`   | From step 6                                                                                 |
-| `PAYMENTS_RETURN_ORIGIN`    | `https://acticlaim.com`                                                                     |
-| `SPONSOR_TERMS_VERSION`     | `2026-10`                                                                                   |
+| Name                        | Value                                                                                                        |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `NODE_ENV`                  | `production`                                                                                                 |
+| `FEATURE_JOBS`              | `on`                                                                                                         |
+| `DATABASE_URL`              | The Supabase session pooler string                                                                           |
+| `MIGRATION_DATABASE_URL`    | The same string                                                                                              |
+| `DATABASE_CA_CERT`          | The certificate text. If the box takes only one line, join the lines with `\n` between them                  |
+| `DATABASE_POOL_MAX`         | `3`                                                                                                          |
+| `CORS_ORIGINS`              | `https://acticlaim.com`                                                                                      |
+| `AUTH_BASE_URL`             | `https://api.acticlaim.com`                                                                                  |
+| `AUTH_TRUSTED_ORIGINS`      | `https://acticlaim.com`                                                                                      |
+| `AUTH_SECRET`               | A random 48-character string (a password manager can generate one)                                           |
+| `AUTH_EMAIL_ENCRYPTION_KEY` | Exactly 64 characters using only `0-9` and `a-f` (see below)                                                 |
+| `EMAIL_FROM`                | `accounts@mail.acticlaim.com` (shown to people as "Acticlaim")                                               |
+| `EMAIL_REPLY_TO`            | Optional. Where replies go, for example `support@acticlaim.com`                                              |
+| `BILLS_PROVIDER`            | Optional. `off` (default) until an airtime and bills provider is chosen; the wallet then shows "Coming soon" |
+| `RESEND_API_KEY`            | The Resend key                                                                                               |
+| `PAYMENTS_PROVIDER`         | `bachs`                                                                                                      |
+| `BACHS_API_KEY`             | `sk_sandbox_…`                                                                                               |
+| `PAYMENTS_WEBHOOK_SECRET`   | From step 6                                                                                                  |
+| `PAYMENTS_RETURN_ORIGIN`    | `https://acticlaim.com`                                                                                      |
+| `SPONSOR_TERMS_VERSION`     | `2026-10`                                                                                                    |
 
 For `AUTH_EMAIL_ENCRYPTION_KEY`, use a password generator set to "hex", or run `openssl rand -hex 32` on any Mac or Linux computer. Keep a copy in your password manager: if it changes, queued emails can no longer be read.
 

@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
-import { Check, Eye, EyeOff } from 'lucide-react';
+import { ArrowRight, Check, Eye, EyeOff } from 'lucide-react';
 import { Page } from '@/components/shell/app-shell';
 import { Button } from '@/components/ui/button';
 import { Feedback, Loading } from '@/components/ui/feedback';
@@ -232,6 +232,10 @@ export function Wallet() {
                     )}
                   </p>
                 )}
+                <Link className="wallet-spend" href="/wallet/bills">
+                  Buy airtime, data or pay bills{' '}
+                  <ArrowRight size={15} aria-hidden />
+                </Link>
               </div>
               <div className="card">
                 <p className="eyebrow">Held cash back</p>

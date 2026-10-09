@@ -48,6 +48,8 @@ const reasons: Record<string, string> = {
   'A second reviewer must approve': 'second_reviewer_required',
   'Unlock unavailable': 'unlock_unavailable',
   'Void limit reached': 'void_limit',
+  'Bill payment unavailable': 'bill_unavailable',
+  'Daily bill payment limit reached': 'bill_daily_limit',
   'Dispute unavailable': 'dispute_unavailable',
   'Ruling unavailable': 'ruling_unavailable',
 };

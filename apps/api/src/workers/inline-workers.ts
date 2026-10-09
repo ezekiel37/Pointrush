@@ -5,6 +5,7 @@ import { createResendPayloadSender } from '../auth/auth.email.js';
 import { EmailWorker } from '../auth/email-worker.js';
 import { PaymentsService } from '../payments/payments.service.js';
 import type { PaymentProvider } from '../payments/provider.js';
+import type { BillsService } from '../bills/bills.service.js';
 
 export interface PeriodicTask {
   name: string;
@@ -74,6 +75,7 @@ export function inlineWorkerTasks(options: {
   db: NodePgDatabase<typeof schema>;
   email?: { resendApiKey: string; encryptionKey: string };
   payments?: PaymentProvider;
+  bills?: Pick<BillsService, 'settlePending'>;
 }): PeriodicTask[] {
   const tasks: PeriodicTask[] = [];
   if (options.email) {
@@ -112,6 +114,18 @@ export function inlineWorkerTasks(options: {
           (value) => typeof value === 'number' && value > 0,
         );
         return busy ? result : undefined;
+      },
+    });
+  }
+  if (options.bills) {
+    const bills = options.bills;
+    // Purchases the provider had not confirmed yet are checked again.
+    tasks.push({
+      name: 'bill_settle_batch',
+      everyMs: 60_000,
+      run: async () => {
+        const result = await bills.settlePending(25);
+        return result.checked ? result : undefined;
       },
     });
   }

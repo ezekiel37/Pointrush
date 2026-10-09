@@ -1376,6 +1376,131 @@
     gap: 0.35rem;
     padding-bottom: 0;
   }
+  /* Airtime, data and bills */
+  .bills-balance {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0;
+  }
+  .bills-balance .amount {
+    font-size: 1.5rem;
+  }
+  .bills-kinds {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .bills-kinds button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+  }
+  @media (max-width: 420px) {
+    .bills-kinds {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .bill-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .bill-chips button,
+  .bill-plans button {
+    min-height: 44px;
+    padding: 0 1rem;
+    border: 1px solid var(--color-line);
+    border-radius: 999px;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font: 550 0.9rem var(--font-sans);
+  }
+  .bill-chips button[aria-pressed='true'],
+  .bill-plans button[aria-pressed='true'] {
+    border-color: var(--color-brand);
+    background: var(--color-brand-soft);
+    color: var(--color-brand-text);
+  }
+  .bill-plans {
+    display: grid;
+    gap: 0.5rem;
+  }
+  .bill-plans button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: 14px;
+    text-align: left;
+  }
+  .bill-review {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+  }
+  .bill-review > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .bill-review dt {
+    color: var(--color-muted);
+  }
+  .bill-review dd {
+    margin: 0;
+    text-align: right;
+    font-weight: 600;
+  }
+  .bill-receipt .celebrate {
+    margin: 0;
+  }
+  .bill-token {
+    display: grid;
+    gap: 0.4rem;
+    justify-items: start;
+  }
+  .bill-token strong {
+    font-size: 1.35rem;
+    letter-spacing: 0.04em;
+  }
+  .bills-history {
+    display: grid;
+    gap: 1rem;
+    margin: 0.75rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .bills-history li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.75rem;
+    align-items: center;
+  }
+  .bills-history li > span:nth-child(2) {
+    display: grid;
+    gap: 0.1rem;
+    min-width: 0;
+  }
+  .bills-history li .small-note {
+    overflow-wrap: anywhere;
+  }
+  .bills-history-end {
+    display: grid;
+    justify-items: end;
+    gap: 0.25rem;
+  }
+  .wallet-spend {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.75rem;
+    color: var(--color-lime);
+    font-weight: 550;
+    text-decoration: none;
+  }
+  .wallet-spend:hover {
+    text-decoration: underline;
+  }
   /* Customer loyalty counts on the business home: a plain list, no boxes. */
   .loyalty-list {
     display: grid;

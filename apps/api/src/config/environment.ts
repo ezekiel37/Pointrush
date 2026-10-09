@@ -41,6 +41,9 @@ const schema = z.object({
   PAYMENTS_RETURN_ORIGIN: z.string().optional(),
   // Only the in-memory test provider exists until an SMS adapter is chosen.
   SMS_PROVIDER: z.enum(['test']).optional(),
+  // Airtime, data, electricity and TV from the wallet. Off until a provider
+  // is chosen; only the test provider exists so far.
+  BILLS_PROVIDER: z.enum(['off', 'test']).default('off'),
   // Country calling codes SMS may go to, e.g. "+234,+233". Limits SMS fraud.
   SMS_ALLOWED_PREFIXES: z
     .string()
@@ -107,6 +110,7 @@ export interface Environment {
   resendApiKey?: string;
   payments?: PaymentsEnvironment;
   sms?: SmsEnvironment;
+  bills?: { provider: 'test' };
   nodeEnv: 'development' | 'test' | 'production';
   port: number;
   corsOrigins: string[];
@@ -122,6 +126,7 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
     RESEND_API_KEY,
     PAYMENTS_PROVIDER,
     PAYMENTS_WEBHOOK_SECRET,
+    BILLS_PROVIDER,
     BACHS_API_KEY,
     PAYMENTS_RETURN_ORIGIN,
     SMS_PROVIDER,
@@ -168,6 +173,9 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
       throw new Error('A sk_live_ Bachs key can only be used in production');
   } else if (BACHS_API_KEY) {
     throw new Error('BACHS_API_KEY is set but PAYMENTS_PROVIDER is not bachs');
+  }
+  if (BILLS_PROVIDER === 'test' && NODE_ENV === 'production') {
+    throw new Error('The test bills provider cannot run in production');
   }
   if (SMS_PROVIDER === 'test' && NODE_ENV === 'production') {
     throw new Error('The test SMS provider cannot run in production');
@@ -244,6 +252,9 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
             dailyLimit: SMS_DAILY_LIMIT,
           },
         }
+      : {}),
+    ...(BILLS_PROVIDER === 'test'
+      ? { bills: { provider: 'test' as const } }
       : {}),
     nodeEnv: NODE_ENV,
     port: PORT,

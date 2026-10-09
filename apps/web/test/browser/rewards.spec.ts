@@ -929,3 +929,167 @@ test('dark mode keeps every text colour readable', async ({ page }) => {
   await page.goto('/claim');
   await healthy(page);
 });
+
+test('wallet pays airtime and electricity once, with the password, and shows the token', async ({
+  page,
+}) => {
+  await phone(page);
+  let walletKobo = '200000';
+  await page.route('**/api/v1/points', (route) =>
+    route.fulfill({
+      json: {
+        points: { available: '0', pending: '0' },
+        walletKobo,
+        tier: {
+          name: 'New',
+          businesses: 1,
+          next: { name: 'Bronze', businesses: 3 },
+        },
+        phoneVerified: true,
+        referral: { code: null, referredBy: null, referred: 0, rewarded: 0 },
+      },
+    }),
+  );
+  await page.route('**/api/v1/wallet/bills/options', (route) =>
+    route.fulfill({
+      json: {
+        available: true,
+        minKobo: '5000',
+        maxKobo: '5000000',
+        billers: [
+          { id: 'mtn', kind: 'airtime', name: 'MTN', plans: null },
+          { id: 'airtel', kind: 'airtime', name: 'Airtel', plans: null },
+          {
+            id: 'mtn-data',
+            kind: 'data',
+            name: 'MTN',
+            plans: [
+              { code: 'mtn-1gb-1d', name: '1GB, 1 day', amountKobo: '35000' },
+            ],
+          },
+          {
+            id: 'ikedc',
+            kind: 'electricity',
+            name: 'Ikeja Electric (prepaid)',
+            plans: null,
+          },
+          { id: 'dstv', kind: 'tv', name: 'DStv', plans: [] },
+        ],
+      },
+    }),
+  );
+  await page.route('**/api/v1/wallet/bills/verify', (route) =>
+    route.fulfill({ json: { name: 'ADA OKAFOR' } }),
+  );
+  const bodies: Record<string, string>[] = [];
+  const done: Record<string, unknown>[] = [];
+  await page.route('**/api/v1/wallet/bills?*', (route) =>
+    route.fulfill({ json: { items: done, nextCursor: null } }),
+  );
+  await page.route('**/api/v1/wallet/bills', (route) => {
+    const body = route.request().postDataJSON();
+    if (body.password !== 'correct horse battery')
+      return route.fulfill({
+        status: 409,
+        json: { statusCode: 409, reason: 'password_required' },
+      });
+    bodies.push(body);
+    // The first response is lost; the retry reuses the same ID.
+    if (bodies.length === 1) return route.abort();
+    const result = {
+      id: body.id,
+      kind: body.kind,
+      biller: body.biller,
+      customerRef: body.customerRef,
+      planCode: body.planCode ?? null,
+      amountKobo: body.amountKobo,
+      createdAt: '2026-10-09T12:00:00Z',
+      state: 'delivered',
+      token: body.kind === 'electricity' ? '1234-5678-9012-3456-7890' : null,
+      failure: null,
+    };
+    done.unshift(result);
+    walletKobo = String(BigInt(walletKobo) - BigInt(body.amountKobo));
+    return route.fulfill({ json: result });
+  });
+
+  await page.goto('/wallet');
+  await page
+    .getByRole('link', { name: /Buy airtime, data or pay bills/ })
+    .click();
+  await page.waitForURL('**/wallet/bills');
+  await expect(page.getByText('₦2,000')).toBeVisible();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByText(/11-digit phone number/)).toBeVisible();
+  await page.getByLabel('Phone number').fill('0803 123 4567');
+  await page.getByLabel('Amount in naira').fill('500');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByText('Check and pay')).toBeVisible();
+  await healthy(page);
+  await page.getByRole('button', { name: 'Pay ₦500' }).click();
+  await expect(page.getByText(/Enter your password/)).toBeVisible();
+  await page.getByLabel('Your password', { exact: true }).fill('wrong');
+  await page.getByRole('button', { name: 'Pay ₦500' }).click();
+  await expect(page.getByText('That password is not right.')).toBeVisible();
+  await page
+    .getByLabel('Your password', { exact: true })
+    .fill('correct horse battery');
+  await page.getByRole('button', { name: 'Pay ₦500' }).click();
+  await expect(page.getByText(/never be charged twice/)).toBeVisible();
+  await page.getByRole('button', { name: 'Pay ₦500' }).click();
+  await expect(page.getByRole('heading', { name: 'Done' })).toBeVisible();
+  expect(bodies).toHaveLength(2);
+  expect(bodies[0]!.id).toBe(bodies[1]!.id);
+  expect(bodies[1]).toMatchObject({
+    kind: 'airtime',
+    biller: 'mtn',
+    customerRef: '08031234567',
+    amountKobo: '50000',
+  });
+
+  await page.getByRole('button', { name: 'Pay another' }).click();
+  await page.getByRole('button', { name: 'Electricity' }).click();
+  await page.getByLabel('Meter number').fill('45012345678');
+  await page.getByLabel('Amount in naira').fill('1,000');
+  await page.getByRole('button', { name: 'Check number' }).click();
+  await expect(page.getByText('ADA OKAFOR')).toBeVisible();
+  await page
+    .getByLabel('Your password', { exact: true })
+    .fill('correct horse battery');
+  await page.getByRole('button', { name: 'Pay ₦1,000' }).click();
+  await expect(page.getByText('1234-5678-9012-3456-7890')).toBeVisible();
+  await healthy(page);
+  await expect(page.getByText('Recent payments')).toBeVisible();
+});
+
+test('bills show coming soon until a provider is connected', async ({
+  page,
+}) => {
+  await phone(page);
+  await page.route('**/api/v1/points', (route) =>
+    route.fulfill({
+      json: {
+        points: { available: '0', pending: '0' },
+        walletKobo: '0',
+        tier: {
+          name: 'New',
+          businesses: 0,
+          next: { name: 'Bronze', businesses: 3 },
+        },
+        phoneVerified: false,
+        referral: { code: null, referredBy: null, referred: 0, rewarded: 0 },
+      },
+    }),
+  );
+  await page.route('**/api/v1/wallet/bills/options', (route) =>
+    route.fulfill({ json: { available: false, billers: [] } }),
+  );
+  await page.route('**/api/v1/wallet/bills?*', (route) =>
+    route.fulfill({ json: { items: [], nextCursor: null } }),
+  );
+  await page.goto('/wallet/bills');
+  await expect(
+    page.getByRole('heading', { name: 'Coming soon' }),
+  ).toBeVisible();
+  await healthy(page);
+});
