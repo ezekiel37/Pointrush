@@ -1,4 +1,8 @@
-import { ConflictException, ForbiddenException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 import type { FundingDatabase } from '../funding/funding-ledger.js';
 import * as s from '../database/schema.js';
@@ -70,9 +74,21 @@ const reasons: Record<string, string> = {
   'Removal unavailable': 'removal_unavailable',
 };
 
+// Postgres cancelled the transaction to break a lock cycle (40P01) or a
+// serialization conflict (40001). Nothing was written; trying again is safe.
+function retryable(error: unknown) {
+  return ['40P01', '40001'].includes(databaseError(error).code ?? '');
+}
+
 // The same mapping for transactions that do not resolve an actor first.
 export function conflictFromDatabase(error: unknown) {
   const { code, message } = databaseError(error);
+  if (retryable(error))
+    return new ServiceUnavailableException({
+      statusCode: 503,
+      message: 'Busy right now. Try again.',
+      reason: 'busy',
+    });
   if (['23514', '23505', '23503'].includes(code ?? ''))
     return new ConflictException({
       statusCode: 409,
@@ -96,32 +112,48 @@ export async function actorTransaction<T>(
   authUserId: string,
   action: (tx: FundingDatabase, actor: string) => Promise<T>,
 ) {
-  try {
-    return await db.transaction(async (tx) => {
-      const [actor] = await tx
-        .select({ id: s.accounts.id })
-        .from(s.accounts)
-        .innerJoin(
-          s.authAccountLinks,
-          eq(s.authAccountLinks.accountId, s.accounts.id),
-        )
-        .innerJoin(
-          s.authUsers,
-          eq(s.authUsers.id, s.authAccountLinks.authUserId),
-        )
-        .where(
-          and(
-            eq(s.authUsers.id, authUserId),
-            eq(s.authUsers.emailVerified, true),
-            eq(s.accounts.accessState, 'active'),
-          ),
-        )
-        .for('share', { of: s.accounts });
-      if (!actor)
-        throw new ForbiddenException('Active linked account required');
-      return action(tx, actor.id);
-    });
-  } catch (error) {
-    throw conflictFromDatabase(error);
+  // Two payouts can lock the same wallets in opposite order (an inviter paid
+  // at the moment a friend's payout pays them a referral reward). Postgres
+  // cancels one; it is run again. Actions only write to the database, or
+  // write to storage under a fixed key, so a rerun repeats nothing.
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await attemptActorTransaction(db, authUserId, action);
+    } catch (error) {
+      if (attempt < 3 && retryable(error)) {
+        await new Promise((r) =>
+          setTimeout(r, 10 + Math.random() * 40 * attempt),
+        );
+        continue;
+      }
+      throw conflictFromDatabase(error);
+    }
   }
+}
+
+async function attemptActorTransaction<T>(
+  db: FundingDatabase,
+  authUserId: string,
+  action: (tx: FundingDatabase, actor: string) => Promise<T>,
+) {
+  return db.transaction(async (tx) => {
+    const [actor] = await tx
+      .select({ id: s.accounts.id })
+      .from(s.accounts)
+      .innerJoin(
+        s.authAccountLinks,
+        eq(s.authAccountLinks.accountId, s.accounts.id),
+      )
+      .innerJoin(s.authUsers, eq(s.authUsers.id, s.authAccountLinks.authUserId))
+      .where(
+        and(
+          eq(s.authUsers.id, authUserId),
+          eq(s.authUsers.emailVerified, true),
+          eq(s.accounts.accessState, 'active'),
+        ),
+      )
+      .for('share', { of: s.accounts });
+    if (!actor) throw new ForbiddenException('Active linked account required');
+    return action(tx, actor.id);
+  });
 }

@@ -41,6 +41,7 @@ import {
   taskReviewerGrants,
   taskReviews,
 } from '../../src/database/schema.js';
+import { lowLimits } from '../helpers/settings.js';
 import { TaskReviewService } from '../../src/reviews/task-review.service.js';
 import { taskReviewChecklist } from '../../src/reviews/task-review.schema.js';
 import { SponsorsService } from '../../src/sponsors/sponsors.service.js';
@@ -341,6 +342,8 @@ before(async () => {
   database = new DatabaseService(config);
   assert.equal(await database.isReady(), false);
   await runMigrations(config, folder);
+  // These tests use tiny amounts, below the launch minimums.
+  await lowLimits(database.db);
 });
 
 after(async () => {
