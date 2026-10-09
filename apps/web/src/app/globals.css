@@ -1376,6 +1376,28 @@
     gap: 0.35rem;
     padding-bottom: 0;
   }
+  /* Customer loyalty counts on the business home: a plain list, no boxes. */
+  .loyalty-list {
+    display: grid;
+    gap: 0.9rem;
+    margin: 0;
+  }
+  .loyalty-list > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .loyalty-list dt {
+    display: grid;
+    gap: 0.1rem;
+    font-weight: 550;
+  }
+  .loyalty-list dd {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
   .lp-audience-icon {
     color: var(--color-brand-text);
   }

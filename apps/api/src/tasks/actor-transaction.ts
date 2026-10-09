@@ -11,6 +11,7 @@ const reasons: Record<string, string> = {
   'Too many purchase codes requested': 'code_rate_limit',
   'Offer unavailable': 'offer_unavailable',
   'Purchase cannot be confirmed': 'confirmation_rejected',
+  'Cash back already given for this period': 'already_rewarded',
   'Purchase cannot be voided': 'void_rejected',
   'Cash back is not releasable': 'not_releasable',
   'Referral unavailable': 'referral_unavailable',

@@ -37,6 +37,7 @@ const pending = z.object({
       holdHours: z.number(),
       placeName: z.string(),
       placeAddress: z.string(),
+      repeat: z.literal('monthly').optional(),
     })
     .nullable(),
   promotionTerms: z
@@ -162,6 +163,12 @@ function Terms({ task }: { task: Pending }) {
           : naira(task.campaignTerms.minSpendKobo),
       ],
       ['Refund hold', `${task.campaignTerms.holdHours} hours`],
+      [
+        'How often',
+        task.campaignTerms.repeat === 'monthly'
+          ? 'Once per customer per month'
+          : 'Once per customer',
+      ],
     );
   if (task.promotionTerms)
     rows.push(

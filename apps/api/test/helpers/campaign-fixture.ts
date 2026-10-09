@@ -104,6 +104,7 @@ export async function campaignFixture() {
     capacity = 2,
     cashback = '50000',
     merchant?: Identity,
+    options: { terms?: Record<string, unknown>; days?: number } = {},
   ) {
     const owner = merchant ?? (await business());
     await fund(owner.account, BigInt(cashback) * BigInt(capacity));
@@ -118,8 +119,10 @@ export async function campaignFixture() {
       capacity,
       rewardKobo: cashback,
       startsAt: start.toISOString(),
-      endsAt: new Date(start.getTime() + 2 * 86400000).toISOString(),
-      campaignTerms,
+      endsAt: new Date(
+        start.getTime() + (options.days ?? 2) * 86400000,
+      ).toISOString(),
+      campaignTerms: { ...campaignTerms, ...options.terms },
     });
     const [row] = await db
       .select()

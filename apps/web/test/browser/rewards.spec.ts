@@ -40,6 +40,15 @@ function overview(days: number) {
       voided: 1,
       returningShoppers: 9,
     },
+    customers: {
+      total: 31,
+      thisMonth: 14,
+      new: 5,
+      returning: 9,
+      regular: 6,
+      longTerm: 2,
+      slippingAway: 3,
+    },
     availableKobo: '2500000',
     lockedKobo: '6450000',
     paidOutKobo: '1500000',
@@ -466,6 +475,10 @@ test('business overview chart reads by keyboard, switches range and fits a phone
   await expect(
     page.getByRole('link', { name: 'Lunch cash back' }),
   ).toBeVisible();
+  const loyalty = page.getByRole('region', { name: 'Your customers' });
+  await expect(loyalty).toContainText('31 people have bought');
+  await expect(loyalty.getByText('Regulars')).toBeVisible();
+  await expect(loyalty).toContainText('Bring them back with a monthly offer');
   await healthy(page);
   const chart = page.getByRole('group', {
     name: /Confirmed purchases per day/,

@@ -43,7 +43,7 @@ function codeError(error: unknown) {
   if (error instanceof RequestError) {
     if (error.status === 401) return 'Sign in to get your code.';
     if (error.code === 'offer_unavailable')
-      return 'This offer is not available to you. You may have used it already, or it is not running right now.';
+      return 'This offer is not available to you right now. You may have used it already (monthly offers come back next month), or it is not running.';
     if (error.code === 'code_rate_limit')
       return 'Too many codes requested. Use your latest code or try again later.';
   }
@@ -235,6 +235,14 @@ export function OfferDetail({ id }: { id: string }) {
                     <span className="small-note icon-line">
                       <MapPin size={14} aria-hidden /> {terms.placeAddress}
                     </span>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="eyebrow">How often</dt>
+                  <dd style={{ margin: 0 }}>
+                    {terms.repeat === 'monthly'
+                      ? 'Once a month: come back next month for more'
+                      : 'Once per customer'}
                   </dd>
                 </div>
                 <div>

@@ -67,6 +67,39 @@ export class BusinessOverviewService {
           left join purchase_releases r on r.confirmation_id = p.id`),
       );
 
+      // Loyalty from confirmed purchases (a void counts only if a reviewer
+      // reversed it), in Lagos calendar months. Counts only: the business
+      // never sees who its customers are.
+      const [loyalty] = rows(
+        await tx.execute(sql`
+          with owned as (${owned}),
+          now as (select date_trunc('month', clock_timestamp() at time zone 'Africa/Lagos') as m, clock_timestamp() as ts),
+          counted as (
+            select p.account_id, p.created_at,
+              date_trunc('month', p.created_at at time zone 'Africa/Lagos') as m
+            from purchase_confirmations p join owned o on o.id = p.task_id
+            where not exists (select 1 from purchase_voids v where v.confirmation_id = p.id)
+              or exists (select 1 from purchase_void_rulings r where r.confirmation_id = p.id and r.decision = 'reversed')
+          ),
+          per as (
+            select c.account_id, min(c.m) as first_m, max(c.created_at) as last_at, count(*) as purchases,
+              bool_or(c.m = n.m) as this_m,
+              bool_or(c.m = n.m - interval '1 month') as m1,
+              bool_or(c.m = n.m - interval '2 months') as m2
+            from counted c cross join now n group by c.account_id
+          )
+          select
+            count(*)::int as total,
+            count(*) filter (where p.this_m)::int as this_month,
+            count(*) filter (where p.first_m = n.m)::int as new,
+            count(*) filter (where p.this_m and p.first_m < n.m)::int as returning,
+            count(*) filter (where p.this_m and p.m1 and p.m2)::int as regular,
+            count(*) filter (where p.first_m <= n.m - interval '6 months' and (p.this_m or p.m1))::int as long_term,
+            count(*) filter (where p.purchases >= 2 and p.last_at < n.ts - interval '30 days'
+              and p.last_at >= n.ts - interval '90 days')::int as slipping
+          from per p cross join now n`),
+      );
+
       const [money] = rows(
         await tx.execute(sql`
           with owned as (${owned})
@@ -126,6 +159,19 @@ export class BusinessOverviewService {
           paid: int(states?.paid),
           voided: int(states?.voided),
           returningShoppers: int(states?.returning),
+        },
+        // New: first purchase this month. Returning: back this month after an
+        // earlier month. Regular: each of the last 3 months. Long-term: first
+        // came 6+ months ago and seen this or last month. Slipping away:
+        // bought at least twice, nothing in 30 days (up to 90).
+        customers: {
+          total: int(loyalty?.total),
+          thisMonth: int(loyalty?.this_month),
+          new: int(loyalty?.new),
+          returning: int(loyalty?.returning),
+          regular: int(loyalty?.regular),
+          longTerm: int(loyalty?.long_term),
+          slippingAway: int(loyalty?.slipping),
         },
         availableKobo: kobo(money?.available),
         lockedKobo: kobo(money?.locked),

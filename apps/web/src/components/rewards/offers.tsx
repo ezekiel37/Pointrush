@@ -51,6 +51,8 @@ export function OfferList() {
                       {offer.campaignTerms.minSpendKobo === '0'
                         ? 'Any purchase'
                         : `Spend ${naira(offer.campaignTerms.minSpendKobo)} or more`}
+                      {offer.campaignTerms.repeat === 'monthly' &&
+                        ' · once a month'}
                     </p>
                   )}
                   {offer.campaignTerms && (

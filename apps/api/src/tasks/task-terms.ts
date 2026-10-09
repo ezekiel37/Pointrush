@@ -22,6 +22,9 @@ export const campaignTermsSchema = z
     holdHours: z.number().int().min(24).max(720),
     placeName: z.string().trim().min(1).max(160),
     placeAddress: z.string().trim().min(1).max(300),
+    // Omitted: one cash back per shopper. 'monthly': one per shopper per
+    // Lagos calendar month, so the business can see who keeps coming back.
+    repeat: z.literal('monthly').optional(),
   })
   .strict();
 export type CampaignTerms = z.infer<typeof campaignTermsSchema>;

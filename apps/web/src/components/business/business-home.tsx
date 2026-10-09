@@ -135,8 +135,8 @@ export function BusinessHome() {
                 <dd>{data.live}</dd>
               </div>
               <div className="stat">
-                <dt>Shoppers who came back</dt>
-                <dd>{purchases.returningShoppers}</dd>
+                <dt>Customers this month</dt>
+                <dd>{data.customers.thisMonth}</dd>
               </div>
             </dl>
             <div className="dash-grid">
@@ -201,6 +201,7 @@ export function BusinessHome() {
                 />
               </section>
             </div>
+            <Customers customers={data.customers} />
             <section className="card" aria-labelledby="campaigns-heading">
               <div className="row" style={{ alignItems: 'flex-start' }}>
                 <div className="card-head">
@@ -228,6 +229,65 @@ export function BusinessHome() {
         )
       )}
     </DashShell>
+  );
+}
+
+type CustomerCounts = z.infer<typeof businessOverview>['customers'];
+
+// Loyalty from confirmed purchases. Counts only: owners never see who their
+// customers are.
+function Customers({ customers }: { customers: CustomerCounts }) {
+  const rows: [string, number, string][] = [
+    ['New', customers.new, 'First purchase this month'],
+    [
+      'Returning',
+      customers.returning,
+      'Back this month after an earlier visit',
+    ],
+    ['Regulars', customers.regular, 'Bought in each of the last 3 months'],
+    ['Long-term', customers.longTerm, 'With you for 6 months or more'],
+    [
+      'Slipping away',
+      customers.slippingAway,
+      'Came at least twice, not seen in 30 days',
+    ],
+  ];
+  return (
+    <section className="card" aria-labelledby="customers-heading">
+      <div className="card-head">
+        <h2 id="customers-heading">Your customers</h2>
+        <p>
+          {customers.total.toLocaleString('en-NG')} people have bought with
+          Acticlaim. Only purchases confirmed at your till count.
+        </p>
+      </div>
+      <dl className="loyalty-list">
+        {rows.map(([label, value, hint]) => (
+          <div key={label}>
+            <dt>
+              <span>{label}</span>
+              <span className="small-note">{hint}</span>
+            </dt>
+            <dd className="num">{value.toLocaleString('en-NG')}</dd>
+          </div>
+        ))}
+      </dl>
+      {customers.total === 0 ? (
+        <p className="small-note" style={{ marginBottom: 0 }}>
+          Run a cash back offer to start seeing who comes back. Choose{' '}
+          <strong>Once a month</strong> to follow your regulars.
+        </p>
+      ) : (
+        customers.slippingAway > 0 && (
+          <p className="small-note" style={{ marginBottom: 0 }}>
+            Bring them back with a monthly offer.{' '}
+            <Link className="text-link" href="/business/campaigns/new">
+              Start one
+            </Link>
+          </p>
+        )
+      )}
+    </section>
   );
 }
 

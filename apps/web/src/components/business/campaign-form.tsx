@@ -104,6 +104,7 @@ export function CampaignForm({ model }: { model: Model }) {
     endsAt: localInput(new Date(start.getTime() + 30 * 86400000)),
     minSpend: '0',
     holdHours: 72,
+    repeat: 'once' as 'once' | 'monthly',
     placeName: '',
     placeAddress: '',
     voidWhen: 'Refunded or cancelled orders.',
@@ -189,6 +190,7 @@ export function CampaignForm({ model }: { model: Model }) {
             holdHours: form.holdHours,
             placeName: form.placeName.trim(),
             placeAddress: form.placeAddress.trim(),
+            ...(form.repeat === 'monthly' ? { repeat: 'monthly' } : {}),
           },
         }
       : {
@@ -361,6 +363,39 @@ export function CampaignForm({ model }: { model: Model }) {
                   inputMode: 'decimal',
                   hint: '0 means any purchase qualifies.',
                 })}
+              {model === 'purchase_cashback' && (
+                <div className="field">
+                  <span className="field-label" id="repeat-label">
+                    How often each customer gets it
+                  </span>
+                  <div
+                    className="segmented preset-row two"
+                    role="group"
+                    aria-labelledby="repeat-label"
+                  >
+                    {(
+                      [
+                        ['once', 'Once'],
+                        ['monthly', 'Once a month'],
+                      ] as const
+                    ).map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        aria-pressed={form.repeat === value}
+                        onClick={() => set('repeat')(value)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="field-help">
+                    {form.repeat === 'monthly'
+                      ? 'A customer can get it again each new month, so you can see who keeps coming back. The number of cash backs above is the total across all months.'
+                      : 'Each customer gets this cash back one time.'}
+                  </p>
+                </div>
+              )}
             </Section>
 
             {model === 'purchase_cashback' ? (

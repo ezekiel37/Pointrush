@@ -126,7 +126,7 @@ test('code -> till confirmation -> hold -> release credits cash back exactly onc
   // A photographed code cannot be used again, and one purchase per shopper per campaign.
   assert.equal(
     await reason(campaigns.confirm(merchant.user, id, confirmation(code.code))),
-    'not_eligible',
+    'already_rewarded',
   );
   assert.equal(
     await reason(campaigns.activate(shopper.user, id)),
@@ -411,6 +411,68 @@ test('business overview counts only its own activity by Lagos day and state', as
     status: 400,
   });
   await assert.rejects(overviews.overview(a.user), { status: 404 });
+});
+
+test('a monthly offer pays each shopper once per Lagos month, and the overview counts loyalty', async () => {
+  const overviews = new BusinessOverviewService(db);
+  const { merchant, id } = await campaign(10, '20000', undefined, {
+    terms: { repeat: 'monthly' },
+    days: 120,
+  });
+  const [regular, once] = [await identity(), await identity()];
+  const buy = async (person: { user: string }) => {
+    const code = await campaigns.activate(person.user, id);
+    return campaigns.confirm(merchant.user, id, confirmation(code.code));
+  };
+  // Noon (Lagos) on the 1st of a coming month.
+  const monthsAhead = async (months: number) => {
+    const [row] = (
+      await pg.query<{ offset: string }>(
+        `select ((date_trunc('month', pg_catalog.clock_timestamp() at time zone 'Africa/Lagos')
+          + make_interval(months => $1::int) + interval '12 hours') at time zone 'Africa/Lagos'
+          - pg_catalog.clock_timestamp())::text as offset`,
+        [months],
+      )
+    ).rows;
+    await travel(row!.offset);
+  };
+  try {
+    await monthsAhead(1);
+    await buy(regular);
+    await buy(once);
+    // Once a month: the same shopper cannot get a second code or reward now.
+    assert.equal(
+      await reason(campaigns.activate(regular.user, id)),
+      'offer_unavailable',
+    );
+    await monthsAhead(2);
+    await buy(regular);
+    await monthsAhead(3);
+    await buy(regular);
+    const view = await overviews.overview(merchant.user, { days: '7' });
+    assert.deepEqual(view.customers, {
+      total: 2,
+      thisMonth: 1,
+      new: 0,
+      returning: 1,
+      regular: 1,
+      longTerm: 0,
+      slippingAway: 0,
+    });
+    assert.equal((await campaigns.summary(merchant.user, id)).confirmed, 4);
+    // Forty days without a visit: the regular is now slipping away.
+    const [shifted] = (
+      await pg.query<{ o: string }>(
+        `select (current_setting('test.offset')::interval + interval '40 days')::text as o`,
+      )
+    ).rows;
+    await travel(shifted!.o);
+    const later = await overviews.overview(merchant.user, { days: '7' });
+    assert.equal(later.customers.slippingAway, 1);
+    assert.equal(later.customers.thisMonth, 0);
+  } finally {
+    await travel('0');
+  }
 });
 
 test('voids are capped at 20%, shoppers can dispute for 7 days, and voided money stays locked until decided', async () => {

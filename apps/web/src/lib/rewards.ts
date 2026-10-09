@@ -32,6 +32,7 @@ export const campaignTerms = z.object({
   holdHours: z.number(),
   placeName: z.string(),
   placeAddress: z.string(),
+  repeat: z.literal('monthly').optional(),
 });
 export const offerSummary = z.object({
   id: z.uuid(),
@@ -239,6 +240,15 @@ export const businessOverview = z.object({
     paid: z.number().int(),
     voided: z.number().int(),
     returningShoppers: z.number().int(),
+  }),
+  customers: z.object({
+    total: z.number().int(),
+    thisMonth: z.number().int(),
+    new: z.number().int(),
+    returning: z.number().int(),
+    regular: z.number().int(),
+    longTerm: z.number().int(),
+    slippingAway: z.number().int(),
   }),
   availableKobo: money,
   lockedKobo: money,

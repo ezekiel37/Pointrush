@@ -84,6 +84,11 @@ export const sponsorTasks = pgTable(
       'sponsor_task_campaign_terms',
       sql`(${t.model} = 'purchase_cashback') = (${t.campaignTerms} is not null) and (${t.model} <> 'purchase_cashback' or ${t.workTerms} is null)`,
     ),
+    // A cash back offer is once per shopper, or once per shopper per month.
+    check(
+      'sponsor_task_campaign_repeat',
+      sql`${t.campaignTerms} is null or not (${t.campaignTerms} ? 'repeat') or ${t.campaignTerms}->>'repeat' = 'monthly'`,
+    ),
     check(
       'sponsor_task_promotion_terms',
       sql`(${t.model} = 'claim_code') = (${t.promotionTerms} is not null) and (${t.model} <> 'claim_code' or ${t.workTerms} is null)`,

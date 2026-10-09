@@ -64,6 +64,15 @@ function overview(campaigns: Record<string, unknown>[] = []) {
       claims: 0,
     })),
     purchases: { held: 0, ready: 0, paid: 0, voided: 0, returningShoppers: 0 },
+    customers: {
+      total: 0,
+      thisMonth: 0,
+      new: 0,
+      returning: 0,
+      regular: 0,
+      longTerm: 0,
+      slippingAway: 0,
+    },
     availableKobo: '2500000',
     lockedKobo: '0',
     paidOutKobo: '0',
@@ -101,6 +110,8 @@ test('a cash back offer locks exactly what the business can afford and survives 
   ).toBeDisabled();
   await page.getByLabel('Number of shoppers').fill('40');
   await page.getByLabel('Minimum spend (₦)').fill('3,000');
+  await page.getByRole('button', { name: 'Once a month' }).click();
+  await expect(page.getByText(/again each new month/)).toBeVisible();
   await page.getByLabel('Place name').fill('Mama Put Kitchen');
   await page.getByLabel('Address').fill('12 Campus Road, Ibadan');
   await page.getByRole('button', { name: '7 days' }).click();
@@ -123,6 +134,7 @@ test('a cash back offer locks exactly what the business can afford and survives 
       holdHours: 168,
       placeName: 'Mama Put Kitchen',
       placeAddress: '12 Campus Road, Ibadan',
+      repeat: 'monthly',
     },
   });
 });

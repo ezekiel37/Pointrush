@@ -55,11 +55,19 @@ export const purchaseConfirmations = pgTable(
       .notNull()
       .references(() => accounts.id),
     amountKobo: bigint('amount_kobo', { mode: 'bigint' }).notNull(),
+    // 'once' for a one-off offer; the Lagos calendar month ('2026-10') for a
+    // monthly offer. Set by the database, never by the caller.
+    period: varchar('period', { length: 7 }).notNull().default('once'),
     releaseAt: at('release_at').notNull(),
     createdAt: at('created_at').notNull().defaultNow(),
   },
   (t) => [
-    uniqueIndex('purchase_once_per_campaign').on(t.taskId, t.accountId),
+    // One cash back per shopper per campaign, or per month for monthly offers.
+    uniqueIndex('purchase_once_per_period').on(t.taskId, t.accountId, t.period),
+    check(
+      'purchase_period_format',
+      sql`${t.period} = 'once' or ${t.period} ~ '^[0-9]{4}-(0[1-9]|1[0-2])$'`,
+    ),
     index('purchase_shopper_recent').on(t.accountId, t.createdAt),
     check('purchase_amount_positive', sql`${t.amountKobo} > 0`),
   ],

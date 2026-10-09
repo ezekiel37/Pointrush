@@ -34,6 +34,8 @@ function tillError(error: unknown) {
         return 'All cash back places for this offer are used.';
       case 'daily_limit':
         return 'This shopper has reached the daily limit of offers. No cash back is recorded.';
+      case 'already_rewarded':
+        return 'This customer already got this cash back. Monthly offers can be used again next month.';
       case 'not_eligible':
         return 'This code was already used, or this shopper already has this offer.';
     }
