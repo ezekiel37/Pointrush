@@ -89,6 +89,18 @@ export const sponsorTasks = pgTable(
       'sponsor_task_campaign_repeat',
       sql`${t.campaignTerms} is null or not (${t.campaignTerms} ? 'repeat') or ${t.campaignTerms}->>'repeat' = 'monthly'`,
     ),
+    // A group offer: the full cash back once `target` buyers have bought, a
+    // smaller base amount otherwise. Not combined with monthly offers.
+    check(
+      'sponsor_task_campaign_group',
+      sql`${t.campaignTerms} is null or not (${t.campaignTerms} ? 'group') or (
+        jsonb_typeof(${t.campaignTerms}->'group'->'target') = 'number'
+        and (${t.campaignTerms}->'group'->>'target')::numeric between 2 and ${t.capacity}
+        and (${t.campaignTerms}->'group'->>'target')::numeric = trunc((${t.campaignTerms}->'group'->>'target')::numeric)
+        and ${t.campaignTerms}->'group'->>'baseKobo' ~ '^[1-9][0-9]{0,14}$'
+        and (${t.campaignTerms}->'group'->>'baseKobo')::numeric < ${t.rewardKobo}
+        and not (${t.campaignTerms} ? 'repeat'))`,
+    ),
     check(
       'sponsor_task_promotion_terms',
       sql`(${t.model} = 'claim_code') = (${t.promotionTerms} is not null) and (${t.model} <> 'claim_code' or ${t.workTerms} is null)`,

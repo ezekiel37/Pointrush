@@ -25,8 +25,19 @@ export const campaignTermsSchema = z
     // Omitted: one cash back per shopper. 'monthly': one per shopper per
     // Lagos calendar month, so the business can see who keeps coming back.
     repeat: z.literal('monthly').optional(),
+    // Group offer: everyone gets the full cash back once `target` people have
+    // bought, or `baseKobo` each if the target is not reached by the end.
+    group: z
+      .object({
+        target: z.number().int().min(2).max(100000),
+        // Always paid, so nobody who bought leaves with nothing.
+        baseKobo: z.string().regex(/^[1-9][0-9]{0,14}$/),
+      })
+      .strict()
+      .optional(),
   })
-  .strict();
+  .strict()
+  .refine((t) => !(t.group && t.repeat));
 export type CampaignTerms = z.infer<typeof campaignTermsSchema>;
 
 // Prize promotions: the business creates codes on Acticlaim and funds every

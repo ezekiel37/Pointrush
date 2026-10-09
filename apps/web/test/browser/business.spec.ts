@@ -139,6 +139,44 @@ test('a cash back offer locks exactly what the business can afford and survives 
   });
 });
 
+test('a group offer sends its target and base amount', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.route('**/api/v1/business/overview?*', (route) =>
+    route.fulfill({ json: overview() }),
+  );
+  const bodies: Record<string, unknown>[] = [];
+  await page.route('**/api/v1/sponsor/tasks', (route) => {
+    bodies.push(route.request().postDataJSON());
+    return route.fulfill({ json: { id: businessId } });
+  });
+  await page.goto('/business/campaigns/new');
+  await page.getByLabel('Campaign name').fill('Bring your friends');
+  await page.getByLabel('What shoppers do').fill('Buy any meal.');
+  await page.getByLabel('Cash back per purchase (₦)').fill('1,000');
+  await page.getByLabel('Number of shoppers').fill('20');
+  await page.getByRole('button', { name: 'Group offer' }).click();
+  await page.getByLabel('Buyers needed').fill('30');
+  await page.getByLabel('If not reached, each gets (₦)').fill('1,000');
+  await page.getByLabel('Place name').fill('Mama Put Kitchen');
+  await page.getByLabel('Address').fill('12 Campus Road, Ibadan');
+  await page.getByRole('button', { name: /Lock ₦20,000 and submit/ }).click();
+  await expect(
+    page.getByText(/From 2 up to the number of shoppers/),
+  ).toBeVisible();
+  await expect(
+    page.getByText('Enter an amount below the full cash back.'),
+  ).toBeVisible();
+  await page.getByLabel('Buyers needed').fill('10');
+  await page.getByLabel('If not reached, each gets (₦)').fill('300');
+  await healthy(page);
+  await page.getByRole('button', { name: /Lock ₦20,000 and submit/ }).click();
+  await page.waitForURL('**/business/campaigns?created=1');
+  expect(bodies[0]).toMatchObject({
+    campaignTerms: { group: { target: 10, baseKobo: '30000' } },
+  });
+  expect(bodies[0]).not.toHaveProperty('campaignTerms.repeat');
+});
+
 test('a prize promotion funds every code: there is no chance mode', async ({
   page,
 }) => {

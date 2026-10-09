@@ -218,6 +218,13 @@
       "when": 1791547971938,
       "tag": "0030_wallet_bills",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1791549060775,
+      "tag": "0031_group_offers",
+      "breakpoints": true
     }
   ]
 }

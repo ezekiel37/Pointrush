@@ -104,7 +104,9 @@ export function CampaignForm({ model }: { model: Model }) {
     endsAt: localInput(new Date(start.getTime() + 30 * 86400000)),
     minSpend: '0',
     holdHours: 72,
-    repeat: 'once' as 'once' | 'monthly',
+    repeat: 'once' as 'once' | 'monthly' | 'group',
+    groupTarget: '',
+    groupBase: '',
     placeName: '',
     placeAddress: '',
     voidWhen: 'Refunded or cancelled orders.',
@@ -157,6 +159,16 @@ export function CampaignForm({ model }: { model: Model }) {
         next.placeAddress = 'Add the address shoppers will visit.';
       if (!form.voidWhen.trim())
         next.voidWhen = 'Say when you may void a purchase.';
+      if (form.repeat === 'group') {
+        const target = /^[1-9]\d{0,5}$/.test(form.groupTarget)
+          ? Number(form.groupTarget)
+          : 0;
+        if (target < 2 || (capacity !== null && target > capacity))
+          next.groupTarget = `From 2 up to the number of shoppers${capacity ? ` (${capacity})` : ''}.`;
+        const base = toKobo(form.groupBase);
+        if (!base || (rewardKobo && BigInt(base) >= BigInt(rewardKobo)))
+          next.groupBase = 'Enter an amount below the full cash back.';
+      }
     } else {
       if (!/^([1-9]|1\d|20)$/.test(form.claimLimit))
         next.claimLimit = 'Between 1 and 20.';
@@ -191,6 +203,14 @@ export function CampaignForm({ model }: { model: Model }) {
             placeName: form.placeName.trim(),
             placeAddress: form.placeAddress.trim(),
             ...(form.repeat === 'monthly' ? { repeat: 'monthly' } : {}),
+            ...(form.repeat === 'group'
+              ? {
+                  group: {
+                    target: Number(form.groupTarget),
+                    baseKobo: toKobo(form.groupBase),
+                  },
+                }
+              : {}),
           },
         }
       : {
@@ -369,7 +389,7 @@ export function CampaignForm({ model }: { model: Model }) {
                     How often each customer gets it
                   </span>
                   <div
-                    className="segmented preset-row two"
+                    className="segmented preset-row three"
                     role="group"
                     aria-labelledby="repeat-label"
                   >
@@ -377,6 +397,7 @@ export function CampaignForm({ model }: { model: Model }) {
                       [
                         ['once', 'Once'],
                         ['monthly', 'Once a month'],
+                        ['group', 'Group offer'],
                       ] as const
                     ).map(([value, label]) => (
                       <button
@@ -392,8 +413,22 @@ export function CampaignForm({ model }: { model: Model }) {
                   <p className="field-help">
                     {form.repeat === 'monthly'
                       ? 'A customer can get it again each new month, so you can see who keeps coming back. The number of cash backs above is the total across all months.'
-                      : 'Each customer gets this cash back one time.'}
+                      : form.repeat === 'group'
+                        ? 'Customers bring friends: if enough people buy before the end, everyone gets the full cash back above. If not, each buyer still gets a smaller amount and the rest comes back to you.'
+                        : 'Each customer gets this cash back one time.'}
                   </p>
+                </div>
+              )}
+              {model === 'purchase_cashback' && form.repeat === 'group' && (
+                <div className="pair">
+                  {field('groupTarget', 'Buyers needed', {
+                    inputMode: 'numeric',
+                    placeholder: '20',
+                  })}
+                  {field('groupBase', 'If not reached, each gets (₦)', {
+                    inputMode: 'decimal',
+                    placeholder: '200',
+                  })}
                 </div>
               )}
             </Section>

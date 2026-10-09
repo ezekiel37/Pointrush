@@ -38,6 +38,7 @@ const pending = z.object({
       placeName: z.string(),
       placeAddress: z.string(),
       repeat: z.literal('monthly').optional(),
+      group: z.object({ target: z.number().int(), baseKobo: money }).optional(),
     })
     .nullable(),
   promotionTerms: z
@@ -169,6 +170,14 @@ function Terms({ task }: { task: Pending }) {
           ? 'Once per customer per month'
           : 'Once per customer',
       ],
+      ...(task.campaignTerms.group
+        ? ([
+            [
+              'Group offer',
+              `Full amount if ${task.campaignTerms.group.target} buy; ${naira(task.campaignTerms.group.baseKobo)} each otherwise`,
+            ],
+          ] as [string, string][])
+        : []),
     );
   if (task.promotionTerms)
     rows.push(

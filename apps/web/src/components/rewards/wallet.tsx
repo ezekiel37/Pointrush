@@ -128,7 +128,7 @@ export function Wallet() {
 
   const held = (purchases.data?.items ?? [])
     .filter((p) => p.state === 'pending' || p.state === 'releasable')
-    .reduce((sum, p) => sum + BigInt(p.cashbackKobo), 0n);
+    .reduce((sum, p) => sum + BigInt(p.payoutKobo ?? p.cashbackKobo), 0n);
   const data = summary.data;
   return (
     <Page eyebrow="Wallet" title="Your money">
@@ -353,9 +353,13 @@ export function Wallet() {
                             {item.businessName}
                           </p>
                           <p className="small-note truncate">
-                            {item.state === 'pending'
-                              ? `Unlocks ${shortDate(item.releaseAt)}`
-                              : `Bought ${shortDate(item.createdAt)}`}
+                            {item.state === 'pending' &&
+                            item.group &&
+                            !item.payoutKobo
+                              ? `Group offer: ${naira(item.cashbackKobo)} if ${item.group.target} people buy, ${naira(item.group.baseKobo)} if not`
+                              : item.state === 'pending'
+                                ? `Unlocks ${shortDate(item.releaseAt)}`
+                                : `Bought ${shortDate(item.createdAt)}`}
                           </p>
                         </div>
                         <div
@@ -373,7 +377,9 @@ export function Wallet() {
                                 : undefined
                             }
                           >
-                            {naira(item.cashbackKobo)}
+                            {item.payoutKobo || !item.group
+                              ? naira(item.payoutKobo ?? item.cashbackKobo)
+                              : `Up to ${naira(item.cashbackKobo)}`}
                           </span>
                           {item.state === 'releasable' ? (
                             <Button

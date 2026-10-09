@@ -128,6 +128,8 @@ export class TaskQueriesService {
           from ${s.purchaseConfirmations} p join ${s.sponsorTasks} st on st.id = p.task_id
           left join ${s.purchaseVoids} v on v.confirmation_id = p.id
           where st.sponsor_id = ${s.sponsorTasks.sponsorId} and p.created_at > clock_timestamp() - interval '180 days')`,
+        // Group offers: whether the target was reached.
+        groupComplete: sql<boolean>`exists (select 1 from campaign_group_completions c where c.task_id = ${s.sponsorTasks.id})`,
         // Campaign places are consumed by confirmed, unvoided purchases.
         claimed: sql<number>`case when ${s.sponsorTasks.model}='purchase_cashback' then (select count(*)::integer from ${s.purchaseConfirmations} p where p.task_id=${s.sponsorTasks.id} and purchase_holds_place(p.id)) else (select count(*)::integer from ${s.taskClaims} where ${s.taskClaims.taskId}=${s.sponsorTasks.id}) end`,
       })

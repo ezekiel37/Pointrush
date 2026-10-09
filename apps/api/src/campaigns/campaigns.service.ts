@@ -65,12 +65,16 @@ function purchaseState(row: {
   voided: boolean;
   released: boolean;
   dispute: string | null;
+  payoutKobo: string | null;
   observedAt: Date;
 }): PurchaseState {
   // A void reversed after a dispute was paid straight to the wallet.
   if (row.released || row.dispute === 'reversed') return 'released';
   if (row.voided) return 'voided';
-  return row.observedAt >= row.releaseAt ? 'releasable' : 'pending';
+  // A group offer waits until its group is complete or the offer ends.
+  return row.observedAt >= row.releaseAt && row.payoutKobo !== null
+    ? 'releasable'
+    : 'pending';
 }
 
 // Purchase campaigns: a business pays cash back from its own locked funds for
@@ -467,6 +471,14 @@ export class CampaignsService {
         remaining: Math.max(0, task.capacity - active),
         voidsLeft,
         returningShoppers: counts!.returning,
+        groupComplete: (
+          await tx
+            .select({ taskId: s.campaignGroupCompletions.taskId })
+            .from(s.campaignGroupCompletions)
+            .where(eq(s.campaignGroupCompletions.taskId, taskId))
+        ).length
+          ? true
+          : false,
         recent: this.purchasePage(rows, limit),
       };
     });
@@ -480,6 +492,15 @@ export class CampaignsService {
       businessName: s.sponsorProfiles.name,
       amountKobo: sql<string>`${s.purchaseConfirmations.amountKobo}::text`,
       cashbackKobo: sql<string>`${s.sponsorTasks.rewardKobo}::text`,
+      // What this purchase pays: null while a group offer is undecided.
+      payoutKobo: sql<
+        string | null
+      >`purchase_payout(${s.purchaseConfirmations.id})::text`,
+      // Group offers: the target and base amount, for showing progress.
+      group: sql<{
+        target: number;
+        baseKobo: string;
+      } | null>`${s.sponsorTasks.campaignTerms}->'group'`,
       releaseAt: s.purchaseConfirmations.releaseAt,
       createdAt: s.purchaseConfirmations.createdAt,
       voided: sql<boolean>`exists (select 1 from ${s.purchaseVoids} where ${s.purchaseVoids.confirmationId} = ${s.purchaseConfirmations.id})`,
@@ -509,6 +530,7 @@ export class CampaignsService {
       voided: boolean;
       released: boolean;
       dispute: string | null;
+      payoutKobo: string | null;
       voidedAt: Date | null;
       observedAt: Date;
     },

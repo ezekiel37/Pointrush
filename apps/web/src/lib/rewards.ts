@@ -33,6 +33,9 @@ export const campaignTerms = z.object({
   placeName: z.string(),
   placeAddress: z.string(),
   repeat: z.literal('monthly').optional(),
+  // Group offer: the full cash back once `target` people buy, `baseKobo`
+  // each otherwise.
+  group: z.object({ target: z.number().int(), baseKobo: money }).optional(),
 });
 export const offerSummary = z.object({
   id: z.uuid(),
@@ -47,6 +50,7 @@ export const offerSummary = z.object({
   campaignTerms: campaignTerms.nullable(),
   // Share of purchases this business voided (180 days); null below 10.
   voidRatePercent: z.number().int().nullable().default(null),
+  groupComplete: z.boolean().default(false),
 });
 export const offerPage = page(offerSummary);
 export const offerDetail = z.object({
@@ -60,6 +64,7 @@ export const offerDetail = z.object({
   rewardBackingKobo: money,
   model: z.string(),
   campaignTerms: campaignTerms.nullable(),
+  groupComplete: z.boolean().default(false),
 });
 
 export const purchaseCode = z.object({
@@ -77,6 +82,12 @@ export const purchase = z.object({
   businessName: z.string(),
   amountKobo: money,
   cashbackKobo: money,
+  // What it pays: null while a group offer is still undecided.
+  payoutKobo: money.nullable().default(null),
+  group: z
+    .object({ target: z.number().int(), baseKobo: money })
+    .nullable()
+    .default(null),
   releaseAt: date,
   createdAt: date,
   state: purchaseState,
@@ -161,6 +172,7 @@ export const campaignSummary = z.object({
   remaining: z.number().int(),
   voidsLeft: z.number().int().default(3),
   returningShoppers: z.number().int(),
+  groupComplete: z.boolean().default(false),
   recent: purchasePage,
 });
 

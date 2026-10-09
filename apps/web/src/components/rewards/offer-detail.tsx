@@ -237,6 +237,16 @@ export function OfferDetail({ id }: { id: string }) {
                     </span>
                   </dd>
                 </div>
+                {terms.group && (
+                  <div>
+                    <dt className="eyebrow">Group offer</dt>
+                    <dd style={{ margin: 0 }}>
+                      {data.groupComplete
+                        ? `Group complete: everyone gets ${naira(data.rewardBackingKobo)} back.`
+                        : `${Math.min(data.claimed, terms.group.target)} of ${terms.group.target} people have bought. If ${terms.group.target} buy before it ends, everyone gets ${naira(data.rewardBackingKobo)} back; if not, ${naira(terms.group.baseKobo)} each. Invite friends to get there.`}
+                    </dd>
+                  </div>
+                )}
                 <div>
                   <dt className="eyebrow">How often</dt>
                   <dd style={{ margin: 0 }}>

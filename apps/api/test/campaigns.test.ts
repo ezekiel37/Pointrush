@@ -475,6 +475,102 @@ test('a monthly offer pays each shopper once per Lagos month, and the overview c
   }
 });
 
+test('a group offer pays everyone the full cash back once the target is reached', async () => {
+  const group = { target: 2, baseKobo: '10000' };
+  const reached = await campaign(3, '50000', undefined, {
+    terms: { group },
+  });
+  const [a, b] = [await identity(), await identity()];
+  const buy = async (person: { user: string }, task: string, owner: string) => {
+    const code = await campaigns.activate(person.user, task);
+    return campaigns.confirm(owner, task, confirmation(code.code));
+  };
+  const first = await buy(a, reached.id, reached.merchant.user);
+  await travel('25 hours');
+  try {
+    // The hold has passed, but the group is not decided yet.
+    assert.equal(
+      (await campaigns.purchases(a.user)).items[0]?.state,
+      'pending',
+    );
+    assert.equal(
+      await reason(campaigns.release(a.user, first.id)),
+      'not_releasable',
+    );
+  } finally {
+    await travel('0');
+  }
+  const second = await buy(b, reached.id, reached.merchant.user);
+  assert.equal(
+    (await campaigns.summary(reached.merchant.user, reached.id)).groupComplete,
+    true,
+  );
+  await travel('25 hours');
+  try {
+    await campaigns.release(a.user, first.id);
+    await campaigns.release(b.user, second.id);
+  } finally {
+    await travel('0');
+  }
+  assert.equal(await wallet(a.account), 50000n);
+  assert.equal(await wallet(b.account), 50000n);
+
+  // Not reached by the end: each buyer gets the base amount, and the rest
+  // returns to the business.
+  const missed = await campaign(3, '50000', undefined, { terms: { group } });
+  const c = await identity();
+  const lone = await buy(c, missed.id, missed.merchant.user);
+  await travel('3 days');
+  try {
+    assert.equal(
+      (await campaigns.purchases(c.user)).items[0]?.payoutKobo,
+      '10000',
+    );
+    await campaigns.release(c.user, lone.id);
+    const back = await campaigns.returnFunds(missed.merchant.user, missed.id, {
+      id: randomUUID(),
+    });
+    assert.equal(back.amountKobo, '140000');
+  } finally {
+    await travel('0');
+  }
+  assert.equal(await wallet(c.account), 10000n);
+
+  // The base must be positive and below the full cash back, never monthly.
+  const merchant = await fixture.business();
+  const base = {
+    requestId: randomUUID(),
+    title: 'Group cash back',
+    instructions: 'Buy',
+    proofRequirements: 'Till confirmation',
+    rejectionCriteria: 'Refunds',
+    model: 'purchase_cashback',
+    capacity: 5,
+    rewardKobo: '50000',
+    startsAt: new Date(Date.now() + 60000).toISOString(),
+    endsAt: new Date(Date.now() + 120000).toISOString(),
+  };
+  for (const bad of [
+    { target: 2, baseKobo: '0' },
+    { target: 2, baseKobo: '50000' },
+    { target: 9, baseKobo: '10000' },
+  ])
+    await assert.rejects(
+      fixture.sponsors.createTask(merchant.user, {
+        ...base,
+        requestId: randomUUID(),
+        campaignTerms: { ...terms, group: bad },
+      }),
+    );
+  await assert.rejects(
+    fixture.sponsors.createTask(merchant.user, {
+      ...base,
+      campaignTerms: { ...terms, group, repeat: 'monthly' },
+    }),
+    { status: 400 },
+  );
+});
+
 test('voids are capped at 20%, shoppers can dispute for 7 days, and voided money stays locked until decided', async () => {
   const { merchant, id, allocation } = await campaign(20, '50000');
   const shoppers: Awaited<ReturnType<typeof identity>>[] = [];

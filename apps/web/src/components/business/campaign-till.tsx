@@ -183,6 +183,13 @@ export function CampaignTill({ id }: { id: string }) {
                 </dd>
               </div>
             </dl>
+            {data.campaignTerms?.group && (
+              <Feedback>
+                {data.groupComplete
+                  ? `Group complete: every buyer gets ${naira(data.cashbackKobo)}.`
+                  : `Group offer: ${Math.min(data.confirmed - data.voided, data.campaignTerms.group.target)} of ${data.campaignTerms.group.target} buyers. If the group is not reached by the end, each buyer gets ${naira(data.campaignTerms.group.baseKobo)} and the rest comes back to you.`}
+              </Feedback>
+            )}
             <div className="till-grid">
               <form
                 className="card grid gap-4 till-form"

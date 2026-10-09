@@ -73,6 +73,16 @@ export const purchaseConfirmations = pgTable(
   ],
 );
 
+// A group offer reached its target. Recorded once, by the database, when the
+// purchase that reaches it is confirmed; from then on every buyer gets the
+// full cash back, even if a purchase is later voided.
+export const campaignGroupCompletions = pgTable('campaign_group_completions', {
+  taskId: uuid('task_id')
+    .primaryKey()
+    .references(() => sponsorTasks.id),
+  createdAt: at('created_at').notNull().defaultNow(),
+});
+
 // The business withdraws cash back during the hold, for example after a refund.
 export const purchaseVoids = pgTable('purchase_voids', {
   confirmationId: uuid('confirmation_id')

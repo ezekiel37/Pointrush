@@ -88,6 +88,13 @@ export class TaskWorkService {
         rewardBackingKobo: task.rewardKobo.toString(),
         capacity: task.capacity,
         claimed: count!.used,
+        groupComplete:
+          (
+            await tx
+              .select({ taskId: s.campaignGroupCompletions.taskId })
+              .from(s.campaignGroupCompletions)
+              .where(eq(s.campaignGroupCompletions.taskId, task.id))
+          ).length > 0,
         termsVersion: task.termsVersion,
       };
     });

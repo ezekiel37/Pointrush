@@ -140,6 +140,7 @@ export {
   purchaseVoids,
   purchaseVoidDisputes,
   purchaseVoidRulings,
+  campaignGroupCompletions,
   purchaseReleases,
   campaignReturns,
 } from '../campaigns/campaign.schema.js';
