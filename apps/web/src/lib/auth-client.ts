@@ -1,3 +1,4 @@
+import { forgetReads } from './api-cache';
 import { createAuthClient } from 'better-auth/react';
 import {
   inferAdditionalFields,
@@ -12,6 +13,7 @@ type AuthClientOptions = {
     credentials: 'include';
     timeout: number;
     retry: number;
+    onRequest: (context: { url: string | URL }) => void;
   };
   plugins: [ReturnType<typeof twoFactorClient>, typeof accountFields];
 };
@@ -32,7 +34,15 @@ export function authClient() {
     plugins: [twoFactorClient({ twoFactorPage: '/two-factor' }), accountFields],
     baseURL: apiOrigin(),
     basePath: '/api/v1/auth',
-    fetchOptions: { credentials: 'include', timeout: 15000, retry: 0 },
+    fetchOptions: {
+      credentials: 'include',
+      timeout: 15000,
+      retry: 0,
+      // A new person or no person: drop the last one's remembered screens.
+      onRequest: (context) => {
+        if (/\/sign-(in|up|out)\b/.test(String(context.url))) forgetReads();
+      },
+    },
   }));
 }
 export class RequestError extends Error {

@@ -141,10 +141,11 @@ This needs a computer with Node.js 24 and Git. Use your own computer, or Google 
 
    On a Mac, use `shasum -a 256` instead of `sha256sum`, `uuidgen` for the grant ID, and `date -u -v+29d +%Y-%m-%dT%H:%M:%SZ` for the date.
 
-4. On the site, turn on two-factor from your account page. Reviewer pages need it.
-5. The same command also lets you decide **job appeals** (Review → Appeals) for the same 30 days, and `revoke` removes both. A business can never decide appeals on its own jobs.
+4. On the site, turn on two-factor from your account page. Reviewer pages need it. The staff area is at `/hq` (reviews under `/hq/review`); there is no link to it for anyone else.
+5. To change settings and fund the referral pool, add `SETTINGS_ADMIN_ACCOUNT_IDS=YOUR-ACCOUNT-ID` to the API app on Brimble (comma-separated for more than one) and redeploy.
+6. The same command also lets you decide **job appeals** (Review → Appeals) for the same 30 days, and `revoke` removes both. A business can never decide appeals on its own jobs.
 
-Reviewer access lasts at most 30 days; to renew, run the CLI's `revoke` and then `grant` again. Appoint a second trusted reviewer the same way: campaigns of ₦1,000,000 or more and unfreezing an account need two different people.
+Reviewer access lasts at most 30 days; to renew, run the CLI's `revoke` and then `grant` again. Appoint a second trusted reviewer the same way: campaigns of ₦1,000,000 or more and unfreezing an account need two different people. While you are the only active reviewer (solo mode), you can give the final approval of a large campaign yourself 24 hours after the first, and lift a freeze you made 24 hours after making it. Solo mode ends by itself as soon as a second reviewer is active.
 
 ## 10. Test before inviting anyone
 

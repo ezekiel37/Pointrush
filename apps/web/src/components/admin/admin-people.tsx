@@ -81,7 +81,7 @@ export function AdminPeople() {
             >
               {items.map((p) => (
                 <li key={p.id} style={{ listStyle: 'none' }}>
-                  <Link className="pick-row" href={`/admin/people/${p.id}`}>
+                  <Link className="pick-row" href={`/hq/people/${p.id}`}>
                     <span className="pick-icon" aria-hidden>
                       {p.businessName ? (
                         <Store size={20} />
@@ -164,7 +164,7 @@ export function AdminPerson({ id }: { id: string }) {
   return (
     <AdminFrame
       title={p?.businessProfile?.name ?? p?.displayName ?? 'Account'}
-      section={{ label: 'People', href: '/admin/people' }}
+      section={{ label: 'People', href: '/hq/people' }}
     >
       {read.loading && !p ? (
         <Loading>Loading account…</Loading>
@@ -333,7 +333,7 @@ export function AdminPerson({ id }: { id: string }) {
             {p.username && (
               <Link
                 className="button button-outline"
-                href={`/review/accounts?username=${encodeURIComponent(p.username)}`}
+                href={`/hq/review/accounts?username=${encodeURIComponent(p.username)}`}
                 style={{ justifySelf: 'start' }}
               >
                 Freeze or unfreeze this account

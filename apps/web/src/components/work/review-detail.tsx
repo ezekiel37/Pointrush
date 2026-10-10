@@ -86,9 +86,9 @@ export function AppealReview({ id }: { id: string }) {
   return (
     <ReviewFrame
       title={read.data?.task.title ?? 'Review appeal'}
-      section={{ label: 'Appeals', href: '/review/appeals' }}
+      section={{ label: 'Appeals', href: '/hq/review/appeals' }}
     >
-      <Link className="back-link" href="/review/appeals">
+      <Link className="back-link" href="/hq/review/appeals">
         Back to pending appeals
       </Link>
       <ReviewAccess />

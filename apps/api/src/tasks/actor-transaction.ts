@@ -52,6 +52,8 @@ const reasons: Record<string, string> = {
   'Withdrawals are locked': 'withdrawals_locked',
   'Staff daily confirmation limit reached': 'staff_daily_limit',
   'A second reviewer must approve': 'second_reviewer_required',
+  'A second reviewer must unfreeze': 'second_reviewer_required',
+  'Solo unfreeze waits 24 hours': 'solo_wait',
   'Unlock unavailable': 'unlock_unavailable',
   'Void limit reached': 'void_limit',
   'Bill payment unavailable': 'bill_unavailable',

@@ -339,7 +339,7 @@ test('a reviewer approves only after every check, and the decision is recorded o
       return route.fulfill({ json: { id: businessId } });
     },
   );
-  await page.goto('/review/campaigns');
+  await page.goto('/hq/review/campaigns');
   await page.getByRole('link', { name: '₦500 back on lunch' }).click();
   await expect(page.getByText('12 Campus Road, Ibadan')).toBeVisible();
   await expect(page.getByText('₦500 × 40 = ₦20,000 locked')).toBeVisible();
@@ -410,7 +410,7 @@ test('a large campaign needs a second, different reviewer', async ({
       });
     },
   );
-  await page.goto(`/review/campaigns/${businessId}`);
+  await page.goto(`/hq/review/campaigns/${businessId}`);
   await expect(
     page.getByText(/two different reviewers must approve it/),
   ).toBeVisible();
@@ -438,7 +438,7 @@ test('without reviewer access the queue explains how to get it', async ({
   await page.route('**/api/v1/admin/reviews/tasks?*', (route) =>
     route.fulfill({ status: 403, json: { statusCode: 403 } }),
   );
-  await page.goto('/review/campaigns');
+  await page.goto('/hq/review/campaigns');
   await expect(page.getByText(/recent authenticator check/)).toBeVisible();
 });
 
@@ -684,7 +684,7 @@ test('a reviewer freezes an account with a reason and can restore it', async ({
     if (body.toState === 'active')
       return route.fulfill({
         status: 409,
-        json: { statusCode: 409, reason: 'access_change_unavailable' },
+        json: { statusCode: 409, reason: 'second_reviewer_required' },
       });
     state = body.toState;
     return route.fulfill({ json: view() });
@@ -696,7 +696,7 @@ test('a reviewer freezes an account with a reason and can restore it', async ({
       return route.fulfill({ json: view() });
     },
   );
-  await page.goto('/review/accounts');
+  await page.goto('/hq/review/accounts');
   await page.getByLabel('Username').fill('@suspect');
   await page.getByRole('button', { name: 'Find account' }).click();
   await expect(page.getByText('Suspect User')).toBeVisible();
@@ -764,7 +764,7 @@ test('a reviewer decides a void dispute with a reason, and the shopper can be pa
     decided = true;
     return route.fulfill({ json: { id: disputeId, decision: 'reversed' } });
   });
-  await page.goto('/review/disputes');
+  await page.goto('/hq/review/disputes');
   await expect(page.getByText('Rice and chicken, receipt 0412')).toBeVisible();
   await expect(page.getByText('8 of 40 purchases (20%)')).toBeVisible();
   await healthy(page);
@@ -814,7 +814,7 @@ test('flagged payments take a note and then show it', async ({ page }) => {
       return route.fulfill({ json: { eventId, reviewed: true } });
     },
   );
-  await page.goto('/review/payments');
+  await page.goto('/hq/review/payments');
   await expect(page.getByText('No matching request')).toBeVisible();
   await healthy(page);
   await page

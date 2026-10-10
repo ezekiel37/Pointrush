@@ -446,7 +446,7 @@ test('appeal access failures expose a recovery path without displaying private e
   await page.route('**/api/v1/work/appeals?*', (route) =>
     route.fulfill({ status: 403, json: {} }),
   );
-  await page.goto('/review/appeals');
+  await page.goto('/hq/review/appeals');
   await expect(page.locator('main').getByRole('alert')).toBeVisible();
   await expect(
     page.getByRole('link', { name: 'Verify authenticator in another tab' }),

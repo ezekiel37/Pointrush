@@ -95,7 +95,8 @@ export function CampaignQueue() {
         {params.get('decided') === 'first' ? (
           <Feedback>
             First approval recorded. A second reviewer must approve before the
-            campaign can go live.
+            campaign can go live. If you are the only reviewer, you can give the
+            final approval yourself 24 hours from now.
           </Feedback>
         ) : (
           params.get('decided') && <Feedback>Decision recorded.</Feedback>
@@ -117,7 +118,7 @@ export function CampaignQueue() {
                 <div style={{ minWidth: 0, flex: '1 1 14rem' }}>
                   <Link
                     className="text-link"
-                    href={`/review/campaigns/${item.id}`}
+                    href={`/hq/review/campaigns/${item.id}`}
                     style={{ fontWeight: 600 }}
                   >
                     {item.title}
@@ -230,6 +231,8 @@ function decisionError(error: unknown) {
     error.code === 'second_reviewer_required'
   )
     return 'You gave the first approval. A different reviewer must give the second.';
+  if (error instanceof RequestError && error.code === 'solo_wait')
+    return 'You gave the first approval. As the only reviewer, you can give the final approval 24 hours after the first. Come back then.';
   if (error instanceof RequestError && error.status === 409)
     return 'This campaign changed or was already decided. Go back to the list.';
   return 'We could not record the decision. Check your connection and submit again; it is recorded once.';
@@ -292,8 +295,8 @@ export function CampaignReview({ id }: { id: string }) {
       );
       router.push(
         result.awaitingSecondReviewer
-          ? '/review/campaigns?decided=first'
-          : '/review/campaigns?decided=1',
+          ? '/hq/review/campaigns?decided=first'
+          : '/hq/review/campaigns?decided=1',
       );
     } catch (cause) {
       if (cause instanceof RequestError && cause.status < 500)
@@ -306,7 +309,7 @@ export function CampaignReview({ id }: { id: string }) {
   return (
     <ReviewFrame
       title={read.data?.title ?? 'Campaign review'}
-      section={{ label: 'Campaigns', href: '/review/campaigns' }}
+      section={{ label: 'Campaigns', href: '/hq/review/campaigns' }}
     >
       {read.loading && !read.data ? (
         <Loading>Loading campaign…</Loading>
@@ -324,7 +327,7 @@ export function CampaignReview({ id }: { id: string }) {
               <Feedback>
                 {read.data.firstApprovedBy
                   ? 'One reviewer has approved. Your approval would be the second and makes the campaign ready to go live.'
-                  : 'This campaign locks ₦1,000,000 or more, so two different reviewers must approve it. Yours would be the first.'}
+                  : 'This campaign locks ₦1,000,000 or more, so two different reviewers must approve it. Yours would be the first. While you are the only reviewer, you can give the second yourself 24 hours later.'}
               </Feedback>
             )}
             <form className="card grid gap-4" onSubmit={submit} noValidate>

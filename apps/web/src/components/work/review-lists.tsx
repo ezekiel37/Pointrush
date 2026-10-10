@@ -164,7 +164,7 @@ export function AppealQueue() {
                   <h2>
                     <Link
                       className="text-link"
-                      href={`/review/appeals/${appeal.id}`}
+                      href={`/hq/review/appeals/${appeal.id}`}
                     >
                       {appeal.title}
                     </Link>
@@ -174,7 +174,7 @@ export function AppealQueue() {
               ))}
             </ul>
             <Pages
-              base="/review/appeals"
+              base="/hq/review/appeals"
               after={after}
               next={read.data.nextCursor}
             />

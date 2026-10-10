@@ -70,27 +70,27 @@ export function AdminOverview() {
                     [
                       'Campaigns to review',
                       data.queues.campaignsToReview,
-                      '/review/campaigns',
+                      '/hq/review/campaigns',
                     ],
                     [
                       'Names and logos to review',
                       data.queues.profileChanges,
-                      '/admin/renames',
+                      '/hq/renames',
                     ],
                     [
                       'Void disputes',
                       data.queues.disputesOpen,
-                      '/review/disputes',
+                      '/hq/review/disputes',
                     ],
                     [
                       'Withdrawals waiting for the provider',
                       data.queues.withdrawalsPending,
-                      '/review/payments',
+                      '/hq/review/payments',
                     ],
                     [
                       'Bill payments waiting for the provider',
                       data.queues.billsPending,
-                      '/review/payments',
+                      '/hq/review/payments',
                     ],
                   ] as const
                 ).map(([label, n, href]) => (

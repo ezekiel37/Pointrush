@@ -223,12 +223,29 @@ export class TaskReviewService {
           });
           return { awaitingSecondReviewer: true as const, taskId: task.id };
         }
-        if (first.reviewerId === reviewerId)
-          throw new ConflictException({
-            statusCode: 409,
-            message: 'A different reviewer must give the second approval',
-            reason: 'second_reviewer_required',
-          });
+        if (first.reviewerId === reviewerId) {
+          // Solo admin mode: the only reviewer may finish their own approval
+          // a day later. The database checks the same rule again.
+          const result = (await tx.execute(sql`
+            select staff_solo(${reviewerId}) as solo,
+              ${first.createdAt.toISOString()}::timestamptz <= clock_timestamp() - interval '24 hours' as due`)) as unknown as {
+            rows: { solo: boolean; due: boolean }[];
+          };
+          const [solo] = result.rows;
+          if (!solo?.solo)
+            throw new ConflictException({
+              statusCode: 409,
+              message: 'A different reviewer must give the second approval',
+              reason: 'second_reviewer_required',
+            });
+          if (!solo.due)
+            throw new ConflictException({
+              statusCode: 409,
+              message:
+                'As the only reviewer, give the final approval 24 hours after the first',
+              reason: 'solo_wait',
+            });
+        }
       }
       const [review] = await tx
         .insert(taskReviews)

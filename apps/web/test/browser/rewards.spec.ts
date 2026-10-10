@@ -705,6 +705,8 @@ test('a withdrawal holds money once across a dropped response and shows its stat
     page.getByText('To ADA OKAFOR, Guaranty Trust Bank ••••6789'),
   ).toBeVisible();
   await page.getByLabel('Amount in naira').fill('3000');
+  // Thousands are grouped as you type.
+  await expect(page.getByLabel('Amount in naira')).toHaveValue('3,000');
   await page.getByRole('button', { name: 'Withdraw ₦3,000' }).click();
   await expect(page.getByText('You have ₦2,000 in your wallet.')).toBeVisible();
   await page.getByLabel('Amount in naira').fill('1,200');
@@ -823,9 +825,12 @@ test('the bell counts unread updates and opening them marks them read', async ({
     ],
     unread: seen === 0 ? 1 : 0,
   });
-  await page.route('**/api/v1/notifications', (route) =>
-    route.fulfill({ json: feed() }),
-  );
+  // After the bell's first read, the server is slow; the page must not wait.
+  let reads = 0;
+  await page.route('**/api/v1/notifications', async (route) => {
+    if (++reads > 1) await new Promise((r) => setTimeout(r, 3000));
+    return route.fulfill({ json: feed() });
+  });
   await page.route('**/api/v1/notifications/seen', (route) => {
     seen++;
     return route.fulfill({ json: { unread: 0 } });
@@ -835,7 +840,10 @@ test('the bell counts unread updates and opening them marks them read', async ({
   );
   await page.goto('/offers');
   await page.getByRole('link', { name: 'Notifications, 1 unread' }).click();
-  await expect(page.getByText('₦500 cash back is ready')).toBeVisible();
+  await expect(page.getByText('₦500 cash back is ready')).toBeVisible({
+    timeout: 1000,
+  });
+  await expect(page.getByText('Loading notifications')).toHaveCount(0);
   await healthy(page);
   await expect.poll(() => seen).toBe(1);
   await page.goto('/offers');

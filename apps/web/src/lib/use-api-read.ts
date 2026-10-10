@@ -2,8 +2,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { z } from 'zod';
 import { apiRequest } from './api';
+import { cachedRead, forgetReads, rememberRead } from './api-cache';
+import { RequestError } from './auth-client';
 // Reads an API path, refreshing on reconnect and when the tab becomes visible.
-// Changing the path never shows the previous resource's private data.
+// Changing the path never shows the previous resource's private data. A path
+// read before in this tab shows its last answer at once while it refreshes.
 // `keep` holds the previous result while a new path loads; use it only when the
 // paths are views of the same resource (for example, a date range).
 export function useApiRead<T>(
@@ -17,7 +20,12 @@ export function useApiRead<T>(
     error: unknown;
     loading: boolean;
     path: string | null;
-  }>({ data: null, error: null, loading: path !== null, path });
+  }>(() => ({
+    data: cachedRead<T>(path, schema),
+    error: null,
+    loading: path !== null,
+    path,
+  }));
   const refresh = useCallback(() => setVersion((v) => v + 1), []);
   useEffect(() => {
     if (path === null) return;
@@ -25,17 +33,24 @@ export function useApiRead<T>(
     // Synchronize API state; never retain another resource's private data.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setState((current) => ({
-      data: keep || current.path === path ? current.data : null,
+      data:
+        keep || current.path === path
+          ? current.data
+          : cachedRead<T>(path, schema),
       error: null,
       loading: true,
       path,
     }));
     void apiRequest(path, schema, { signal: controller.signal })
       .then((data) => {
-        if (!controller.signal.aborted)
-          setState({ data, error: null, loading: false, path });
+        if (controller.signal.aborted) return;
+        rememberRead(path, schema, data);
+        setState({ data, error: null, loading: false, path });
       })
       .catch((error) => {
+        // A lapsed session must not leave private answers behind.
+        if (error instanceof RequestError && error.status === 401)
+          forgetReads();
         if (!controller.signal.aborted)
           setState({ data: null, error, loading: false, path });
       });
@@ -56,7 +71,7 @@ export function useApiRead<T>(
     ...(state.path === path
       ? state
       : {
-          data: keep ? state.data : null,
+          data: keep ? state.data : cachedRead<T>(path, schema),
           error: null,
           loading: path !== null,
         }),

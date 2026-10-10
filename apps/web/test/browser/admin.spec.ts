@@ -89,11 +89,11 @@ test('the admin overview shows totals and what needs attention', async ({
       },
     }),
   );
-  await page.goto('/admin');
+  await page.goto('/hq');
   await expect(page.getByText('₦2,500,000')).toBeVisible();
   await expect(
     page.getByRole('link', { name: /Campaigns to review/ }),
-  ).toHaveAttribute('href', '/review/campaigns');
+  ).toHaveAttribute('href', '/hq/review/campaigns');
   // The phone tab bar leads to people and settings.
   const bar = page.getByRole('navigation', { name: 'Review sections' });
   await expect(bar.getByRole('link', { name: 'People' })).toBeVisible();
@@ -104,7 +104,7 @@ test('without access the admin explains how to get it', async ({ page }) => {
   await page.route('**/api/v1/admin/analytics', (route) =>
     route.fulfill({ status: 403, json: { statusCode: 403 } }),
   );
-  await page.goto('/admin');
+  await page.goto('/hq');
   await expect(
     page.getByRole('heading', { name: 'Admin access needed' }),
   ).toBeVisible();
@@ -157,16 +157,16 @@ test('search finds a business and opens its account', async ({ page }) => {
       },
     }),
   );
-  await page.goto('/admin/people');
+  await page.goto('/hq/people');
   await page.getByLabel('Search').fill('mama');
   await page.getByRole('button', { name: 'Search' }).click();
   await page.getByRole('link', { name: /Mama Put Kitchen/ }).click();
-  await page.waitForURL(`**/admin/people/${person}`);
+  await page.waitForURL(`**/hq/people/${person}`);
   await expect(page.getByText('₦50,000')).toBeVisible();
   await healthy(page);
   await expect(
     page.getByRole('link', { name: 'Freeze or unfreeze this account' }),
-  ).toHaveAttribute('href', '/review/accounts?username=ada');
+  ).toHaveAttribute('href', '/hq/review/accounts?username=ada');
 });
 
 test('settings check values, show examples and save with a reason', async ({
@@ -200,7 +200,7 @@ test('settings check values, show examples and save with a reason', async ({
       },
     });
   });
-  await page.goto('/admin/settings');
+  await page.goto('/hq/settings');
   await expect(page.getByText(/You can view these settings/)).toBeVisible();
   await expect(
     page.getByLabel('Least cash back per purchase (₦)'),
@@ -235,4 +235,9 @@ test('settings check values, show examples and save with a reason', async ({
   expect(bodies[0]!.reason).toBe('Raise floors after small offers');
   expect(bodies[0]!.settings.campaigns.minCashbackKobo).toBe(15000);
   expect(bodies[0]!.settings.referrals.friend.rewardKobo).toBe(30000);
+});
+
+test('the old staff addresses no longer exist', async ({ page }) => {
+  for (const path of ['/admin', '/admin/settings', '/review/campaigns'])
+    expect((await page.goto(path))?.status(), path).toBe(404);
 });

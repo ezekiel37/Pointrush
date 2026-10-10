@@ -7,7 +7,7 @@ import { Dialog } from '@/components/ui/dialog';
 import { Feedback, Loading } from '@/components/ui/feedback';
 import { Field } from '@/components/ui/field';
 import { toast } from '@/components/ui/toast';
-import { apiRequest, shortDate } from '@/lib/api';
+import { apiRequest, shortDate, typedNaira } from '@/lib/api';
 import { RequestError } from '@/lib/auth-client';
 import { nairaOf, settingsRead, settingsShape } from '@/lib/admin';
 import type { PlatformSettings } from '@/lib/admin';
@@ -183,7 +183,9 @@ function Money({
   onChange: (next: PlatformSettings) => void;
 }) {
   const id = `setting-${path.join('-')}`;
-  const [text, setText] = useState(String(get(settings, path) / 100));
+  const [text, setText] = useState(
+    typedNaira(String(get(settings, path) / 100)),
+  );
   return (
     <Field
       id={id}
@@ -194,8 +196,9 @@ function Money({
       error={error}
       disabled={disabled}
       onChange={(event) => {
-        setText(event.target.value);
-        const n = Number(event.target.value.replace(/,/g, ''));
+        const typed = typedNaira(event.target.value);
+        setText(typed);
+        const n = Number(typed.replace(/,/g, ''));
         if (Number.isFinite(n) && n >= 0)
           onChange(set(settings, path, Math.round(n * 100)));
       }}

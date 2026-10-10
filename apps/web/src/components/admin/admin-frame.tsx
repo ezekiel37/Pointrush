@@ -27,7 +27,7 @@ export function AdminFrame({
     <DashShell
       variant="review"
       crumbs={[
-        { label: 'Admin', href: '/admin' },
+        { label: 'Admin', href: '/hq' },
         ...(section ? [section] : []),
         { label: title },
       ]}

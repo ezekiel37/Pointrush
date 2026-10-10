@@ -10,7 +10,14 @@ import { Celebrate } from '@/components/ui/celebrate';
 import { Feedback, Loading } from '@/components/ui/feedback';
 import { Field } from '@/components/ui/field';
 import { WorkFailure } from '@/components/work/work-frame';
-import { apiRequest, naira, newId, shortDate, toKobo } from '@/lib/api';
+import {
+  apiRequest,
+  naira,
+  newId,
+  shortDate,
+  toKobo,
+  typedNaira,
+} from '@/lib/api';
 import { RequestError } from '@/lib/auth-client';
 import {
   billCustomer,
@@ -482,7 +489,7 @@ function BillForm({
           placeholder={kind === 'airtime' ? '500' : '5,000'}
           value={amount}
           onChange={(e) => {
-            setAmount(e.target.value);
+            setAmount(typedNaira(e.target.value));
             setErrors((x) => ({ ...x, amount: '' }));
           }}
           hint="From ₦50 to ₦50,000."

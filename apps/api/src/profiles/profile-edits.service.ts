@@ -302,7 +302,9 @@ export class ProfileEditsService {
     const [b] = rows(
       await this.db.execute(sql`
         select sp.id, sp.name, sp.description, sp.terms_accepted_at, sp.logo_file_id,
-          (select handle from business_handles h2 where h2.sponsor_id = sp.id order by seq desc limit 1) as current
+          (select handle from business_handles h2 where h2.sponsor_id = sp.id order by seq desc limit 1) as current,
+          exists (select 1 from sponsor_tasks t join task_publications p on p.task_id = t.id
+            where t.sponsor_id = sp.id) as listed
         from business_handles h
         join sponsor_profiles sp on sp.id = h.sponsor_id
         join accounts a on a.id = sp.owner_id and a.access_state = 'active'
@@ -340,9 +342,33 @@ export class ProfileEditsService {
       description: text(b.description),
       logoFileId: text(b.logo_file_id),
       since: iso(b.terms_accepted_at),
+      // Search engines list a business only once Acticlaim has approved one
+      // of its campaigns, so a made-up business cannot borrow a real name.
+      listed: Boolean(b.listed),
       formerly,
       offers,
       ratings: await this.ratings.summary(this.db, String(b.id)),
+    };
+  }
+
+  // Listed businesses for the sitemap: an approved campaign, owner active.
+  async listedBusinesses() {
+    const items = rows(
+      await this.db.execute(sql`
+        select (select handle from business_handles h where h.sponsor_id = sp.id order by seq desc limit 1) as handle,
+          greatest(sp.terms_accepted_at, (select max(p.created_at) from task_publications p
+            join sponsor_tasks t on t.id = p.task_id where t.sponsor_id = sp.id)) as updated
+        from sponsor_profiles sp
+        join accounts a on a.id = sp.owner_id and a.access_state = 'active'
+        where exists (select 1 from sponsor_tasks t join task_publications p on p.task_id = t.id
+          where t.sponsor_id = sp.id)
+        order by updated desc limit 5000`),
+    );
+    return {
+      items: items.map((r) => ({
+        handle: String(r.handle),
+        updatedAt: iso(r.updated),
+      })),
     };
   }
 

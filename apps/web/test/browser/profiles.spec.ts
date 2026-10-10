@@ -210,7 +210,7 @@ test('reviewers approve or refuse a business rename with a reason', async ({
       return route.fulfill({ json: { decision: 'rejected' } });
     },
   );
-  await page.goto('/admin/renames');
+  await page.goto('/hq/renames');
   await expect(page.getByText('Shoprite Express')).toBeVisible();
   await page.getByRole('button', { name: 'Refuse' }).click();
   const dialog = page.getByRole('dialog', { name: /Refuse/ });
@@ -497,7 +497,7 @@ test('a business replies once; a reviewer removes an abusive rating with a reaso
     removed = route.request().postDataJSON().reason;
     return route.fulfill({ json: { removed: true } });
   });
-  await page.goto('/admin/reviews');
+  await page.goto('/hq/reviews');
   await page.getByRole('button', { name: 'Remove' }).click();
   const removal = page.getByRole('dialog', { name: 'Remove this rating?' });
   await removal.getByLabel('Reason').fill('Contains a phone number');

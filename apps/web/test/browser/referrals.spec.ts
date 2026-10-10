@@ -231,7 +231,7 @@ test('offers show the invite programme, and the admin funds the pool with a refe
     balance = '5000000';
     return route.fulfill({ json: { id: bodies[0]!.id } });
   });
-  await page.goto('/admin/referrals');
+  await page.goto('/hq/referrals');
   await expect(page.getByText(/The pool is empty/)).toBeVisible();
   await page.getByRole('button', { name: 'Add money' }).click();
   const dialog = page.getByRole('dialog', {

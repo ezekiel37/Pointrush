@@ -306,3 +306,23 @@ test('admin search finds a business by an old name or an old handle', async () =
   ]);
   assert.deepEqual(detail.businessProfile?.formerNames, ['Mr Biggs Surulere']);
 });
+
+test('search engines list a business only after a campaign is approved', async () => {
+  const owner = await person();
+  await open(owner, 'Fake Shoprite Lekki', 'lekki_mart');
+  const before = await edits.publicBusiness('lekki_mart');
+  assert.ok(!('redirect' in before) && before.listed === false);
+  assert.ok(
+    !(await edits.listedBusinesses()).items.some(
+      (b) => b.handle === 'lekki_mart',
+    ),
+  );
+  await campaign(1, '50000', owner);
+  const after = await edits.publicBusiness('lekki_mart');
+  assert.ok(!('redirect' in after) && after.listed === true);
+  assert.ok(
+    (await edits.listedBusinesses()).items.some(
+      (b) => b.handle === 'lekki_mart',
+    ),
+  );
+});

@@ -115,14 +115,7 @@ export function AccountTools({ initial = '' }: { initial?: string }) {
       if (cause instanceof RequestError && cause.status < 500)
         attempt.current = null;
       setNeedsAccess(denied(cause));
-      setError(
-        cause instanceof RequestError &&
-          cause.code === 'access_change_unavailable'
-          ? toState === 'active'
-            ? 'Another reviewer must unfreeze this account: the person who froze it cannot undo it alone.'
-            : 'This change is not allowed: the account may be closed, already in that state, or your own.'
-          : 'We could not record the change. Try again; it is recorded once.',
-      );
+      setError(accessMessage(cause));
     } finally {
       setBusy(false);
     }
@@ -408,4 +401,15 @@ export function PaymentReviews() {
       </div>
     </ReviewFrame>
   );
+}
+
+function accessMessage(cause: unknown) {
+  const code = cause instanceof RequestError ? cause.code : undefined;
+  if (code === 'solo_wait')
+    return 'You froze this account. As the only reviewer, you can unfreeze it 24 hours after the freeze, with a reason.';
+  if (code === 'second_reviewer_required')
+    return 'Another reviewer must unfreeze this account: the person who froze it cannot undo it alone.';
+  if (code === 'access_change_unavailable')
+    return 'This change is not allowed: the account may be closed, already in that state, or your own.';
+  return 'We could not record the change. Try again; it is recorded once.';
 }

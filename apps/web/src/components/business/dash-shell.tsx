@@ -75,27 +75,31 @@ const reviewGroups = [
   {
     title: 'Admin',
     links: [
-      { href: '/admin', label: 'Overview', icon: LayoutGrid, exact: true },
-      { href: '/admin/people', label: 'People', icon: Search },
-      { href: '/admin/referrals', label: 'Referrals', icon: Gift },
-      { href: '/admin/settings', label: 'Settings', icon: SlidersHorizontal },
+      { href: '/hq', label: 'Overview', icon: LayoutGrid, exact: true },
+      { href: '/hq/people', label: 'People', icon: Search },
+      { href: '/hq/referrals', label: 'Referrals', icon: Gift },
+      { href: '/hq/settings', label: 'Settings', icon: SlidersHorizontal },
     ],
   },
   {
     title: 'Review',
     links: [
-      { href: '/review/campaigns', label: 'Campaigns', icon: ClipboardCheck },
-      { href: '/review/appeals', label: 'Appeals', icon: Scale },
-      { href: '/review/disputes', label: 'Void disputes', icon: Undo2 },
-      { href: '/admin/renames', label: 'Names & logos', icon: PenLine },
-      { href: '/admin/reviews', label: 'Reviews', icon: Star },
+      {
+        href: '/hq/review/campaigns',
+        label: 'Campaigns',
+        icon: ClipboardCheck,
+      },
+      { href: '/hq/review/appeals', label: 'Appeals', icon: Scale },
+      { href: '/hq/review/disputes', label: 'Void disputes', icon: Undo2 },
+      { href: '/hq/renames', label: 'Names & logos', icon: PenLine },
+      { href: '/hq/reviews', label: 'Reviews', icon: Star },
     ],
   },
   {
     title: 'Safety',
     links: [
-      { href: '/review/accounts', label: 'Accounts', icon: ShieldAlert },
-      { href: '/review/payments', label: 'Payments', icon: CreditCard },
+      { href: '/hq/review/accounts', label: 'Accounts', icon: ShieldAlert },
+      { href: '/hq/review/payments', label: 'Payments', icon: CreditCard },
     ],
   },
 ];

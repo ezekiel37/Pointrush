@@ -5,7 +5,14 @@ import type { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Feedback } from '@/components/ui/feedback';
 import { Field } from '@/components/ui/field';
-import { apiRequest, naira, newId, shortDate, toKobo } from '@/lib/api';
+import {
+  apiRequest,
+  naira,
+  newId,
+  shortDate,
+  toKobo,
+  typedNaira,
+} from '@/lib/api';
 import { RequestError } from '@/lib/auth-client';
 import { nairaOfKobo, useLimits } from '@/lib/limits';
 import type { Limits } from '@/lib/limits';
@@ -130,7 +137,7 @@ export function WithdrawPanel({
           placeholder="5,000"
           value={amount}
           onChange={(e) => {
-            setAmount(e.target.value);
+            setAmount(typedNaira(e.target.value));
             setInvalid('');
           }}
           hint={`From ${nairaOfKobo(limits.withdrawals.minKobo)} to ${nairaOfKobo(limits.withdrawals.maxKobo)} each, up to ${nairaOfKobo(limits.withdrawals.dailyKobo)} a day in ${limits.withdrawals.dailyCount} withdrawals.`}

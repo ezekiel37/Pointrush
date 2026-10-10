@@ -8,7 +8,14 @@ import { Dialog } from '@/components/ui/dialog';
 import { Feedback, Loading } from '@/components/ui/feedback';
 import { Field } from '@/components/ui/field';
 import { toast } from '@/components/ui/toast';
-import { apiRequest, naira, newId, shortDate, toKobo } from '@/lib/api';
+import {
+  apiRequest,
+  naira,
+  newId,
+  shortDate,
+  toKobo,
+  typedNaira,
+} from '@/lib/api';
 import { referralPool } from '@/lib/admin';
 import { useApiRead } from '@/lib/use-api-read';
 import { AdminFailure, AdminFrame } from './admin-frame';
@@ -173,7 +180,9 @@ export function AdminReferrals() {
                   label="Amount (₦)"
                   inputMode="decimal"
                   value={amount}
-                  onChange={(event) => setAmount(event.target.value)}
+                  onChange={(event) =>
+                    setAmount(typedNaira(event.target.value))
+                  }
                   disabled={busy}
                   data-autofocus
                 />

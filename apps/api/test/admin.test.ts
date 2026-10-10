@@ -112,7 +112,7 @@ test('only appointed reviewers can freeze, and every change is audited and rever
         reason: 'Changed my mind',
       }),
     ),
-    'access_change_unavailable',
+    'second_reviewer_required',
   );
   const second = await appointed();
   const restored = await admin.setAccess(second.user, target.account, {

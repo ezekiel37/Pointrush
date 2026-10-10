@@ -70,6 +70,12 @@ export class ProfileEditsController {
   username(@Req() r: AuthenticatedRequest, @Body() body: unknown) {
     return this.edits.changeUsername(r[AUTH_USER_ID], body);
   }
+  // Businesses search engines may list, for the site's sitemap.
+  @PublicRoute()
+  @Get('businesses')
+  businesses() {
+    return this.edits.listedBusinesses();
+  }
   // Shareable business page, readable without signing in.
   @PublicRoute()
   @Get('businesses/:handle')

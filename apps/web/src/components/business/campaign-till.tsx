@@ -11,7 +11,14 @@ import { toast } from '@/components/ui/toast';
 import { Feedback, Loading } from '@/components/ui/feedback';
 import { Field } from '@/components/ui/field';
 import { WorkFailure } from '@/components/work/work-frame';
-import { apiRequest, naira, newId, shortDate, toKobo } from '@/lib/api';
+import {
+  apiRequest,
+  naira,
+  newId,
+  shortDate,
+  toKobo,
+  typedNaira,
+} from '@/lib/api';
 import { RequestError } from '@/lib/auth-client';
 import { campaignSummary, confirmation, voidResult } from '@/lib/rewards';
 import { useApiRead } from '@/lib/use-api-read';
@@ -225,7 +232,9 @@ export function CampaignTill({ id }: { id: string }) {
                   inputMode="decimal"
                   autoComplete="off"
                   value={amount}
-                  onChange={(event) => setAmount(event.target.value)}
+                  onChange={(event) =>
+                    setAmount(typedNaira(event.target.value))
+                  }
                   disabled={busy}
                 />
                 {error && <Feedback error>{error}</Feedback>}

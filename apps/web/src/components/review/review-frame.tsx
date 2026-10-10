@@ -18,7 +18,7 @@ export function ReviewFrame({
     <DashShell
       variant="review"
       crumbs={[
-        { label: 'Review', href: '/review/campaigns' },
+        { label: 'Review', href: '/hq/review/campaigns' },
         ...(section ? [section] : []),
         { label: title },
       ]}

@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Feedback, Loading } from '@/components/ui/feedback';
 import { Field } from '@/components/ui/field';
 import { WorkFailure } from '@/components/work/work-frame';
-import { apiRequest, naira, newId, toKobo } from '@/lib/api';
+import { apiRequest, naira, newId, toKobo, typedNaira } from '@/lib/api';
 import { RequestError } from '@/lib/auth-client';
 import { businessOverview } from '@/lib/rewards';
 import { useApiRead } from '@/lib/use-api-read';
@@ -290,7 +290,13 @@ export function CampaignForm({ model }: { model: Model }) {
       id={`campaign-${key}`}
       label={label}
       value={String(form[key])}
-      onChange={(e) => set(key)(e.target.value)}
+      onChange={(e) =>
+        set(key)(
+          extra.inputMode === 'decimal'
+            ? typedNaira(e.target.value)
+            : e.target.value,
+        )
+      }
       error={errors[key]}
       {...extra}
     />

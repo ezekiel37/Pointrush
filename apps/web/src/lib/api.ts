@@ -50,6 +50,15 @@ export function naira(kobo: string, { showKobo = false } = {}) {
     : `₦${whole}`;
 }
 
+// Groups thousands as naira is typed, so "100000" reads "100,000". Keeps up
+// to two decimals; toKobo reads the result back.
+export function typedNaira(input: string) {
+  const [whole = '', ...rest] = input.replace(/[^\d.]/g, '').split('.');
+  const digits = whole.replace(/^0+(?=\d)/, '').slice(0, 12);
+  const grouped = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return rest.length ? `${grouped}.${rest.join('').slice(0, 2)}` : grouped;
+}
+
 // "1,250.50" or "1250" naira typed at a till, to exact kobo. Null if invalid.
 export function toKobo(input: string): string | null {
   const value = input.replace(/[\s,₦]/g, '');

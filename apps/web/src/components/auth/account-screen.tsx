@@ -203,7 +203,7 @@ export function AccountScreen({ goHome = false }: { goHome?: boolean }) {
                   <Link className="text-link" href="/two-factor?mode=enroll">
                     Set up authenticator security
                   </Link>
-                  <Link className="text-link" href="/review/appeals">
+                  <Link className="text-link" href="/hq/review/appeals">
                     Review appeals (appointed reviewers)
                   </Link>
                 </section>
