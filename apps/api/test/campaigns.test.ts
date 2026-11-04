@@ -828,3 +828,34 @@ test('voids are capped at 20%, shoppers can dispute for 7 days, and voided money
   await assert.rejects(db.execute(sql`delete from purchase_void_disputes`));
   await assert.rejects(db.execute(sql`delete from purchase_void_rulings`));
 });
+
+test('the jobs list shows a business its jobs, not its cash back offers', async () => {
+  const offer = await campaign(1, '50000');
+  await fixture.fund(offer.merchant.account, 100000n);
+  const start = new Date(Date.now() + 86400000);
+  const job = await sponsors.createTask(offer.merchant.user, {
+    requestId: randomUUID(),
+    title: 'Test our checkout',
+    instructions: 'Place a test order and tell us what confused you.',
+    proofRequirements: 'A screenshot of the confirmation.',
+    rejectionCriteria: 'Copied answers.',
+    model: 'capped_fixed',
+    capacity: 2,
+    rewardKobo: '50000',
+    startsAt: start.toISOString(),
+    endsAt: new Date(start.getTime() + 7 * 86400000).toISOString(),
+    workTerms: {
+      reviewHours: 48,
+      correctionHours: 72,
+      appealHours: 168,
+      settlement: 'approved_reward_backing',
+    },
+  });
+  const listed = await new TaskQueriesService(db).sponsorTasks(
+    offer.merchant.user,
+  );
+  assert.deepEqual(
+    listed.items.map((t) => t.id),
+    [job.id],
+  );
+});

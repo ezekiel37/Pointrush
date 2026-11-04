@@ -16,7 +16,16 @@ import { businessOverview } from '@/lib/rewards';
 import { useApiRead } from '@/lib/use-api-read';
 import { nairaOfKobo, useLimits } from '@/lib/limits';
 
-type Model = 'purchase_cashback' | 'claim_code';
+// capped_fixed is a paid job: the first people to join, each paid once the
+// business approves their work.
+type Model = 'purchase_cashback' | 'claim_code' | 'capped_fixed';
+// How long the business has to review submitted work.
+const reviewChoices = [
+  [24, '1 day'],
+  [48, '2 days'],
+  [72, '3 days'],
+  [168, '7 days'],
+] as const;
 const created = z.object({ id: z.uuid() });
 const holdChoices = [
   [24, '1 day'],
@@ -64,6 +73,19 @@ const copy = {
     instructionsHint:
       'For example: Find the code inside the cap and enter it at acticlaim.com/claim.',
   },
+  capped_fixed: {
+    title: 'Post a paid job',
+    intro:
+      'Pay people for work you approve: testing your app, trying a product, a survey. The full pay is locked now and reviewed by Acticlaim before the job goes live.',
+    list: '/sponsor/tasks',
+    listLabel: 'Jobs',
+    reward: 'Pay per person',
+    capacity: 'Number of people',
+    titleHint: 'For example: Test our checkout and report what breaks',
+    instructionsLabel: 'What people do',
+    instructionsHint:
+      'Step by step, so anyone can follow it. For example: Install the app, place a test order with the code TEST, and write what confused you.',
+  },
 } as const;
 
 function createError(error: unknown) {
@@ -103,7 +125,9 @@ export function CampaignForm({ model }: { model: Model }) {
   const floor =
     model === 'purchase_cashback'
       ? limits.campaigns.minCashbackKobo
-      : limits.campaigns.minPrizeKobo;
+      : model === 'capped_fixed'
+        ? limits.campaigns.minJobRewardKobo
+        : limits.campaigns.minPrizeKobo;
   const [start] = useState(defaultStart);
   const [form, setForm] = useState({
     title: '',
@@ -125,6 +149,9 @@ export function CampaignForm({ model }: { model: Model }) {
     howToGetCodes: '',
     prizeType: 'cash' as 'cash' | 'item',
     prizeItem: '',
+    proof: '',
+    noPay: '',
+    reviewHours: 48,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState('');
@@ -151,7 +178,11 @@ export function CampaignForm({ model }: { model: Model }) {
 
   function validate() {
     const next: Record<string, string> = {};
-    if (!form.title.trim()) next.title = 'Give the campaign a name.';
+    if (!form.title.trim())
+      next.title =
+        model === 'capped_fixed'
+          ? 'Give the job a title.'
+          : 'Give the campaign a name.';
     if (!form.instructions.trim())
       next.instructions = 'Tell people what to do.';
     if (!rewardKobo) next.reward = 'Enter an amount in naira.';
@@ -193,6 +224,11 @@ export function CampaignForm({ model }: { model: Model }) {
         if (!base || (rewardKobo && BigInt(base) >= BigInt(rewardKobo)))
           next.groupBase = 'Enter an amount below the full cash back.';
       }
+    } else if (model === 'capped_fixed') {
+      if (!form.proof.trim())
+        next.proof = 'Say what people must send to show the work is done.';
+      if (!form.noPay.trim())
+        next.noPay = 'Say when you will not pay, so people know up front.';
     } else {
       if (!/^([1-9]|1\d|20)$/.test(form.claimLimit))
         next.claimLimit = 'Between 1 and 20.';
@@ -216,6 +252,19 @@ export function CampaignForm({ model }: { model: Model }) {
       startsAt: new Date(form.startsAt).toISOString(),
       endsAt: new Date(form.endsAt).toISOString(),
     };
+    if (model === 'capped_fixed')
+      return {
+        ...common,
+        proofRequirements: form.proof.trim(),
+        rejectionCriteria: form.noPay.trim(),
+        // Corrections get 3 days and appeals 7, the same for every job.
+        workTerms: {
+          reviewHours: form.reviewHours,
+          correctionHours: 72,
+          appealHours: 168,
+          settlement: 'approved_reward_backing',
+        },
+      };
     return model === 'purchase_cashback'
       ? {
           ...common,
@@ -302,6 +351,28 @@ export function CampaignForm({ model }: { model: Model }) {
     />
   );
 
+  const area = (key: 'proof' | 'noPay', label: string, hint: string) => (
+    <div className="field">
+      <label htmlFor={`campaign-${key}`}>{label}</label>
+      <textarea
+        id={`campaign-${key}`}
+        className="input textarea"
+        rows={3}
+        maxLength={2000}
+        value={form[key]}
+        aria-invalid={Boolean(errors[key])}
+        aria-describedby={`campaign-${key}-help`}
+        onChange={(e) => set(key)(e.target.value)}
+      />
+      <p
+        id={`campaign-${key}-help`}
+        className={errors[key] ? 'field-help field-error' : 'field-help'}
+      >
+        {errors[key] || hint}
+      </p>
+    </div>
+  );
+
   return (
     <DashShell
       crumbs={[
@@ -322,10 +393,14 @@ export function CampaignForm({ model }: { model: Model }) {
         <form className="create-grid" onSubmit={submit} noValidate>
           <div className="card grid gap-5">
             <Section title="The offer">
-              {field('title', 'Campaign name', {
-                maxLength: 160,
-                hint: text.titleHint,
-              })}
+              {field(
+                'title',
+                model === 'capped_fixed' ? 'Job title' : 'Campaign name',
+                {
+                  maxLength: 160,
+                  hint: text.titleHint,
+                },
+              )}
               <div className="field">
                 <label htmlFor="campaign-instructions">
                   {text.instructionsLabel}
@@ -352,6 +427,46 @@ export function CampaignForm({ model }: { model: Model }) {
                 </p>
               </div>
             </Section>
+
+            {model === 'capped_fixed' && (
+              <Section title="Proof and review">
+                {area(
+                  'proof',
+                  'What proof they send',
+                  'For example: A screenshot of the order confirmation and three sentences on what confused you.',
+                )}
+                {area(
+                  'noPay',
+                  'When you will not pay',
+                  'For example: Copied answers, missing screenshots, or work sent after the deadline.',
+                )}
+                <div className="field">
+                  <span className="field-label" id="review-label">
+                    You review each submission within
+                  </span>
+                  <div
+                    className="segmented preset-row"
+                    role="group"
+                    aria-labelledby="review-label"
+                  >
+                    {reviewChoices.map(([hours, label]) => (
+                      <button
+                        key={hours}
+                        type="button"
+                        aria-pressed={form.reviewHours === hours}
+                        onClick={() => set('reviewHours')(hours)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="field-help">
+                    People can fix rejected work within 3 days, and appeal a
+                    decision to Acticlaim within 7.
+                  </p>
+                </div>
+              </Section>
+            )}
 
             {model === 'claim_code' && (
               <Section title="The prize">
@@ -522,7 +637,7 @@ export function CampaignForm({ model }: { model: Model }) {
                   })}
                 </Section>
               </>
-            ) : (
+            ) : model === 'claim_code' ? (
               <Section title="Codes and winners">
                 <p className="field-help" style={{ margin: 0 }}>
                   Every code you create here is funded and wins its prize.
@@ -541,7 +656,7 @@ export function CampaignForm({ model }: { model: Model }) {
                   })}
                 </div>
               </Section>
-            )}
+            ) : null}
 
             <Section title="When">
               <div className="pair">

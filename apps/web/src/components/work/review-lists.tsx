@@ -1,6 +1,11 @@
 'use client';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { useState } from 'react';
+import { Plus } from 'lucide-react';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { apiRequest } from '@/lib/api';
 import { useWorkRead } from '@/lib/use-work-read';
 import { sponsorTaskPage, appealQueue } from '@/lib/review-work';
 import { claimPage } from '@/lib/work';
@@ -8,7 +13,8 @@ import { backingNaira, workDate } from '@/lib/work-format';
 import { WorkFrame, WorkFailure } from './work-frame';
 import { ReviewFrame } from '@/components/review/review-frame';
 import { DashHead, DashShell } from '@/components/business/dash-shell';
-import { Loading } from '@/components/ui/feedback';
+import { notEnded } from '@/components/business/business-home';
+import { Feedback, Loading } from '@/components/ui/feedback';
 import { ReviewAccess } from './review-access';
 function Pages({
   base,
@@ -46,6 +52,38 @@ function usePageQuery() {
 export function SponsorTasks() {
   const { after, query } = usePageQuery();
   const read = useWorkRead(`sponsor/tasks?${query}`, sponsorTaskPage);
+  const created = useSearchParams().get('created');
+  const [publishing, setPublishing] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  // Approved by Acticlaim and not live yet: the business chooses when.
+  const ready =
+    read.data?.items.filter(
+      (t) =>
+        t.reviewState === 'approved' &&
+        t.lifecycle !== 'published' &&
+        notEnded(t.endsAt),
+    ) ?? [];
+
+  async function goLive(id: string) {
+    if (publishing) return;
+    setPublishing(id);
+    setError('');
+    try {
+      // Publishing is idempotent: repeating it returns the same publication.
+      await apiRequest(`work/tasks/${id}/publish`, z.unknown(), {
+        method: 'POST',
+        body: {},
+      });
+      read.refresh();
+    } catch {
+      setError(
+        'We could not publish this job. Check your connection and try again.',
+      );
+    } finally {
+      setPublishing(null);
+    }
+  }
+
   return (
     // Business Jobs keep the business sidebar, like every business page.
     <DashShell
@@ -54,7 +92,42 @@ export function SponsorTasks() {
       <DashHead
         title="Jobs you posted"
         intro="Open a job to review who joined and the work they sent."
+        actions={
+          <Link className="button button-accent" href="/sponsor/tasks/new">
+            <Plus size={17} aria-hidden /> Post a job
+          </Link>
+        }
       />
+      {created && (
+        <Feedback>
+          Posted and pay locked. Acticlaim reviews it next; you can put it live
+          here once it is approved.
+        </Feedback>
+      )}
+      {error && <Feedback error>{error}</Feedback>}
+      {ready.length > 0 && (
+        <section className="card" aria-labelledby="ready-jobs-heading">
+          <div className="card-head">
+            <h2 id="ready-jobs-heading">Approved, ready to go live</h2>
+            <p>People can join as soon as you publish.</p>
+          </div>
+          <ul className="stack">
+            {ready.map((t) => (
+              <li key={t.id} className="row" style={{ flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 600 }}>{t.title}</span>
+                <Button
+                  type="button"
+                  variant="accent"
+                  disabled={publishing !== null}
+                  onClick={() => void goLive(t.id)}
+                >
+                  {publishing === t.id ? 'Publishing…' : 'Go live'}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       {read.loading ? (
         <Loading>Loading your jobs…</Loading>
       ) : read.error ? (

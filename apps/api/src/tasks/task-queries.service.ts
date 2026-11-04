@@ -3,7 +3,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { and, eq, gt, isNull, ne, sql } from 'drizzle-orm';
+import { and, eq, gt, isNull, ne, sql, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import type { FundingDatabase } from '../funding/funding-ledger.js';
 import * as s from '../database/schema.js';
@@ -200,6 +200,12 @@ export class TaskQueriesService {
       .where(
         and(
           eq(s.sponsorProfiles.ownerId, actor),
+          // Jobs only: cash back offers and prize promotions have their
+          // own pages.
+          inArray(s.sponsorTasks.model, [
+            'capped_fixed',
+            'selected_assignment',
+          ]),
           query.after ? gt(s.sponsorTasks.id, query.after) : undefined,
         ),
       )

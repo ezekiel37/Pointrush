@@ -1024,3 +1024,97 @@ test('on a phone the business has a tab bar, a More sheet and a quick confirm', 
     page.getByRole('link', { name: 'Create a cash back offer' }),
   ).toBeVisible();
 });
+
+test('a business posts a paid job with proof rules and review time, then puts it live once approved', async ({
+  page,
+}) => {
+  await page.route('**/api/v1/business/overview?*', (route) =>
+    route.fulfill({ json: overview() }),
+  );
+  const jobId = '7d1e2d3f-4a5b-4c6d-8e9f-0a1b2c3d4e5f';
+  const posted: Record<string, unknown>[] = [];
+  let approved = false;
+  let live = false;
+  await page.route('**/api/v1/sponsor/tasks', (route) => {
+    posted.push(route.request().postDataJSON());
+    return route.fulfill({ json: { id: jobId } });
+  });
+  // The jobs list is a work read.
+  await page.route('**/api/v1/work/sponsor/tasks?*', (route) => {
+    return route.fulfill({
+      json: {
+        items: posted.length
+          ? [
+              {
+                id: jobId,
+                title: 'Test our checkout',
+                reviewState: approved ? 'approved' : 'pending_review',
+                lifecycle: live ? 'published' : 'not_live',
+                endsAt: '2099-12-01T10:00:00Z',
+                budgetKobo: '1000000',
+              },
+            ]
+          : [],
+        nextCursor: null,
+      },
+    });
+  });
+  const published: string[] = [];
+  await page.route(`**/api/v1/work/tasks/${jobId}/publish`, (route) => {
+    published.push(jobId);
+    live = true;
+    return route.fulfill({ json: { taskId: jobId } });
+  });
+
+  await page.goto('/sponsor/tasks');
+  await page.getByRole('link', { name: 'Post a job' }).click();
+  await page.waitForURL('**/sponsor/tasks/new');
+  await expect(
+    page.getByRole('heading', { name: 'Post a paid job' }),
+  ).toBeVisible();
+  // A job never shows the prize or shop sections.
+  await expect(page.getByText('Codes and winners')).toHaveCount(0);
+  await page.getByRole('button', { name: /Lock money and submit/ }).click();
+  await expect(page.getByText('Give the job a title.')).toBeVisible();
+  await expect(
+    page.getByText('Say what people must send to show the work is done.'),
+  ).toBeVisible();
+  expect(posted).toHaveLength(0);
+
+  await page.getByLabel('Job title').fill('Test our checkout');
+  await page
+    .getByLabel('What people do')
+    .fill('Place a test order with the code TEST and note what confused you.');
+  await page
+    .getByLabel('What proof they send')
+    .fill('A screenshot of the confirmation and three sentences.');
+  await page.getByLabel('When you will not pay').fill('Copied answers.');
+  await page.getByRole('button', { name: '3 days' }).click();
+  await page.getByLabel('Pay per person (₦)').fill('5000');
+  await page.getByLabel('Number of people').fill('2');
+  await page.getByRole('button', { name: /Lock ₦10,000 and submit/ }).click();
+  await page.waitForURL('**/sponsor/tasks?created=1');
+  await expect(page.getByText(/Posted and pay locked/)).toBeVisible();
+  expect(posted[0]).toMatchObject({
+    title: 'Test our checkout',
+    model: 'capped_fixed',
+    capacity: 2,
+    rewardKobo: '500000',
+    proofRequirements: 'A screenshot of the confirmation and three sentences.',
+    rejectionCriteria: 'Copied answers.',
+    workTerms: {
+      reviewHours: 72,
+      correctionHours: 72,
+      appealHours: 168,
+      settlement: 'approved_reward_backing',
+    },
+  });
+
+  // Once Acticlaim approves it, the business chooses when it goes live.
+  approved = true;
+  await page.reload();
+  await page.getByRole('button', { name: 'Go live' }).click();
+  await expect(page.getByRole('button', { name: 'Go live' })).toHaveCount(0);
+  expect(published).toEqual([jobId]);
+  await healthy(page);
+});
