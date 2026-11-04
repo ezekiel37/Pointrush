@@ -46,6 +46,15 @@ const limits = {
   },
 };
 
+// Staff pages first check who is asking; these tests act as a verified reviewer.
+test.beforeEach(async ({ page }) => {
+  await page.route('**/api/v1/staff/access', (route) =>
+    route.fulfill({
+      json: { reviewer: true, verified: true, settingsAdmin: true },
+    }),
+  );
+});
+
 test('an invite link opens sign-up with the inviter, for people and businesses', async ({
   page,
 }) => {

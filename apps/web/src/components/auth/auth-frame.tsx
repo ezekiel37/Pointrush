@@ -33,7 +33,7 @@ export function AuthFrame({
         <div className="story-body">
           <p className="eyebrow">Proof pays</p>
           <h2>
-            Buy. Scratch.
+            Buy. Claim.
             <br />
             Get paid
             <br />

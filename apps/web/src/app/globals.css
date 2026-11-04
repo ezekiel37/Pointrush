@@ -44,6 +44,8 @@
   --color-info-surface: #eaf2fc;
   --color-danger: #a3261f;
   --color-danger-surface: #fdecea;
+  --color-warning: #8a5300;
+  --color-warning-surface: #fdf3e1;
   /* Purchase-state series, validated as a categorical set (dataviz). */
   --color-series-paid: #1baf7a;
   --color-series-ready: #2a78d6;
@@ -97,6 +99,8 @@
     --color-info-surface: #15253b;
     --color-danger: #ff9a90;
     --color-danger-surface: #3b1714;
+    --color-warning: #f2c46d;
+    --color-warning-surface: #33270f;
     --shadow-card:
       0 1px 2px rgb(0 0 0 / 0.3), 0 10px 30px -14px rgb(0 0 0 / 0.6);
     --shadow-float:
@@ -115,6 +119,9 @@
   html {
     color-scheme: light;
     -webkit-text-size-adjust: 100%;
+    /* Decorations (the hero's dashed rings) may spill into the margins but
+       never make the page scroll sideways. */
+    overflow-x: clip;
   }
   body {
     margin: 0;
@@ -434,6 +441,19 @@
   .feedback-info {
     background: var(--color-mint);
     color: var(--color-success);
+  }
+  .feedback-warning {
+    background: var(--color-warning-surface);
+    color: var(--color-warning);
+  }
+  .quick-action-soon {
+    margin-top: -0.2rem;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    background: var(--color-sunken);
+    color: var(--color-muted);
+    font-size: 0.66rem;
+    font-weight: 600;
   }
   .feedback a {
     color: inherit;
@@ -3327,6 +3347,8 @@
   }
   /* Dialogs: centred on wide screens, a bottom sheet on phones. */
   .dialog {
+    /* The reset zeroes margins; a modal dialog centres itself with auto. */
+    margin: auto;
     width: min(100% - 2rem, 460px);
     max-height: calc(100svh - 2rem);
     padding: 0;

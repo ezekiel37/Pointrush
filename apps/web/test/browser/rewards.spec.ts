@@ -825,10 +825,11 @@ test('the bell counts unread updates and opening them marks them read', async ({
     ],
     unread: seen === 0 ? 1 : 0,
   });
-  // After the bell's first read, the server is slow; the page must not wait.
-  let reads = 0;
+  // Once the bell has read the feed, the server turns slow; the page must
+  // show what the bell already has instead of waiting.
+  let slow = false;
   await page.route('**/api/v1/notifications', async (route) => {
-    if (++reads > 1) await new Promise((r) => setTimeout(r, 3000));
+    if (slow) await new Promise((r) => setTimeout(r, 3000));
     return route.fulfill({ json: feed() });
   });
   await page.route('**/api/v1/notifications/seen', (route) => {
@@ -838,10 +839,21 @@ test('the bell counts unread updates and opening them marks them read', async ({
   await page.route('**/api/v1/work/tasks?*', (route) =>
     route.fulfill({ json: { items: [], nextCursor: null } }),
   );
+  // Signed in as a shopper with no business. An unanswered read would look
+  // like a signed-out session, which rightly clears remembered screens.
+  await page.route('**/api/v1/sponsor/profile', (route) =>
+    route.fulfill({ status: 404, json: { statusCode: 404 } }),
+  );
+  // The development server builds a page on its first visit; do that first
+  // so the timing below measures the app, not the build.
+  await page.request.get('/notifications');
   await page.goto('/offers');
-  await page.getByRole('link', { name: 'Notifications, 1 unread' }).click();
+  const bell = page.getByRole('link', { name: 'Notifications, 1 unread' });
+  await expect(bell).toBeVisible();
+  slow = true;
+  await bell.click();
   await expect(page.getByText('₦500 cash back is ready')).toBeVisible({
-    timeout: 1000,
+    timeout: 1500,
   });
   await expect(page.getByText('Loading notifications')).toHaveCount(0);
   await healthy(page);

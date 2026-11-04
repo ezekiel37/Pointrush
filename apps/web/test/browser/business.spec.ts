@@ -11,6 +11,15 @@ async function healthy(page: Page) {
   ).toBe(true);
 }
 
+// Staff pages first check who is asking; these tests act as a verified reviewer.
+test.beforeEach(async ({ page }) => {
+  await page.route('**/api/v1/staff/access', (route) =>
+    route.fulfill({
+      json: { reviewer: true, verified: true, settingsAdmin: true },
+    }),
+  );
+});
+
 test('a business is created against the current terms, then sent to add funds', async ({
   page,
 }) => {
@@ -71,6 +80,89 @@ test('a business is created against the current terms, then sent to add funds', 
       termsVersion: 'business-2026-10',
     },
   ]);
+});
+
+test('a business sign-up without a username chooses one first, then sets up the business', async ({
+  page,
+}) => {
+  let onboarded = false;
+  const created: unknown[] = [];
+  await page.route('**/api/v1/accounts/me', (route) => {
+    if (route.request().method() === 'POST') {
+      created.push(route.request().postDataJSON());
+      onboarded = true;
+      return route.fulfill({ status: 201, json: {} });
+    }
+    return route.fulfill({
+      json: onboarded
+        ? {
+            onboarding: 'complete',
+            accountType: 'business',
+            account: {
+              id: '7c1e2d3f-4a5b-4c6d-8e9f-0a1b2c3d4e5f',
+              username: 'tolu',
+              displayName: 'Tolu',
+              accessState: 'active',
+            },
+          }
+        : {
+            onboarding: 'required',
+            account: null,
+            accountType: 'business',
+            invitedBy: null,
+          },
+    });
+  });
+  await page.route('**/api/v1/sponsor/terms', (route) =>
+    route.fulfill({ json: { version: 'business-2026-10' } }),
+  );
+  await page.route('**/api/v1/sponsor/profile', (route) =>
+    route.fulfill({ status: 404, json: { statusCode: 404 } }),
+  );
+  await page.route('**/api/v1/handles/check?*', (route) =>
+    route.fulfill({
+      json: { available: true, reason: null, suggestion: null },
+    }),
+  );
+  await page.goto('/business/setup');
+  await expect(page.getByText('First, your details')).toBeVisible();
+  await expect(page.getByLabel('Business name')).toHaveCount(0);
+  await page.getByLabel('Display name').fill('Tolu');
+  await page.getByLabel('Username').fill('tolu');
+  await page.getByRole('button', { name: 'Complete setup' }).click();
+  await expect(page.getByLabel('Business name')).toBeVisible();
+  expect(created).toEqual([{ username: 'tolu', displayName: 'Tolu' }]);
+  // Everything missing is reported at once.
+  await page.getByRole('button', { name: 'Create business' }).click();
+  await expect(page.getByText('Enter your business name.')).toBeVisible();
+  await expect(
+    page.getByText('Accept the business terms to continue.'),
+  ).toBeVisible();
+  // Handles are shown as they will be saved, never longer than 30.
+  await page.getByLabel('Business handle').fill('@QA Shop');
+  await expect(page.getByLabel('Business handle')).toHaveValue('qashop');
+  await expect(page.getByLabel('Business handle')).toHaveAttribute(
+    'maxlength',
+    '30',
+  );
+  await healthy(page);
+});
+
+test('a handle that cannot be checked says why', async ({ page }) => {
+  await page.route('**/api/v1/sponsor/terms', (route) =>
+    route.fulfill({ json: { version: 'business-2026-10' } }),
+  );
+  await page.route('**/api/v1/sponsor/profile', (route) =>
+    route.fulfill({ status: 404, json: { statusCode: 404 } }),
+  );
+  await page.route('**/api/v1/handles/check?*', (route) =>
+    route.fulfill({ status: 403, json: { statusCode: 403 } }),
+  );
+  await page.goto('/business/setup');
+  await page.getByLabel('Business name').fill('T motors');
+  await expect(
+    page.getByText('Finish setting up your account (name and username) first.'),
+  ).toBeVisible();
 });
 
 const businessId = '5b0f8d4e-1c2a-4e7a-9f3b-2d6c8a1e4f70';

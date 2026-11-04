@@ -28,7 +28,7 @@ export default function Page() {
       <h2>2. What Acticlaim does</h2>
       <p>
         Acticlaim connects people with businesses that offer cash back on
-        purchases, prize codes and paid tasks. The business pays each reward in
+        purchases, prize codes and paid jobs. The business pays each reward in
         before its offer goes live. Acticlaim holds the business&apos;s payment
         through our payment provider, checks each claim and pays rewards once
         the rules of the offer are met.
@@ -55,7 +55,7 @@ export default function Page() {
         collected from the business with a voucher.
       </p>
 
-      <h2>5. Paid tasks</h2>
+      <h2>5. Paid jobs</h2>
       <p>
         The business sets the task, the pay and the rules for approval. Pay is
         released only for approved work. You can respond to a rejection and

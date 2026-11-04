@@ -16,7 +16,7 @@ export function MyTasks() {
     claimPage,
   );
   return (
-    <WorkFrame title="My tasks">
+    <WorkFrame title="My jobs">
       <p className="work-intro">
         Your confirmed places, submissions and approved reward value.
       </p>

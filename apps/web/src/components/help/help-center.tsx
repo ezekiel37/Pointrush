@@ -30,7 +30,7 @@ const topics: Topic[] = [
     questions: [
       [
         'What is Acticlaim?',
-        'A way to get paid for things you already do: cash back on purchases at real businesses, prize codes where every code wins, and paid tasks. The business pays the reward in before an offer goes live, so the money is there when you earn it.',
+        'A way to get paid for things you already do: cash back on purchases at real businesses, prize codes where every code wins, and paid jobs. The business pays the reward in before an offer goes live, so the money is there when you earn it.',
       ],
       [
         'Does it cost anything to join?',
@@ -81,7 +81,7 @@ const topics: Topic[] = [
         'You get a private voucher to show the business when you collect it. If you have not collected it after 14 days, you can take its cash value instead.',
       ],
       [
-        'How do paid tasks work?',
+        'How do paid jobs work?',
         'Read the brief, join the task and submit your proof before the deadline. The business reviews it. Approved work is paid into your wallet. You can respond to correction requests and appeal a rejection within the times shown on the task.',
       ],
     ],
@@ -124,7 +124,7 @@ const topics: Topic[] = [
     questions: [
       [
         'How do I start?',
-        'Create an account, set up your business and add funds by bank transfer. Then create a cash back offer, prize codes or a paid task. Acticlaim reviews each campaign before it goes live.',
+        'Create an account, set up your business and add funds by bank transfer. Then create a cash back offer, prize codes or a paid job. Acticlaim reviews each campaign before it goes live.',
       ],
       [
         'Why do I pay in advance?',

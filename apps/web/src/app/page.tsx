@@ -33,7 +33,7 @@ import {
 import { jobsEnabled } from '@/lib/features';
 
 export const metadata: Metadata = {
-  title: { absolute: 'Acticlaim: cash back, prize codes and paid tasks' },
+  title: { absolute: 'Acticlaim: cash back, prize codes and paid jobs' },
   description:
     'Get money back when you buy, claim prize codes where every code wins, and get paid for tasks. Businesses lock every naira before it is promised.',
   robots: { index: true, follow: true },
@@ -72,7 +72,7 @@ const audiences = [
           who: 'Startups & software companies',
           title: 'Real people, real feedback.',
           body: 'Pay people to test your app, try your product or finish a task. The pay is locked first, and you only pay for approved work.',
-          cta: 'Post a paid task',
+          cta: 'Post a paid job',
         },
       ]
     : []),
@@ -136,7 +136,7 @@ export default function Home() {
             </h1>
             <p>
               Cash back when you buy, prize codes where every code wins
-              {jobsEnabled ? ', and paid tasks from real businesses' : ''}.
+              {jobsEnabled ? ', and paid jobs from real businesses' : ''}.
               Businesses pay the reward in before the offer goes live, so it is
               there when you earn it.
             </p>
@@ -174,7 +174,7 @@ export default function Home() {
           <div
             className="lp-visual"
             role="img"
-            aria-label="Example of the Acticlaim app: a wallet with cash back, a prize and a paid task"
+            aria-label="Example of the Acticlaim app: a wallet with cash back, a prize and a paid job"
           >
             <div className="lp-arc" aria-hidden />
             <svg className="lp-burst" viewBox="0 0 100 100" aria-hidden>
@@ -236,7 +236,7 @@ export default function Home() {
                         <Code2 size={14} />
                       </span>
                       <span>
-                        Paid task
+                        Paid job
                         <small>Test a new app</small>
                       </span>
                       <b>+₦2,000</b>
@@ -315,7 +315,7 @@ export default function Home() {
               <h3>Pick an offer</h3>
               <p>
                 Cash back from a business near you, a prize code from a pack
-                {jobsEnabled ? ', or a paid task' : ''}.
+                {jobsEnabled ? ', or a paid job' : ''}.
               </p>
             </li>
             <li>
@@ -431,7 +431,7 @@ export default function Home() {
             </h2>
             <p style={{ margin: 0, maxWidth: '46ch' }}>
               {jobsEnabled
-                ? 'Cash back, prize codes or paid tasks.'
+                ? 'Cash back, prize codes or paid jobs.'
                 : 'Cash back or prize codes.'}{' '}
               You fund it, we verify every claim, and you see the results.
             </p>
@@ -450,7 +450,7 @@ export default function Home() {
           <div className="lp-footer-brand">
             <Brand />
             <p className="small-note">
-              Cash back, prize codes{jobsEnabled ? ' and paid tasks' : ''},
+              Cash back, prize codes{jobsEnabled ? ' and paid jobs' : ''},
               prepaid by real businesses.
             </p>
             <SocialLinks />

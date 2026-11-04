@@ -17,11 +17,27 @@ import { useApiRead } from '@/lib/use-api-read';
 
 type Claimed = z.infer<typeof claimResult>;
 
+// Prize codes are AC plus 16 characters from an alphabet without I, L, O,
+// 0 or 1, so nothing can be misread. Checked here before anything is sent.
+const codeAlphabet = /^[A-HJKMNP-Z2-9]+$/;
+export function codeProblem(input: string) {
+  const value = input
+    .toUpperCase()
+    .replace(/[\s-]/g, '')
+    .replace(/^AC(?=.{16}$)/, '');
+  if (!value) return 'Enter the prize code from your pack, card or receipt.';
+  if (!codeAlphabet.test(value))
+    return 'Prize codes never contain the letters I, L or O, or the numbers 0 and 1. Check each character against your code.';
+  if (value.length !== 16)
+    return `Prize codes have 16 characters after AC, like AC-7K4M-9X2Q-PRDH-3VBN. This one has ${value.length}.`;
+  return null;
+}
+
 function claimError(error: unknown) {
   if (error instanceof RequestError) {
     if (error.status === 401) return 'Sign in to claim a prize.';
     if (error.status === 400)
-      return 'That does not look like a prize code. Codes have 16 letters and numbers, like AC-7K4M-9X2Q-PRDH-3VBN.';
+      return 'That is not a valid prize code. Codes are AC plus 16 characters, like AC-7K4M-9X2Q-PRDH-3VBN, and never use I, L, O, 0 or 1.';
     switch (error.code) {
       case 'claim_rejected':
         return 'This code cannot be claimed. Check each character. It may already be used, or the promotion may not be running.';
@@ -30,7 +46,7 @@ function claimError(error: unknown) {
       case 'claim_rate_limit':
         return 'Too many codes did not work. For your security, try again in an hour.';
       case 'phone_required':
-        return 'Verify your phone number to claim prizes. Your code stays valid.';
+        return 'Verify your phone number to claim prizes. Your code has not been checked or used yet: keep it and claim it after verifying.';
     }
     if (error.status === 403)
       return 'Your account cannot claim prizes right now. Check your account status.';
@@ -54,8 +70,9 @@ export function PrizeClaimScreen() {
     event.preventDefault();
     if (busy) return;
     const value = code.trim();
-    if (!value) {
-      setError('Enter the code printed under the scratch panel.');
+    const problem = codeProblem(value);
+    if (problem) {
+      setError(problem);
       return;
     }
     if (attempt.current?.code !== value)
@@ -83,7 +100,7 @@ export function PrizeClaimScreen() {
     <Page
       eyebrow="Prize codes"
       title="Claim a prize"
-      intro="Scratched a winning code? Enter it here. Every prize is paid from money the business locked before the promotion started."
+      intro="Found a prize code on a pack, card or receipt? Enter it here. Every prize is paid from money the business locked before the promotion started."
     >
       <div className="grid gap-6" style={{ maxWidth: 560 }}>
         {won?.prizeItem ? (
@@ -144,14 +161,17 @@ export function PrizeClaimScreen() {
             <Field
               id="claim-code"
               label="Prize code"
-              hint="Letters and numbers only. Dashes and spaces are optional."
+              hint="AC plus 16 letters and numbers. Codes never use I, L, O, 0 or 1. Dashes and spaces are optional."
               placeholder="AC-XXXX-XXXX-XXXX-XXXX"
               className="input-code"
               autoComplete="off"
               autoCapitalize="characters"
               spellCheck={false}
               value={code}
-              onChange={(event) => setCode(event.target.value)}
+              // Only letters, numbers, spaces and dashes can be typed.
+              onChange={(event) =>
+                setCode(event.target.value.replace(/[^A-Za-z0-9\s-]/g, ''))
+              }
               disabled={busy}
             />
             {error && (

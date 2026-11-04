@@ -35,6 +35,7 @@ import { useApiRead } from '@/lib/use-api-read';
 import { WithdrawalList, WithdrawPanel } from './withdraw';
 import { nairaOfKobo, useLimits } from '@/lib/limits';
 import { WithdrawalLock } from './withdrawal-lock';
+import { billOptions } from '@/lib/bills';
 import { VoidDispute } from './void-dispute';
 
 const stateLabel = {
@@ -118,6 +119,9 @@ export function Wallet() {
   const summary = useApiRead('points', pointsSummary);
   const purchases = useApiRead('purchases?limit=30', purchasePage);
   const withdrawals = useApiRead('wallet/withdrawals?limit=10', withdrawalPage);
+  // Bill tiles say "Soon" until a bill provider is connected.
+  const bills = useApiRead('wallet/bills/options', billOptions);
+  const billsSoon = bills.data ? !bills.data.available : false;
   const bank = useApiRead(
     summary.data?.phoneVerified ? 'wallet/bank-account' : null,
     bankAccount,
@@ -251,11 +255,22 @@ export function Wallet() {
                 Withdraw
               </button>
               {quickActions.map(({ href, label, icon: Icon }) => (
-                <Link key={href} href={href} className="quick-action">
+                <Link
+                  key={href}
+                  href={href}
+                  className="quick-action"
+                  aria-disabled={billsSoon || undefined}
+                  aria-label={billsSoon ? `${label}, coming soon` : undefined}
+                >
                   <span className="quick-action-icon" aria-hidden>
                     <Icon size={22} />
                   </span>
                   {label}
+                  {billsSoon && (
+                    <span className="quick-action-soon" aria-hidden>
+                      Soon
+                    </span>
+                  )}
                 </Link>
               ))}
             </nav>
@@ -264,7 +279,7 @@ export function Wallet() {
               <section className="card ready" aria-labelledby="ready-heading">
                 <h2 id="ready-heading">Get ready to withdraw</h2>
                 <p className="small-note">
-                  Two quick checks keep your money going to you and nobody else.
+                  These checks keep your money going to you and nobody else.
                 </p>
                 <ol className="ready-steps">
                   <Step done={data.phoneVerified} title="Verify your phone">
@@ -332,7 +347,7 @@ export function Wallet() {
                 />
               </div>
             )}
-            {notice && <Feedback>{notice}</Feedback>}
+            {notice && <Feedback warning>{notice}</Feedback>}
             {error && <Feedback error>{error}</Feedback>}
 
             <section aria-labelledby="purchases-heading">

@@ -56,6 +56,15 @@ const settings = {
 };
 const person = '0b9d7e4a-3c2f-4a1b-9e8d-7c6b5a4f3e21';
 
+// Staff pages first check who is asking; these tests act as a verified reviewer.
+test.beforeEach(async ({ page }) => {
+  await page.route('**/api/v1/staff/access', (route) =>
+    route.fulfill({
+      json: { reviewer: true, verified: true, settingsAdmin: true },
+    }),
+  );
+});
+
 test('the admin overview shows totals and what needs attention', async ({
   page,
 }) => {
@@ -100,14 +109,43 @@ test('the admin overview shows totals and what needs attention', async ({
   await healthy(page);
 });
 
-test('without access the admin explains how to get it', async ({ page }) => {
-  await page.route('**/api/v1/admin/analytics', (route) =>
-    route.fulfill({ status: 403, json: { statusCode: 403 } }),
+test('the staff area shows nothing of itself to people who are not staff', async ({
+  page,
+}) => {
+  let analytics = 0;
+  await page.route('**/api/v1/admin/analytics', (route) => {
+    analytics++;
+    return route.fulfill({ status: 403, json: { statusCode: 403 } });
+  });
+  // Signed out: straight to sign in, coming back here afterwards.
+  await page.route('**/api/v1/staff/access', (route) =>
+    route.fulfill({ status: 401, json: { statusCode: 401 } }),
+  );
+  await page.goto('/hq/settings');
+  await page.waitForURL('**/login?next=%2Fhq%2Fsettings');
+  // Signed in without a reviewer appointment: the page does not exist.
+  await page.route('**/api/v1/staff/access', (route) =>
+    route.fulfill({
+      json: { reviewer: false, verified: false, settingsAdmin: false },
+    }),
   );
   await page.goto('/hq');
   await expect(
-    page.getByRole('heading', { name: 'Admin access needed' }),
+    page.getByRole('heading', { name: 'Page not found' }),
   ).toBeVisible();
+  await expect(page.getByText('Overview')).toHaveCount(0);
+  expect(analytics).toBe(0);
+  // A reviewer whose authenticator check is stale is asked for a code.
+  await page.route('**/api/v1/staff/access', (route) =>
+    route.fulfill({
+      json: { reviewer: true, verified: false, settingsAdmin: false },
+    }),
+  );
+  await page.goto('/hq');
+  await expect(
+    page.getByRole('link', { name: 'Enter authenticator code' }),
+  ).toHaveAttribute('href', '/two-factor?next=%2Fhq');
+  expect(analytics).toBe(0);
 });
 
 test('search finds a business and opens its account', async ({ page }) => {

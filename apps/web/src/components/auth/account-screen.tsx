@@ -18,7 +18,11 @@ import {
 } from '@/lib/auth-client';
 import { useSubmit } from '@/lib/use-submit';
 import { homePath } from '@/lib/role';
+import { staffAccess } from '@/lib/staff';
+import { useApiRead } from '@/lib/use-api-read';
 export function AccountScreen({ goHome = false }: { goHome?: boolean }) {
+  // Only reviewers learn that a staff area exists.
+  const staff = useApiRead('staff/access', staffAccess);
   const router = useRouter();
   const [status, setStatus] = useState<AccountStatus | null>(null);
   const [error, setError] = useState('');
@@ -192,21 +196,23 @@ export function AccountScreen({ goHome = false }: { goHome?: boolean }) {
                   username={account.username}
                   onSaved={() => void refresh()}
                 />
-                <section className="account-panel security-panel">
-                  <p className="eyebrow">Reviewer security</p>
-                  <h2>Use an authenticator app</h2>
-                  <p>
-                    Appointed reviewers need a recent authenticator check before
-                    sensitive review actions. Basic accounts can leave this
-                    unavailable.
-                  </p>
-                  <Link className="text-link" href="/two-factor?mode=enroll">
-                    Set up authenticator security
-                  </Link>
-                  <Link className="text-link" href="/hq/review/appeals">
-                    Review appeals (appointed reviewers)
-                  </Link>
-                </section>
+                {staff.data?.reviewer && (
+                  <section className="account-panel security-panel">
+                    <p className="eyebrow">Reviewer security</p>
+                    <h2>Use an authenticator app</h2>
+                    <p>
+                      Appointed reviewers need a recent authenticator check
+                      before sensitive review actions. Basic accounts can leave
+                      this unavailable.
+                    </p>
+                    <Link className="text-link" href="/two-factor?mode=enroll">
+                      Set up authenticator security
+                    </Link>
+                    <Link className="text-link" href="/hq">
+                      Open the staff area
+                    </Link>
+                  </section>
+                )}
               </div>
             )}
           </>

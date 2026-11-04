@@ -5,7 +5,7 @@ import { HelpCenter } from '@/components/help/help-center';
 export const metadata = {
   title: 'Help',
   description:
-    'Answers about cash back, prize codes, paid tasks, your wallet and running campaigns on Acticlaim.',
+    'Answers about cash back, prize codes, paid jobs, your wallet and running campaigns on Acticlaim.',
   robots: { index: true, follow: true },
 };
 export default function Page() {

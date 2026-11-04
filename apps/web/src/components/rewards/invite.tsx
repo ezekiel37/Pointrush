@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useSyncExternalStore } from 'react';
+import { useSyncExternalStore, useEffect, useState } from 'react';
 import {
   Copy,
   Gift,
@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   Store,
   UserRoundPlus,
+  Check,
 } from 'lucide-react';
 import { Page } from '@/components/shell/app-shell';
 import { Button } from '@/components/ui/button';
@@ -33,8 +34,10 @@ async function copy(text: string) {
   try {
     await navigator.clipboard.writeText(text);
     toast('Link copied');
+    return true;
   } catch {
     toast('Copy failed. Press and hold the link to copy it.', { error: true });
+    return false;
   }
 }
 async function share(text: string, url: string) {
@@ -63,6 +66,13 @@ function LinkCard({
   message: string;
   icon: React.ReactNode;
 }) {
+  // The button itself confirms the copy for a moment, not only the toast.
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [copied]);
   return (
     <section className="card invite-card">
       <div className="invite-head">
@@ -81,11 +91,17 @@ function LinkCard({
         <button
           type="button"
           className="icon-button"
-          aria-label={`Copy ${title.toLowerCase()} link`}
-          onClick={() => void copy(url)}
+          aria-label={
+            copied ? 'Link copied' : `Copy ${title.toLowerCase()} link`
+          }
+          onClick={() => void copy(url).then(setCopied)}
           disabled={!url}
         >
-          <Copy size={18} aria-hidden />
+          {copied ? (
+            <Check size={18} aria-hidden />
+          ) : (
+            <Copy size={18} aria-hidden />
+          )}
         </button>
       </div>
       <Button
@@ -125,7 +141,7 @@ export function Invite() {
         data && (
           <div className="grid gap-5" style={{ maxWidth: 720 }}>
             {!data.phoneVerified && (
-              <Feedback>
+              <Feedback warning>
                 Verify your phone so your invites count.{' '}
                 <Link href="/verify-phone?next=/invite">Verify now</Link>
               </Feedback>

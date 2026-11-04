@@ -94,6 +94,14 @@ export function VerifyPhone() {
       setError('Enter your mobile number.');
       return;
     }
+    // Nigerian mobiles, as the API accepts them: 0803 123 4567 or +234 803...
+    const compact = number.replace(/[\s().-]/g, '');
+    if (!/^(0|\+234)[789]\d{9}$/.test(compact)) {
+      setError(
+        'Enter an 11-digit Nigerian mobile number, like 0803 123 4567, or start with +234.',
+      );
+      return;
+    }
     setBusy(true);
     setError('');
     try {
@@ -174,9 +182,11 @@ export function VerifyPhone() {
               inputMode="tel"
               autoComplete="tel"
               placeholder="0803 123 4567"
+              maxLength={18}
               value={number}
               onChange={(e) => {
-                setNumber(e.target.value);
+                // Digits, +, spaces, dashes and brackets only.
+                setNumber(e.target.value.replace(/[^\d+\s().-]/g, ''));
                 setError('');
               }}
               hint="We send a 6-digit code by text. Receiving it is free."

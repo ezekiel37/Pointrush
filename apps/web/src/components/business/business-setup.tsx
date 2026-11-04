@@ -15,6 +15,8 @@ import { businessRules } from '@/lib/business-rules';
 import { useApiRead } from '@/lib/use-api-read';
 import { cleanHandle, handleFromName } from '@/lib/profiles';
 import { HandleField } from './handle-field';
+import { OnboardingForm } from '@/components/auth/onboarding-form';
+import { statusSchema } from '@/lib/account';
 
 const terms = z.object({ version: z.string().nullable() });
 const profile = z.object({ id: z.uuid(), name: z.string() });
@@ -36,6 +38,10 @@ function setupError(error: unknown) {
 export function BusinessSetup() {
   const router = useRouter();
   const current = useApiRead('sponsor/terms', terms);
+  // Business sign-ups arrive here straight from email verification, before
+  // choosing a name and username. Those come first: without them there is
+  // no account to own the business.
+  const me = useApiRead('accounts/me', statusSchema);
   const [name, setName] = useState('');
   // Suggested from the name until the owner types their own.
   const [handle, setHandle] = useState('');
@@ -50,18 +56,14 @@ export function BusinessSetup() {
     event.preventDefault();
     const version = current.data?.version;
     if (busy || !version) return;
-    if (!name.trim()) {
-      setInvalid('Enter your business name.');
-      return;
-    }
-    if (!handleOk) {
-      setError('Choose an available handle.');
-      return;
-    }
-    if (!accepted) {
-      setError('Accept the business terms to continue.');
-      return;
-    }
+    // Everything missing is reported at once, not one click at a time.
+    const problems = [
+      !handleOk && 'Choose an available handle.',
+      !accepted && 'Accept the business terms to continue.',
+    ].filter(Boolean);
+    setInvalid(name.trim() ? '' : 'Enter your business name.');
+    setError(problems.join(' '));
+    if (!name.trim() || problems.length) return;
     setBusy(true);
     setError('');
     setInvalid('');
@@ -91,7 +93,22 @@ export function BusinessSetup() {
         title="Set up your business"
         intro="Run cash back offers and prize promotions that pay real customers."
       />
-      {current.loading && !current.data ? (
+      {me.data?.onboarding === 'required' ? (
+        <section className="card grid gap-3" style={{ maxWidth: 620 }}>
+          <div className="card-head">
+            <p className="eyebrow">Step 1 of 2</p>
+            <h2 style={{ margin: 0 }}>First, your details</h2>
+            <p>
+              Your name and username are yours, not the business&rsquo;s. Next,
+              you set up the business.
+            </p>
+          </div>
+          <OnboardingForm
+            invitedBy={me.data.invitedBy}
+            onSaved={async () => me.refresh()}
+          />
+        </section>
+      ) : (current.loading && !current.data) || (me.loading && !me.data) ? (
         <Loading>Loading…</Loading>
       ) : current.error && !current.data ? (
         <WorkFailure error={current.error} retry={current.refresh} />

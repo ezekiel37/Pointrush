@@ -46,16 +46,16 @@ export function SponsorTasks() {
   const { after, query } = usePageQuery();
   const read = useWorkRead(`sponsor/tasks?${query}`, sponsorTaskPage);
   return (
-    <WorkFrame title="Your sponsored tasks">
+    <WorkFrame title="Jobs you posted">
       <p>Open a task to review its participants and submitted work.</p>
       {read.loading ? (
-        <Loading>Loading sponsored tasks…</Loading>
+        <Loading>Loading your jobs…</Loading>
       ) : read.error ? (
         <WorkFailure error={read.error} retry={read.refresh} />
       ) : (
         read.data && (
           <>
-            {!read.data.items.length && <p>No sponsored tasks on this page.</p>}
+            {!read.data.items.length && <p>No jobs on this page.</p>}
             <ul className="work-list">
               {read.data.items.map((task) => (
                 <li className="account-panel" key={task.id}>

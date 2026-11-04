@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { safeNext } from '@/lib/next-path';
 import { useState } from 'react';
 import { ArrowRight, Copy, ShieldCheck } from 'lucide-react';
 import { AuthFrame } from './auth-frame';
@@ -17,6 +18,8 @@ export function TwoFactorScreen() {
   const router = useRouter();
   const query = useSearchParams();
   const enrollment = query.get('mode') === 'enroll';
+  // Back to the page that asked for a fresh check, such as the staff area.
+  const next = safeNext(query.get('next'));
   const submit = useSubmit();
   const [setup, setSetup] = useState<Setup | null>(null);
   const [backup, setBackup] = useState(false);
@@ -50,7 +53,7 @@ export function TwoFactorScreen() {
       } else {
         requireSuccess(await authClient().twoFactor.verifyTotp({ code }));
       }
-      router.replace('/account?home=1');
+      router.replace(next ?? '/account?home=1');
     });
   }
 

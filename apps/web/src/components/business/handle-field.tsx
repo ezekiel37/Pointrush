@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { AtSign, Check, LoaderCircle, X } from 'lucide-react';
 import { apiRequest } from '@/lib/api';
+import { RequestError } from '@/lib/auth-client';
 import { cleanHandle, handleCheck, handlePattern } from '@/lib/profiles';
 
 type State =
@@ -85,10 +86,15 @@ export function HandleField({
                   suggestion: r.suggestion,
                 },
           ),
-        () =>
+        (error) =>
           report({
             kind: 'bad',
-            message: 'We could not check this handle. Try again.',
+            message:
+              error instanceof RequestError && error.status === 401
+                ? 'Your session has ended. Sign in again to check this handle.'
+                : error instanceof RequestError && error.status === 403
+                  ? 'Finish setting up your account (name and username) first.'
+                  : 'We could not check this handle. Check your connection and try again.',
           }),
       );
     }, 350);
@@ -113,10 +119,19 @@ export function HandleField({
           autoCapitalize="none"
           autoComplete="off"
           spellCheck={false}
-          maxLength={31}
+          maxLength={30}
           aria-invalid={state.kind === 'bad'}
           aria-describedby="business-handle-help"
-          onChange={(event) => onChange(event.target.value, false)}
+          // Handles are lowercase with no spaces or @; shown as they will be.
+          onChange={(event) =>
+            onChange(
+              event.target.value
+                .replace(/^@/, '')
+                .replace(/\s+/g, '')
+                .toLowerCase(),
+              false,
+            )
+          }
         />
         <span className="handle-state" aria-hidden>
           {state.kind === 'checking' && (

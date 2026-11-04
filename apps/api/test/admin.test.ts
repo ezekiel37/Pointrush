@@ -173,3 +173,19 @@ test('flagged payments can be noted once by a reviewer; notes move no money', as
     403,
   );
 });
+
+test('the staff area tells people only about themselves', async () => {
+  const someone = await identity();
+  assert.deepEqual(await admin.access(someone.user, randomUUID()), {
+    reviewer: false,
+    verified: false,
+    settingsAdmin: false,
+  });
+  // An appointed reviewer without a fresh authenticator check is asked for one.
+  const reviewer = await appointed();
+  assert.deepEqual(await admin.access(reviewer.user, randomUUID()), {
+    reviewer: true,
+    verified: false,
+    settingsAdmin: false,
+  });
+});

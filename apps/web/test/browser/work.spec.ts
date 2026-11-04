@@ -13,6 +13,15 @@ const task = {
   capacity: 2,
 };
 
+// Staff pages first check who is asking; these tests act as a verified reviewer.
+test.beforeEach(async ({ page }) => {
+  await page.route('**/api/v1/staff/access', (route) =>
+    route.fulfill({
+      json: { reviewer: true, verified: true, settingsAdmin: true },
+    }),
+  );
+});
+
 test('task search resets pagination and clear restores the list on mobile', async ({
   page,
 }) => {

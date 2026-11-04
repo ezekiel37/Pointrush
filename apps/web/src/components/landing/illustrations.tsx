@@ -150,16 +150,6 @@ export function PrizeIllustration() {
           <stop offset="0.6" stopColor="#0f6e50" />
           <stop offset="1" stopColor="#0b4d39" />
         </linearGradient>
-        <pattern
-          id="ill-scratch"
-          width="6"
-          height="6"
-          patternUnits="userSpaceOnUse"
-          patternTransform="rotate(45)"
-        >
-          <rect width="6" height="6" fill="#c9ccc9" />
-          <rect width="2" height="6" fill="#b4b8b5" />
-        </pattern>
       </defs>
       <circle className="ill-soft" cx="140" cy="108" r="92" />
       <g transform="rotate(5 140 110)">
@@ -178,20 +168,16 @@ export function PrizeIllustration() {
         <text x="64" y="102" fontSize="20" fontWeight="700" fill="#ffffff">
           Prize code
         </text>
-        <rect
-          x="64"
-          y="122"
-          width="152"
-          height="30"
-          rx="8"
-          fill="url(#ill-scratch)"
-        />
-        <path
-          d="M64 130a8 8 0 0 1 8-8h80l-10 30H72a8 8 0 0 1-8-8z"
-          fill="#d4f25a"
-        />
-        <text className="ill-mono" x="74" y="142" fontSize="12" fill="#0e1512">
-          AC-7K4M-9X
+        {/* A printed code label: every code is visible, nothing to scratch. */}
+        <rect x="60" y="122" width="160" height="30" rx="8" fill="#d4f25a" />
+        <text
+          className="ill-mono"
+          x="68"
+          y="141"
+          fontSize="10.5"
+          fill="#0e1512"
+        >
+          AC-7K4M-9X2Q-PRDH-3VBN
         </text>
       </g>
       <g transform="rotate(-12 222 168)">

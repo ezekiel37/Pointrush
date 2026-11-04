@@ -17,6 +17,7 @@ import {
 import { platformSettings } from '../settings/settings.schema.js';
 import { ProfileEditsService } from '../profiles/profile-edits.service.js';
 import { RatingsService } from '../sponsors/ratings.service.js';
+import { hasRecentAdminMfa } from '../auth/admin-mfa.js';
 
 type Row = Record<string, unknown>;
 const rows = (result: unknown) =>
@@ -108,6 +109,24 @@ export class AdminService {
     return this.reviewer(user, (tx, actor) =>
       this.edits.setHandleAsReviewer(tx, actor, sponsorId, input),
     );
+  }
+
+  // What the staff area may show this person, about themselves only: nothing
+  // for non-reviewers, a verify prompt when the authenticator check is stale.
+  async access(user: string, sessionId: string) {
+    return actorTransaction(this.db, user, async (tx, actor) => {
+      const [row] = rows(
+        await tx.execute(
+          sql`select staff_reviewer_active(${actor}) as reviewer`,
+        ),
+      );
+      const reviewer = Boolean(row?.reviewer);
+      return {
+        reviewer,
+        verified: reviewer && (await hasRecentAdminMfa(tx, sessionId, user)),
+        settingsAdmin: reviewer && settingsAdmins().includes(actor),
+      };
+    });
   }
 
   private async reviewer<T>(

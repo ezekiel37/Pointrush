@@ -14,6 +14,7 @@ import { NotificationsService } from '../notifications/notifications.service.js'
 import { StaffController } from '../sponsors/staff.controller.js';
 import { StaffService } from '../sponsors/staff.service.js';
 import { AdminController } from '../admin/admin.controller.js';
+import { StaffAccessController } from '../admin/staff-access.controller.js';
 import { AdminService } from '../admin/admin.service.js';
 import { SettingsController } from '../settings/settings.controller.js';
 import { ReferralsController } from '../referrals/referrals.controller.js';
@@ -31,6 +32,7 @@ import { RatingsService } from '../sponsors/ratings.service.js';
     NotificationsController,
     StaffController,
     AdminController,
+    StaffAccessController,
     SettingsController,
     ReferralsController,
     ProfileEditsController,

@@ -13,6 +13,15 @@ async function healthy(page: Page) {
 
 const offerId = '4f3e2d1c-0b9a-4876-8543-210fedcba987';
 
+// Staff pages first check who is asking; these tests act as a verified reviewer.
+test.beforeEach(async ({ page }) => {
+  await page.route('**/api/v1/staff/access', (route) =>
+    route.fulfill({
+      json: { reviewer: true, verified: true, settingsAdmin: true },
+    }),
+  );
+});
+
 test('a business page shows earlier names, live offers, and old handles lead to it', async ({
   page,
 }) => {

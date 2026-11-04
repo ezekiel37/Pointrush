@@ -44,7 +44,7 @@ export function useApiRead<T>(
     void apiRequest(path, schema, { signal: controller.signal })
       .then((data) => {
         if (controller.signal.aborted) return;
-        rememberRead(path, schema, data);
+        rememberRead(path, data);
         setState({ data, error: null, loading: false, path });
       })
       .catch((error) => {

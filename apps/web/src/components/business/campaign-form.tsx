@@ -54,7 +54,7 @@ const copy = {
   claim_code: {
     title: 'New prize promotion',
     intro:
-      'Hide codes in packs, receipts or scratch cards. Acticlaim verifies each claim once and pays the prize from money you lock now.',
+      'Print codes on packs, receipts, cards or labels. Every code wins. Acticlaim verifies each claim once and pays the prize from money you lock now.',
     list: '/business/promotions',
     listLabel: 'Prize promotions',
     reward: 'Prize per winning code',
@@ -62,7 +62,7 @@ const copy = {
     titleHint: 'For example: Win ₦5,000 with every crate',
     instructionsLabel: 'How to take part',
     instructionsHint:
-      'For example: Scratch the card inside the cap and enter the code at acticlaim.com/claim.',
+      'For example: Find the code inside the cap and enter it at acticlaim.com/claim.',
   },
 } as const;
 
