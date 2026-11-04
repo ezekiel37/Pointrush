@@ -144,6 +144,7 @@ export function AccountScreen({ goHome = false }: { goHome?: boolean }) {
       <header className="account-header">
         <Brand />
         <nav aria-label="Account navigation">
+          <Link href="/account?home=1">Back to the app</Link>
           <Link href="/help">Help</Link>
           <Button variant="ghost" loading={logout.busy} onClick={signOut}>
             <LogOut size={18} aria-hidden />

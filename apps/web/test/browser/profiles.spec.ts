@@ -517,3 +517,13 @@ test('a business replies once; a reviewer removes an abusive rating with a reaso
     page.getByText('Removed: Contains a phone number'),
   ).toBeVisible();
 });
+
+test('an unknown business page is a real 404, not a page that says so', async ({
+  page,
+}) => {
+  const response = await page.goto('/b/nobody_here');
+  expect(response?.status()).toBe(404);
+  await expect(
+    page.getByRole('heading', { name: 'Page not found' }),
+  ).toBeVisible();
+});

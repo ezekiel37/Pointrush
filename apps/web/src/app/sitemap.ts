@@ -15,6 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: site, changeFrequency: 'weekly', priority: 1 },
     { url: `${site}/help`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${site}/terms`, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${site}/terms/business`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${site}/privacy`, changeFrequency: 'yearly', priority: 0.3 },
   ];
   const businesses = await publicRead('businesses', listed);

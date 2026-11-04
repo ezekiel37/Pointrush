@@ -1,8 +1,9 @@
 'use client';
+import QRCode from 'qrcode';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { safeNext } from '@/lib/next-path';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowRight, Copy, ShieldCheck } from 'lucide-react';
 import { AuthFrame } from './auth-frame';
 import { Button } from '@/components/ui/button';
@@ -134,11 +135,11 @@ export function TwoFactorScreen() {
         <section className="mfa-setup" aria-labelledby="setup-heading">
           <h2 id="setup-heading">Add Acticlaim to your app</h2>
           <p>
-            In your authenticator app, add a new account and choose manual
-            setup. Copy this link into the app if it supports importing an
-            otpauth link; otherwise use the app&apos;s manual secret-entry
-            option.
+            In Google Authenticator, Microsoft Authenticator or a similar app,
+            add an account and scan this code. On this same phone? Copy the
+            setup link instead and open it in the app.
           </p>
+          <SetupQr uri={setup.totpURI} />
           <div
             className="setup-uri"
             tabIndex={0}
@@ -256,4 +257,29 @@ function VerificationForm({
       </Button>
     </Form>
   );
+}
+
+// The setup secret as a QR code, drawn in the browser so it never leaves it.
+function SetupQr({ uri }: { uri: string }) {
+  const [image, setImage] = useState('');
+  useEffect(() => {
+    let live = true;
+    void QRCode.toDataURL(uri, { margin: 1, width: 220 }).then((url) => {
+      if (live) setImage(url);
+    });
+    return () => {
+      live = false;
+    };
+  }, [uri]);
+  return image ? (
+    // A data URL generated here; next/image adds nothing for it.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={image}
+      width={220}
+      height={220}
+      alt="QR code to add Acticlaim to your authenticator app"
+      style={{ borderRadius: 12, background: '#fff' }}
+    />
+  ) : null;
 }

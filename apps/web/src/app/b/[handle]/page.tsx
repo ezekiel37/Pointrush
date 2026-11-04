@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { z } from 'zod';
 import { PublicBusiness } from '@/components/business/public-business';
-import { publicRead, siteOrigin } from '@/lib/site';
+import { publicLookup, publicRead, siteOrigin } from '@/lib/site';
 
 const listing = z.object({
   handle: z.string(),
@@ -46,5 +46,15 @@ export default async function Page({
 }) {
   const handle = clean((await params).handle);
   if (!handle) notFound();
+  // Asked on the server so an unknown handle answers 404 (not a page that
+  // says so with 200) and an old handle moves permanently to the new one.
+  // If the API cannot be reached, the page still loads and asks again.
+  const result = await publicLookup(
+    `businesses/${handle}`,
+    z.union([z.object({ redirect: z.string() }), listing]),
+  );
+  if (result === 'missing') notFound();
+  if (result && 'redirect' in result.found)
+    permanentRedirect(`/b/${encodeURIComponent(result.found.redirect)}`);
   return <PublicBusiness key={handle} handle={handle} />;
 }

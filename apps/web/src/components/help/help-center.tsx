@@ -155,7 +155,7 @@ const topics: Topic[] = [
       ],
       [
         'I think someone else is using my account.',
-        'Open your wallet and press "This wasn’t me". Withdrawals lock straight away and your balance stays safe. Then change your password.',
+        'Change your password first. If a bank account is on your wallet, open Wallet and press "This wasn’t me" under "See a bank account or withdrawal you did not make?". Withdrawals lock straight away and your balance stays safe. With no bank account added, nobody can withdraw your money; contact support@acticlaim.com.',
       ],
       [
         'Why are some actions unavailable?',

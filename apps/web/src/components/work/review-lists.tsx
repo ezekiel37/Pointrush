@@ -7,6 +7,7 @@ import { claimPage } from '@/lib/work';
 import { backingNaira, workDate } from '@/lib/work-format';
 import { WorkFrame, WorkFailure } from './work-frame';
 import { ReviewFrame } from '@/components/review/review-frame';
+import { DashHead, DashShell } from '@/components/business/dash-shell';
 import { Loading } from '@/components/ui/feedback';
 import { ReviewAccess } from './review-access';
 function Pages({
@@ -46,8 +47,14 @@ export function SponsorTasks() {
   const { after, query } = usePageQuery();
   const read = useWorkRead(`sponsor/tasks?${query}`, sponsorTaskPage);
   return (
-    <WorkFrame title="Jobs you posted">
-      <p>Open a task to review its participants and submitted work.</p>
+    // Business Jobs keep the business sidebar, like every business page.
+    <DashShell
+      crumbs={[{ label: 'Business', href: '/business' }, { label: 'Jobs' }]}
+    >
+      <DashHead
+        title="Jobs you posted"
+        intro="Open a job to review who joined and the work they sent."
+      />
       {read.loading ? (
         <Loading>Loading your jobs…</Loading>
       ) : read.error ? (
@@ -84,7 +91,7 @@ export function SponsorTasks() {
           </>
         )
       )}
-    </WorkFrame>
+    </DashShell>
   );
 }
 export function SponsorParticipants({ id }: { id: string }) {

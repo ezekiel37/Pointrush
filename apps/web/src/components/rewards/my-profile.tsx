@@ -1,13 +1,24 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import { ChevronRight, Copy, Eye, EyeOff, Gift, Store } from 'lucide-react';
+import {
+  ChevronRight,
+  Copy,
+  Eye,
+  EyeOff,
+  Gift,
+  LogOut,
+  Store,
+} from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { Page } from '@/components/shell/app-shell';
 import { Button } from '@/components/ui/button';
 import { Feedback, Loading } from '@/components/ui/feedback';
 import { toast } from '@/components/ui/toast';
 import { WorkFailure } from '@/components/work/work-frame';
 import { apiRequest } from '@/lib/api';
+import { authClient, requireSuccess } from '@/lib/auth-client';
+import { useSubmit } from '@/lib/use-submit';
 import { ownProfile, pointsSummary } from '@/lib/rewards';
 import { useBusinessAccess } from '@/lib/role';
 import { useApiRead } from '@/lib/use-api-read';
@@ -137,6 +148,7 @@ export function MyProfile() {
             <Link className="text-link" href="/account">
               Account settings
             </Link>
+            <SignOut />
           </div>
         )
       )}
@@ -182,5 +194,30 @@ function BusinessLink() {
         {action}
       </Link>
     </section>
+  );
+}
+
+// Signing out is one tap from Profile, not only from Account settings.
+function SignOut() {
+  const router = useRouter();
+  const logout = useSubmit();
+  return (
+    <>
+      <Button
+        variant="ghost"
+        loading={logout.busy}
+        onClick={() =>
+          logout.run(async () => {
+            requireSuccess(await authClient().signOut());
+            router.replace('/login');
+          })
+        }
+        style={{ justifySelf: 'start' }}
+      >
+        <LogOut size={18} aria-hidden />
+        {logout.busy ? 'Signing out…' : 'Sign out'}
+      </Button>
+      {logout.error && <Feedback error>{logout.error}</Feedback>}
+    </>
   );
 }

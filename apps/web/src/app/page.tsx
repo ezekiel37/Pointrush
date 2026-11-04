@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Brand } from '@/components/auth/auth-frame';
 import { EmailCapture } from '@/components/landing/email-capture';
+import { AccountLinks } from '@/components/landing/account-links';
 import { SocialLinks } from '@/components/landing/social-links';
 import {
   LockedPoolIllustration,
@@ -37,6 +38,7 @@ export const metadata: Metadata = {
   description:
     'Get money back when you buy, claim prize codes where every code wins, and get paid for tasks. Businesses lock every naira before it is promised.',
   robots: { index: true, follow: true },
+  alternates: { canonical: '/' },
 };
 
 const sectors = [
@@ -111,12 +113,7 @@ export default function Home() {
           <Link href="/help">Help</Link>
         </nav>
         <nav className="flex items-center gap-2" aria-label="Account">
-          <Link className="button button-outline hide-narrow" href="/login">
-            Sign in
-          </Link>
-          <Link className="button button-primary" href="/signup">
-            Get started
-          </Link>
+          <AccountLinks />
         </nav>
       </header>
       <main

@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,6 +13,7 @@ import { Form } from '@/components/ui/form';
 import { Field } from '@/components/ui/field';
 import { Button } from '@/components/ui/button';
 import { Feedback } from '@/components/ui/feedback';
+import { getAccount } from '@/lib/account';
 export function LoginForm() {
   const router = useRouter();
   const query = useSearchParams();
@@ -23,6 +24,15 @@ export function LoginForm() {
   // reveals nothing to someone who does not own the account.
   const [unverified, setUnverified] = useState<string | null>(null);
   const [resent, setResent] = useState(false);
+  // Already signed in: go into the app instead of showing the form.
+  useEffect(() => {
+    const controller = new AbortController();
+    getAccount(controller.signal).then(
+      () => router.replace(next ?? '/account?home=1'),
+      () => undefined,
+    );
+    return () => controller.abort();
+  }, [router, next]);
   const {
     register,
     handleSubmit,

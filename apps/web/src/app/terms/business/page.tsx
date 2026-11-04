@@ -1,6 +1,9 @@
 import { Brand } from '@/components/auth/auth-frame';
 import { businessRules } from '@/lib/business-rules';
-export const metadata = { title: 'Business terms' };
+export const metadata = {
+  title: 'Business terms',
+  robots: { index: true, follow: true },
+};
 export default function Page() {
   return (
     <main id="main-content" className="help">
