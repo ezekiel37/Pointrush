@@ -22,6 +22,7 @@ type Withdrawal = z.infer<typeof withdrawal>;
 
 export const withdrawalState = {
   held: ['Processing', 'chip chip-pending'],
+  awaiting_approval: ['Waiting for approval', 'chip chip-pending'],
   sent: ['Sent', 'chip chip-ready'],
   paid: ['Paid', 'chip chip-done'],
   failed: ['Returned to wallet', 'chip chip-muted'],
@@ -127,6 +128,13 @@ export function WithdrawPanel({
           The amount leaves your wallet at once and is held until the payment
           provider confirms it. If a payout fails, it comes straight back.
         </p>
+        {limits.withdrawals.manualApproval && (
+          <p>
+            For now, an Acticlaim reviewer checks each withdrawal before it is
+            sent, usually within one working day. If it is not approved, the
+            money comes back to your wallet with the reason.
+          </p>
+        )}
       </div>
       <form className="grid gap-4" onSubmit={submit} noValidate>
         <Field
@@ -204,6 +212,9 @@ export function WithdrawalList({ items }: { items: Withdrawal[] }) {
                   {shortDate(item.createdAt)}
                   {item.bank ? ` · ${item.bank}` : ''}
                 </p>
+                {item.state === 'failed' && item.reason && (
+                  <p className="small-note">{item.reason}</p>
+                )}
               </div>
               <span className={chip}>{text}</span>
             </li>

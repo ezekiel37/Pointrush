@@ -65,6 +65,8 @@ export function errorMessage(error: unknown): string {
     return 'We could not confirm the result. Check your connection, then try again. If you were signing up, try signing in first.';
   if (error.status === 429)
     return 'Too many attempts. Wait a minute before trying again. Email requests also have hourly limits.';
+  if (error.code === 'DISPOSABLE_EMAIL')
+    return 'Use your own email address. Temporary email services are not accepted.';
   if (error.code === 'EMAIL_NOT_VERIFIED')
     return 'Verify your email before signing in. You can request another verification email below.';
   if (error.status === 401)

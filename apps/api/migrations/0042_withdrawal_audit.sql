@@ -1,0 +1,2 @@
+ALTER TABLE "audit_events" DROP CONSTRAINT "audit_event_kind";--> statement-breakpoint
+ALTER TABLE "audit_events" ADD CONSTRAINT "audit_event_kind" CHECK ("audit_events"."kind" in ('sign_in', 'money_password_failed', 'sessions_revoked', 'session_revoked', 'admin_account_viewed', 'admin_payments_viewed', 'admin_disputes_viewed', 'admin_settings_changed', 'admin_search', 'referral_pool_funded', 'withdrawal_decided'));

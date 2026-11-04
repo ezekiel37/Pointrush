@@ -427,6 +427,34 @@ export function AdminSettings() {
               </div>
             </Section>
             <Section
+              title="Phone verification and payouts"
+              intro="Phone verification stops one person opening many accounts. Turn it off only for a pilot without an SMS provider: then every withdrawal waits for a reviewer to approve it in Payments."
+            >
+              <Toggle
+                checked={s.phone.required}
+                label="Phone verification required"
+                disabled={locked}
+                onChange={(v) => setDraft({ ...s, phone: { required: v } })}
+              />
+              <Toggle
+                checked={!s.phone.required || s.withdrawals.manualApproval}
+                label="A reviewer approves every withdrawal"
+                disabled={locked || !s.phone.required}
+                onChange={(v) =>
+                  setDraft({
+                    ...s,
+                    withdrawals: { ...s.withdrawals, manualApproval: v },
+                  })
+                }
+              />
+              {!s.phone.required && (
+                <p className="small-note">
+                  While phone verification is off, approval stays on and cannot
+                  be turned off.
+                </p>
+              )}
+            </Section>
+            <Section
               title="Withdrawals"
               intro="Money people take out of their wallet to a bank. The database enforces these limits too."
             >
@@ -503,6 +531,49 @@ export function AdminSettings() {
                 >
                   {issues['handles.reserved'] ??
                     'Separate with commas. Existing handles are not affected.'}
+                </p>
+              </div>
+            </Section>
+            <Section
+              title="Blocked email domains"
+              intro="About 10,000 throwaway email services (yopmail, mailinator and similar) are refused at sign-up already. Add any new ones you see here."
+            >
+              <div className="field">
+                <label htmlFor="blocked-domains">Extra blocked domains</label>
+                <textarea
+                  id="blocked-domains"
+                  className="input textarea"
+                  disabled={locked}
+                  defaultValue={s.signup.blockedEmailDomains.join(', ')}
+                  aria-describedby="blocked-domains-help"
+                  onChange={(event) =>
+                    setDraft({
+                      ...s,
+                      signup: {
+                        blockedEmailDomains: Array.from(
+                          new Set(
+                            event.target.value
+                              .split(/[\s,]+/)
+                              .map((d) =>
+                                d.trim().replace(/^@/, '').toLowerCase(),
+                              )
+                              .filter(Boolean),
+                          ),
+                        ),
+                      },
+                    })
+                  }
+                />
+                <p
+                  id="blocked-domains-help"
+                  className={
+                    issues['signup.blockedEmailDomains']
+                      ? 'field-help field-error'
+                      : 'field-help'
+                  }
+                >
+                  {issues['signup.blockedEmailDomains'] ??
+                    'Separate with commas, like example.com. Existing accounts are not affected.'}
                 </p>
               </div>
             </Section>

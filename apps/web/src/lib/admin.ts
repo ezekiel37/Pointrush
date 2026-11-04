@@ -115,9 +115,14 @@ export const settingsShape = z.object({
     maxKobo: kobo,
     dailyKobo: kobo,
     dailyCount: z.number(),
+    manualApproval: z.boolean().default(false),
   }),
   newAccounts: z.object({ days: z.number(), dailyWithdrawalKobo: kobo }),
   handles: z.object({ reserved: z.array(z.string()) }),
+  phone: z.object({ required: z.boolean() }).default({ required: true }),
+  signup: z
+    .object({ blockedEmailDomains: z.array(z.string()) })
+    .default({ blockedEmailDomains: [] }),
   referrals: z.object({
     enabled: z.boolean(),
     friend: z.object({

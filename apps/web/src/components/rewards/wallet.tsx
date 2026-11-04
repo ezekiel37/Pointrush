@@ -122,10 +122,12 @@ export function Wallet() {
   // Bill tiles say "Soon" until a bill provider is connected.
   const bills = useApiRead('wallet/bills/options', billOptions);
   const billsSoon = bills.data ? !bills.data.available : false;
-  const bank = useApiRead(
-    summary.data?.phoneVerified ? 'wallet/bank-account' : null,
-    bankAccount,
+  const { limits } = useLimits();
+  // Verified, or not needed while Acticlaim runs without phone verification.
+  const phoneOk = Boolean(
+    summary.data?.phoneVerified || (summary.data && !limits.phone.required),
   );
+  const bank = useApiRead(phoneOk ? 'wallet/bank-account' : null, bankAccount);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [withdrawing, setWithdrawing] = useState(false);
@@ -158,23 +160,24 @@ export function Wallet() {
     .filter((p) => p.state === 'pending' || p.state === 'releasable')
     .reduce((sum, p) => sum + BigInt(p.payoutKobo ?? p.cashbackKobo), 0n);
   const data = summary.data;
-  const { limits } = useLimits();
   const minWithdrawKobo = BigInt(limits.withdrawals.minKobo);
   const canWithdraw = Boolean(
-    data?.phoneVerified &&
+    data &&
+    phoneOk &&
     !bank.data?.locked &&
     BigInt(data.walletKobo) >= minWithdrawKobo &&
     usable(bank.data?.destination),
   );
-  const withdrawBlock = !data?.phoneVerified
-    ? 'Withdrawing needs a verified phone number.'
-    : bank.data?.locked
-      ? 'Withdrawals are locked while support checks your account.'
-      : BigInt(data.walletKobo) < minWithdrawKobo
-        ? `You can withdraw once you have ${nairaOfKobo(limits.withdrawals.minKobo)} or more.`
-        : bank.data?.destination
-          ? 'Your new bank account can receive money 24 hours after you added it.'
-          : 'Add a bank account below to withdraw.';
+  const withdrawBlock =
+    !data || !phoneOk
+      ? 'Withdrawing needs a verified phone number.'
+      : bank.data?.locked
+        ? 'Withdrawals are locked while support checks your account.'
+        : BigInt(data.walletKobo) < minWithdrawKobo
+          ? `You can withdraw once you have ${nairaOfKobo(limits.withdrawals.minKobo)} or more.`
+          : bank.data?.destination
+            ? 'Your new bank account can receive money 24 hours after you added it.'
+            : 'Add a bank account below to withdraw.';
   return (
     <Page title="Wallet">
       {summary.loading && !data ? (
@@ -221,7 +224,7 @@ export function Wallet() {
               {!canWithdraw && (
                 <p className="wallet-card-note">
                   {withdrawBlock}
-                  {!data.phoneVerified && (
+                  {!phoneOk && (
                     <>
                       {' '}
                       <Link href="/verify-phone?next=/wallet">
@@ -275,27 +278,29 @@ export function Wallet() {
               ))}
             </nav>
 
-            {!(data.phoneVerified && bank.data?.destination) && (
+            {!(phoneOk && bank.data?.destination) && (
               <section className="card ready" aria-labelledby="ready-heading">
                 <h2 id="ready-heading">Get ready to withdraw</h2>
                 <p className="small-note">
                   These checks keep your money going to you and nobody else.
                 </p>
                 <ol className="ready-steps">
-                  <Step done={data.phoneVerified} title="Verify your phone">
-                    <p className="small-note">
-                      One number per person.{' '}
-                      <Link href="/verify-phone?next=/wallet">
-                        Verify your phone
-                      </Link>
-                    </p>
-                  </Step>
+                  {limits.phone.required && (
+                    <Step done={data.phoneVerified} title="Verify your phone">
+                      <p className="small-note">
+                        One number per person.{' '}
+                        <Link href="/verify-phone?next=/wallet">
+                          Verify your phone
+                        </Link>
+                      </p>
+                    </Step>
+                  )}
                   <Step
                     done={Boolean(bank.data?.destination)}
                     title="Add a bank account in your name"
                   >
                     <p className="small-note">
-                      {data.phoneVerified
+                      {phoneOk
                         ? 'Add it below. We check the name with your bank.'
                         : 'You can add it right after your phone is verified.'}
                     </p>
@@ -308,7 +313,7 @@ export function Wallet() {
               </section>
             )}
 
-            {data.phoneVerified && bank.data && (
+            {phoneOk && bank.data && (
               <BankAccount
                 account={bank.data.destination}
                 onSaved={bank.refresh}

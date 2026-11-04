@@ -288,6 +288,20 @@
       "when": 1791664714574,
       "tag": "0040_solo_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1793789837787,
+      "tag": "0041_pilot_mode",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1793790118920,
+      "tag": "0042_withdrawal_audit",
+      "breakpoints": true
     }
   ]
 }

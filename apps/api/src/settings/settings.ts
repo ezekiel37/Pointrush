@@ -47,6 +47,9 @@ export const settingsSchema = z
         maxKobo: kobo(naira(5_000_000)).min(naira(100)),
         dailyKobo: kobo(naira(10_000_000)).min(naira(100)),
         dailyCount: z.number().int().min(1).max(20),
+        // An Acticlaim reviewer approves each withdrawal before it is sent.
+        // Always on while phone verification is off (see phone.required).
+        manualApproval: z.boolean().default(false),
       })
       .strict(),
     // Lower daily withdrawals while an account is new.
@@ -103,6 +106,30 @@ export const settingsSchema = z
         monthlyKobo: kobo(naira(1_000_000)),
       })
       .strict(),
+    // Phone verification before prize claims, referral rewards, ratings and
+    // withdrawals. Off only for a pilot without an SMS provider; then every
+    // withdrawal waits for a reviewer's approval instead.
+    phone: z
+      .object({ required: z.boolean() })
+      .strict()
+      .default({ required: true }),
+    signup: z
+      .object({
+        // Throwaway email domains refused at sign-up, on top of the built-in
+        // list of about 10,000 (yopmail, mailinator and similar).
+        blockedEmailDomains: z
+          .array(
+            z
+              .string()
+              .regex(
+                /^[a-z0-9-]+(\.[a-z0-9-]+)+$/,
+                'Use a domain like example.com',
+              ),
+          )
+          .max(2000),
+      })
+      .strict()
+      .default({ blockedEmailDomains: [] }),
   })
   .strict()
   .superRefine((v, ctx) => {
@@ -206,6 +233,7 @@ export const defaultSettings: Settings = {
     maxKobo: naira(1_000_000),
     dailyKobo: naira(1_000_000),
     dailyCount: 3,
+    manualApproval: false,
   },
   newAccounts: { days: 7, dailyWithdrawalKobo: naira(50_000) },
   handles: {
@@ -251,6 +279,8 @@ export const defaultSettings: Settings = {
     monthlyCount: 10,
     monthlyKobo: naira(10_000),
   },
+  phone: { required: true },
+  signup: { blockedEmailDomains: [] },
 };
 
 export function parseSettings(value: unknown): Settings {

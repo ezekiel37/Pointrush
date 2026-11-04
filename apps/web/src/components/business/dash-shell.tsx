@@ -99,6 +99,11 @@ const reviewGroups = [
     title: 'Safety',
     links: [
       { href: '/hq/review/accounts', label: 'Accounts', icon: ShieldAlert },
+      {
+        href: '/hq/review/withdrawals',
+        label: 'Withdrawals',
+        icon: Landmark,
+      },
       { href: '/hq/review/payments', label: 'Payments', icon: CreditCard },
     ],
   },

@@ -12,6 +12,7 @@ import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { eq } from 'drizzle-orm';
 import request from 'supertest';
+import { disposableEmail } from '../src/auth/email-policy.js';
 import { postFundingTransfer } from '../src/funding/funding-ledger.js';
 import { TaskWorkModule } from '../src/tasks/task-work.module.js';
 import { ReviewsModule } from '../src/reviews/reviews.module.js';
@@ -991,4 +992,37 @@ test('uploads arrive as raw files and are served safely', async () => {
     .set('Content-Type', 'image/png')
     .send(Buffer.from('<svg onload="alert(1)"/>'))
     .expect(400);
+});
+
+test('sign-up refuses throwaway email services, including ones an admin adds', async () => {
+  // Earlier tests used up this address's auth rate limit; start fresh.
+  await pg.query('delete from auth_rate_limits');
+  const refuse = async (address: string) => {
+    const response = await request(server)
+      .post('/api/v1/auth/sign-up/email')
+      .set('Origin', origin)
+      .send({ email: address, password, name: 'Throwaway' })
+      .expect(400);
+    assert.equal(response.body.code, 'DISPOSABLE_EMAIL');
+  };
+  await refuse('someone@yopmail.com');
+  await pg.query(
+    `insert into platform_settings (settings, reason)
+     select jsonb_set(settings, '{signup}', '{"blockedEmailDomains":["spam-mail.ng"]}'), 'Test'
+     from platform_settings order by version desc limit 1`,
+  );
+  await refuse('someone@spam-mail.ng');
+  assert.equal(
+    mailbox.filter((m) => /yopmail|spam-mail/i.test(m.to)).length,
+    0,
+  );
+  // The matching rules, without the network.
+  assert.equal(disposableEmail('Someone@MAILINATOR.COM'), true);
+  assert.equal(disposableEmail('someone@inbox.yopmail.com'), true);
+  assert.equal(
+    disposableEmail('someone@sub.spam-mail.ng', ['spam-mail.ng']),
+    true,
+  );
+  for (const real of ['ada@gmail.com', 'ada@yahoo.com', 'ada@outlook.com'])
+    assert.equal(disposableEmail(real), false, real);
 });

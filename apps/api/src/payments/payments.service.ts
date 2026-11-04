@@ -356,11 +356,16 @@ export class PaymentsService {
       bank: sql<
         string | null
       >`(select d.bank_name || ' ••••' || d.account_last4 from payout_destinations d where d.id = ${s.withdrawals.destinationId})`,
-      state: sql<'held' | 'sent' | 'paid' | 'failed'>`case
+      state: sql<'held' | 'awaiting_approval' | 'sent' | 'paid' | 'failed'>`case
         when exists (select 1 from withdrawal_outcomes o where o.withdrawal_id = ${s.withdrawals.id} and o.outcome = 'paid') then 'paid'
         when exists (select 1 from withdrawal_outcomes o where o.withdrawal_id = ${s.withdrawals.id} and o.outcome = 'failed') then 'failed'
         when exists (select 1 from withdrawal_submissions w where w.withdrawal_id = ${s.withdrawals.id}) then 'sent'
+        when ${s.withdrawals.needsApproval} and not exists (select 1 from withdrawal_approvals a
+          where a.withdrawal_id = ${s.withdrawals.id} and a.decision = 'approved') then 'awaiting_approval'
         else 'held' end`,
+      reason: sql<
+        string | null
+      >`(select o.reason from withdrawal_outcomes o where o.withdrawal_id = ${s.withdrawals.id} and o.outcome = 'failed')`,
     };
   }
 
@@ -568,7 +573,10 @@ export class PaymentsService {
         eq(s.payoutDestinations.id, s.withdrawals.destinationId),
       )
       .where(
-        sql`not exists (select 1 from withdrawal_submissions w where w.withdrawal_id = ${s.withdrawals.id})
+        // Withdrawals that need a reviewer's approval wait until they have it.
+        sql`(not ${s.withdrawals.needsApproval} or exists (select 1 from withdrawal_approvals a
+            where a.withdrawal_id = ${s.withdrawals.id} and a.decision = 'approved'))
+          and not exists (select 1 from withdrawal_submissions w where w.withdrawal_id = ${s.withdrawals.id})
           and not exists (select 1 from withdrawal_outcomes o where o.withdrawal_id = ${s.withdrawals.id})
           and not exists (select 1 from withdrawal_locks l where l.account_id = ${s.withdrawals.accountId}
             and not exists (select 1 from withdrawal_unlocks u where u.lock_id = l.id))`,

@@ -50,6 +50,7 @@ const reasons: Record<string, string> = {
   'Bank account unavailable': 'destination_unavailable',
   'Too many bank account changes': 'destination_limit',
   'Withdrawals are locked': 'withdrawals_locked',
+  'Withdrawal approval unavailable': 'withdrawal_approval_unavailable',
   'Staff daily confirmation limit reached': 'staff_daily_limit',
   'A second reviewer must approve': 'second_reviewer_required',
   'A second reviewer must unfreeze': 'second_reviewer_required',

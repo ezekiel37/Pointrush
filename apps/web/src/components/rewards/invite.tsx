@@ -140,7 +140,7 @@ export function Invite() {
       ) : (
         data && (
           <div className="grid gap-5" style={{ maxWidth: 720 }}>
-            {!data.phoneVerified && (
+            {!data.phoneVerified && limits.phone.required && (
               <Feedback warning>
                 Verify your phone so your invites count.{' '}
                 <Link href="/verify-phone?next=/invite">Verify now</Link>

@@ -170,6 +170,7 @@ export {
   withdrawals,
   withdrawalSubmissions,
   withdrawalOutcomes,
+  withdrawalApprovals,
 } from '../payments/payment.schema.js';
 export {
   phoneChallenges,

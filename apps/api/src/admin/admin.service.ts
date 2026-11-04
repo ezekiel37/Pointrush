@@ -23,6 +23,7 @@ type Row = Record<string, unknown>;
 const rows = (result: unknown) =>
   ((result as { rows?: Row[] }).rows ?? (result as Row[])) as Row[];
 const iso = (value: unknown) => new Date(String(value)).toISOString();
+const text = (value: unknown) => (value == null ? null : String(value));
 
 const accessInput = z
   .object({
@@ -247,6 +248,89 @@ export class AdminService {
           .insert(s.withdrawalUnlocks)
           .values({ lockId: String(lock.id), actorId: actor });
       return this.accountView(tx, accountId);
+    });
+  }
+
+  // Withdrawals waiting for a reviewer (approval on, or phone verification
+  // off): who is asking, how much, and enough history to judge.
+  async pendingWithdrawals(user: string) {
+    return this.reviewer(user, async (tx) => {
+      const items = rows(
+        await tx.execute(sql`
+          select w.id, w.amount_kobo::text as amount, w.created_at, w.account_id,
+            a.created_at as account_created,
+            (select u.username from usernames u where u.account_id = w.account_id and u.is_current) as username,
+            (select p.display_name from account_profiles p where p.account_id = w.account_id) as display_name,
+            (select au.email from auth_account_links l join auth_users au on au.id = l.auth_user_id
+              where l.account_id = w.account_id limit 1) as email,
+            exists (select 1 from verified_phones v where v.account_id = w.account_id) as phone_verified,
+            (select d.account_name || ', ' || d.bank_name || ' ••••' || d.account_last4
+              from payout_destinations d where d.id = w.destination_id) as bank,
+            (select count(*) from purchase_confirmations c where c.account_id = w.account_id)::int as purchases,
+            (select count(*) from claim_redemptions r where r.account_id = w.account_id)::int as prizes,
+            (select count(*) from withdrawals x where x.account_id = w.account_id)::int as withdrawals
+          from withdrawals w join accounts a on a.id = w.account_id
+          where w.needs_approval
+            and not exists (select 1 from withdrawal_approvals p where p.withdrawal_id = w.id)
+            and not exists (select 1 from withdrawal_outcomes o where o.withdrawal_id = w.id)
+          order by w.created_at limit 100`),
+      );
+      return {
+        items: items.map((r) => ({
+          id: String(r.id),
+          amountKobo: String(r.amount),
+          createdAt: iso(r.created_at),
+          accountId: String(r.account_id),
+          accountCreatedAt: iso(r.account_created),
+          username: text(r.username),
+          displayName: text(r.display_name),
+          email: text(r.email),
+          phoneVerified: Boolean(r.phone_verified),
+          bank: text(r.bank),
+          purchases: Number(r.purchases),
+          prizes: Number(r.prizes),
+          withdrawals: Number(r.withdrawals),
+        })),
+      };
+    });
+  }
+
+  async decideWithdrawal(user: string, withdrawalId: string, input: unknown) {
+    if (!z.uuid().safeParse(withdrawalId).success)
+      throw new NotFoundException();
+    const parsed = z
+      .object({
+        decision: z.enum(['approved', 'rejected']),
+        reason: z.string().trim().min(3).max(300),
+      })
+      .strict()
+      .safeParse(input);
+    if (!parsed.success)
+      throw new BadRequestException(
+        'Choose approve or reject and give a reason',
+      );
+    return this.reviewer(user, async (tx, actor) => {
+      const [done] = rows(
+        await tx.execute(
+          sql`select decision from withdrawal_approvals where withdrawal_id = ${withdrawalId}`,
+        ),
+      );
+      // Repeating the same decision is safe; changing it is not.
+      if (done) {
+        if (done.decision !== parsed.data.decision)
+          throw new BadRequestException('Withdrawal already decided');
+        return { id: withdrawalId, decision: parsed.data.decision };
+      }
+      await tx.execute(sql`
+        insert into withdrawal_approvals (withdrawal_id, decision, reviewer_id, reason)
+        values (${withdrawalId}, ${parsed.data.decision}, ${actor}, ${parsed.data.reason})`);
+      await recordAudit(tx, {
+        kind: 'withdrawal_decided',
+        subject: withdrawalId,
+        actor,
+        detail: { decision: parsed.data.decision },
+      });
+      return { id: withdrawalId, decision: parsed.data.decision };
     });
   }
 

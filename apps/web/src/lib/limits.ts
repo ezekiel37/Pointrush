@@ -23,8 +23,10 @@ export const limitsSchema = z.object({
     maxKobo: kobo,
     dailyKobo: kobo,
     dailyCount: z.number(),
+    manualApproval: z.boolean().default(false),
   }),
   newAccounts: z.object({ days: z.number(), dailyWithdrawalKobo: kobo }),
+  phone: z.object({ required: z.boolean() }).default({ required: true }),
   referrals: z.object({
     friend: z
       .object({
@@ -68,8 +70,10 @@ export const fallbackLimits: Limits = {
     maxKobo: 100000000,
     dailyKobo: 100000000,
     dailyCount: 3,
+    manualApproval: false,
   },
   newAccounts: { days: 7, dailyWithdrawalKobo: 5000000 },
+  phone: { required: true },
   referrals: { friend: null, business: null, monthlyCount: 0 },
 };
 

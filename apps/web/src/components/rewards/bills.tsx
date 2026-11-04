@@ -19,6 +19,7 @@ import {
   typedNaira,
 } from '@/lib/api';
 import { RequestError } from '@/lib/auth-client';
+import { useLimits } from '@/lib/limits';
 import {
   billCustomer,
   billOptions,
@@ -72,6 +73,7 @@ function payError(error: unknown) {
 export function Bills({ initialKind = 'airtime' }: { initialKind?: BillKind }) {
   const options = useApiRead('wallet/bills/options', billOptions);
   const summary = useApiRead('points', pointsSummary);
+  const { limits } = useLimits();
   const history = useApiRead('wallet/bills?limit=10', billPage);
   const [kind, setKind] = useState<BillKind>(initialKind);
   const [result, setResult] = useState<BillPurchase | null>(null);
@@ -111,7 +113,7 @@ export function Bills({ initialKind = 'airtime' }: { initialKind?: BillKind }) {
                   Back to wallet
                 </Link>
               </section>
-            ) : !summary.data.phoneVerified ? (
+            ) : !summary.data.phoneVerified && limits.phone.required ? (
               <section className="card grid gap-3">
                 <h2 style={{ margin: 0 }}>Verify your phone first</h2>
                 <p className="small-note" style={{ margin: 0 }}>

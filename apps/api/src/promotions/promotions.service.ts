@@ -197,7 +197,8 @@ export class PromotionsService {
     const [row] = await this.db
       .select({
         id: s.accounts.id,
-        phone: sql<boolean>`exists (select 1 from ${s.verifiedPhones} where ${s.verifiedPhones.accountId} = ${s.accounts.id})`,
+        // Verified, or not required while phone verification is off (pilot).
+        phone: sql<boolean>`phone_ok(${s.accounts.id})`,
         failures: sql<number>`(select count(*)::integer from ${s.claimAttempts} where ${s.claimAttempts.accountId} = ${s.accounts.id} and not ${s.claimAttempts.succeeded} and ${s.claimAttempts.createdAt} > now() - interval '1 hour')`,
       })
       .from(s.accounts)

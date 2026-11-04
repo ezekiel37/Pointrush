@@ -6,7 +6,7 @@ import * as s from '../src/database/schema.js';
 import { AdminService } from '../src/admin/admin.service.js';
 import { PaymentsService } from '../src/payments/payments.service.js';
 import { TestPaymentProvider } from '../src/payments/provider.js';
-import { defaultSettings } from '../src/settings/settings.js';
+import { defaultSettings, settingsSchema } from '../src/settings/settings.js';
 import { SettingsController } from '../src/settings/settings.controller.js';
 import { lowLimits } from './helpers/settings.js';
 import { campaignFixture, campaignTerms } from './helpers/campaign-fixture.js';
@@ -52,7 +52,9 @@ test('the migration installs the documented defaults', async () => {
       sql`select settings from platform_settings order by version limit 1`,
     )
   ).rows as { settings: unknown }[];
-  assert.deepEqual(first!.settings, defaultSettings);
+  // Rows saved before a field existed still load, with that field's safe
+  // default (phone verification on, no extra blocked domains).
+  assert.deepEqual(settingsSchema.parse(first!.settings), defaultSettings);
 });
 
 test('reviewers read settings; only named admins change them, with a reason, and history is kept', async () => {

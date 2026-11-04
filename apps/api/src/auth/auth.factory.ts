@@ -24,6 +24,8 @@ import type { SendAuthEmail } from './auth.email.js';
 import { emailQueuePlugin } from './email-queue.schema.js';
 import { assertTrustedOrigin } from '../config/validation.js';
 import { recordAudit } from '../audit/audit.js';
+import { readSettings } from '../settings/settings.js';
+import { disposableEmail } from './email-policy.js';
 
 export interface AuthConfig {
   secret: string;
@@ -93,6 +95,20 @@ export function createAuth(
     },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
+        // Throwaway inboxes make fake accounts free; refuse them at sign-up.
+        if (
+          ctx.path === '/sign-up/email' &&
+          typeof ctx.body?.email === 'string' &&
+          disposableEmail(
+            ctx.body.email,
+            (await readSettings(db)).signup.blockedEmailDomains,
+          )
+        )
+          throw new APIError('BAD_REQUEST', {
+            message:
+              'Use your own email address. Temporary email services are not accepted.',
+            code: 'DISPOSABLE_EMAIL',
+          });
         if (
           (ctx.path === '/sign-up/email' || ctx.path === '/update-user') &&
           ctx.body?.accountType !== undefined &&

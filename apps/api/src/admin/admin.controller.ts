@@ -92,6 +92,18 @@ export class AdminController {
   unlock(@Req() r: AuthenticatedRequest, @Param('id') id: string) {
     return this.admin.unlockWithdrawals(r[AUTH_USER_ID], id);
   }
+  @Get('withdrawals/pending')
+  pendingWithdrawals(@Req() r: AuthenticatedRequest) {
+    return this.admin.pendingWithdrawals(r[AUTH_USER_ID]);
+  }
+  @Post('withdrawals/:id/decisions')
+  decideWithdrawal(
+    @Req() r: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    return this.admin.decideWithdrawal(r[AUTH_USER_ID], id, body);
+  }
   @Get('payments/flagged')
   flagged(@Req() r: AuthenticatedRequest) {
     return this.admin.flaggedPayments(r[AUTH_USER_ID]);

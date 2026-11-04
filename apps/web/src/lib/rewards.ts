@@ -295,7 +295,9 @@ export const withdrawal = z.object({
   amountKobo: money,
   createdAt: date,
   bank: z.string().nullable().optional(),
-  state: z.enum(['held', 'sent', 'paid', 'failed']),
+  state: z.enum(['held', 'awaiting_approval', 'sent', 'paid', 'failed']),
+  // Why it came back to the wallet, when it did.
+  reason: z.string().nullable().optional(),
 });
 export const withdrawalPage = page(withdrawal);
 

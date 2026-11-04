@@ -304,3 +304,22 @@ test('forms cannot submit credentials before JavaScript loads', async ({
   ).toBeVisible();
   await context.close();
 });
+
+test('sign-up explains that temporary email addresses are not accepted', async ({
+  page,
+}) => {
+  const password = 'My browser passphrase 123!';
+  await page.goto('/signup');
+  await page.getByLabel('Display name', { exact: true }).fill('Throwaway');
+  await page.getByLabel('Email address').fill('someone@yopmail.com');
+  await page.getByLabel('Password', { exact: true }).fill(password);
+  await page.getByLabel('Confirm password', { exact: true }).fill(password);
+  await page
+    .getByRole('button', { name: 'Create account', exact: true })
+    .click();
+  await expect(
+    page.getByText(
+      'Use your own email address. Temporary email services are not accepted.',
+    ),
+  ).toBeVisible();
+});

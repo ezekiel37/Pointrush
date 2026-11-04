@@ -18,8 +18,13 @@ export class SettingsController {
       funding: s.funding,
       campaigns: s.campaigns,
       newBusinesses: s.newBusinesses,
-      withdrawals: s.withdrawals,
+      withdrawals: {
+        ...s.withdrawals,
+        // Whether a reviewer checks each withdrawal before it is sent.
+        manualApproval: s.withdrawals.manualApproval || !s.phone.required,
+      },
       newAccounts: s.newAccounts,
+      phone: { required: s.phone.required },
       referrals: {
         friend: on('friend')
           ? {

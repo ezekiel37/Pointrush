@@ -137,7 +137,7 @@ export class RatingsService {
       const [e] = rows(
         await tx.execute(sql`
           select business_served(${sponsorId}, ${actor}) as served,
-            exists (select 1 from verified_phones where account_id = ${actor}) as phone,
+            phone_ok(${actor}) as phone,
             exists (select 1 from sponsor_profiles where id = ${sponsorId} and owner_id = ${actor}) as owner`),
       );
       const editableUntil = r

@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  boolean,
   bigint,
   check,
   index,
@@ -106,6 +107,9 @@ export const withdrawals = pgTable(
     destinationId: uuid('destination_id').references(
       () => payoutDestinations.id,
     ),
+    // Set by the database when the withdrawal is made: a reviewer must
+    // approve it before it is sent (approval on, or phone verification off).
+    needsApproval: boolean('needs_approval').notNull().default(false),
     createdAt: at('created_at').notNull().defaultNow(),
   },
   (t) => [
@@ -149,6 +153,29 @@ export const withdrawalOutcomes = pgTable(
   },
   (t) => [
     check('withdrawal_outcome_kind', sql`${t.outcome} in ('paid', 'failed')`),
+  ],
+);
+
+// A reviewer's decision on a withdrawal that needed approval. Rejecting
+// returns the money to the wallet. Never edited or deleted.
+export const withdrawalApprovals = pgTable(
+  'withdrawal_approvals',
+  {
+    withdrawalId: uuid('withdrawal_id')
+      .primaryKey()
+      .references(() => withdrawals.id),
+    decision: text('decision').notNull(),
+    reviewerId: uuid('reviewer_id')
+      .notNull()
+      .references(() => accounts.id),
+    reason: varchar('reason', { length: 300 }).notNull(),
+    createdAt: at('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      'withdrawal_approval_decision',
+      sql`${t.decision} in ('approved', 'rejected')`,
+    ),
   ],
 );
 
