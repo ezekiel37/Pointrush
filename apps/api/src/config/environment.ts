@@ -40,8 +40,20 @@ const schema = z.object({
     .optional(),
   // Web app origin customers return to after paying, e.g. https://acticlaim.com
   PAYMENTS_RETURN_ORIGIN: z.string().optional(),
-  // Only the in-memory test provider exists until an SMS adapter is chosen.
-  SMS_PROVIDER: z.enum(['test']).optional(),
+  // "termii" sends real texts (needs the TERMII_* settings below); "test"
+  // keeps them in memory for development. Unset: phone verification shows
+  // as unavailable (use the admin setting to run without it).
+  SMS_PROVIDER: z.enum(['test', 'termii']).optional(),
+  TERMII_API_KEY: z.string().trim().min(16).max(200).optional(),
+  // The approved sender name, 3 to 11 letters or numbers, e.g. Acticlaim.
+  TERMII_SENDER_ID: z
+    .string()
+    .regex(/^[A-Za-z0-9]{3,11}$/)
+    .optional(),
+  // From the Termii dashboard; it differs per account.
+  TERMII_BASE_URL: z.string().optional(),
+  // "dnd" reaches numbers on Do Not Disturb and is right for codes.
+  TERMII_CHANNEL: z.enum(['dnd', 'generic']).default('dnd'),
   // Airtime, data, electricity and TV from the wallet. Off until a provider
   // is chosen; only the test provider exists so far.
   BILLS_PROVIDER: z.enum(['off', 'test']).default('off'),
@@ -124,9 +136,15 @@ export type PaymentsEnvironment =
     };
 
 export interface SmsEnvironment {
-  provider: 'test';
+  provider: 'test' | 'termii';
   allowedPrefixes: string[];
   dailyLimit: number;
+  termii?: {
+    apiKey: string;
+    senderId: string;
+    baseUrl: string;
+    channel: 'dnd' | 'generic';
+  };
 }
 
 export interface Environment {
@@ -162,6 +180,10 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
     BACHS_API_KEY,
     PAYMENTS_RETURN_ORIGIN,
     SMS_PROVIDER,
+    TERMII_API_KEY,
+    TERMII_SENDER_ID,
+    TERMII_BASE_URL,
+    TERMII_CHANNEL,
     SMS_ALLOWED_PREFIXES,
     SMS_DAILY_LIMIT,
     NODE_ENV,
@@ -222,6 +244,22 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
   }
   if (SMS_PROVIDER === 'test' && NODE_ENV === 'production') {
     throw new Error('The test SMS provider cannot run in production');
+  }
+  let termiiBase: string | undefined;
+  if (SMS_PROVIDER === 'termii') {
+    if (!TERMII_API_KEY || !TERMII_SENDER_ID || !TERMII_BASE_URL)
+      throw new Error(
+        'Termii needs TERMII_API_KEY, TERMII_SENDER_ID and TERMII_BASE_URL',
+      );
+    let url: URL;
+    try {
+      url = new URL(TERMII_BASE_URL);
+    } catch {
+      throw new Error('Invalid TERMII_BASE_URL');
+    }
+    if (url.protocol !== 'https:' || url.username || url.password || url.search)
+      throw new Error('TERMII_BASE_URL must be a plain https address');
+    termiiBase = url.origin;
   }
   const database = readDatabaseConfig(input);
   const authValues = [
@@ -293,6 +331,16 @@ export function readEnvironment(input: NodeJS.ProcessEnv): Environment {
             provider: SMS_PROVIDER,
             allowedPrefixes: SMS_ALLOWED_PREFIXES,
             dailyLimit: SMS_DAILY_LIMIT,
+            ...(SMS_PROVIDER === 'termii'
+              ? {
+                  termii: {
+                    apiKey: TERMII_API_KEY!,
+                    senderId: TERMII_SENDER_ID!,
+                    baseUrl: termiiBase!,
+                    channel: TERMII_CHANNEL,
+                  },
+                }
+              : {}),
           },
         }
       : {}),

@@ -21,7 +21,7 @@ Brimble's screens may name things slightly differently from these steps. If a st
 3. **Brimble**: start the 7-day Developer trial. Check whether it charges automatically on day 7. Either way, switch to **Hacker** before the trial ends.
 4. **Resend**: add the sending subdomain `mail.acticlaim.com` (Resend recommends a subdomain so the main domain's reputation is protected), copy the DNS records it shows into Cloudflare with the cloud icon grey, wait for Verified, and create an API key.
 5. **Bachs**: in the sandbox, copy the API key (`sk_sandbox_…`). The webhook comes in step 6.
-6. **SMS (Termii or Africa's Talking)**: request a sender ID now. Until Claude connects it, phone verification shows "not available yet", so withdrawals and prize claims wait.
+6. **SMS (Termii)**: when you have budget for texts, open a Termii account, request a sender ID (for example `Acticlaim`; Termii reviews it), ask support@termii.com to switch on the **DND route** (it reaches numbers on Do Not Disturb), and top up a little. See "Turning on phone verification" below. Until then, run the pilot without it.
 
 ## 2. Database details (Supabase)
 
@@ -157,7 +157,35 @@ Run the whole flow on the live site:
 - claim a prize code;
 - void a purchase and dispute it.
 
-The phone steps wait for the SMS connection.
+Without SMS, run the pilot (below) instead of the phone steps.
+
+## Running the pilot without SMS
+
+Phone verification is what stops one person opening many accounts. Until
+Termii is set up, turn it off and check payouts by hand:
+
+1. In `/hq/settings`, under **Phone verification and payouts**, turn off
+   **Phone verification required** and save with a reason. Prize claims,
+   withdrawals, referrals and ratings then work without a phone.
+2. Every withdrawal now waits in `/hq/review/withdrawals`. Check the person
+   (when they joined, their purchases and prizes, the bank account name),
+   then **Approve and send**, or **Do not approve** with a reason: the money
+   returns to their wallet and they see the reason.
+3. Keep the withdrawal limits in settings low during the pilot.
+4. Throwaway emails (yopmail and about 10,000 others) are refused at sign-up
+   already. Add new ones under **Blocked email domains**.
+
+## Turning on phone verification (Termii)
+
+1. On Brimble, **API** app, add: `SMS_PROVIDER` = `termii`, `TERMII_API_KEY`
+   (from the Termii dashboard), `TERMII_SENDER_ID` (your approved sender ID,
+   3 to 11 letters or numbers) and `TERMII_BASE_URL` (the base URL shown in
+   your Termii dashboard; it differs per account). `TERMII_CHANNEL` defaults
+   to `dnd`. Redeploy. The server refuses to start if one is missing.
+2. Verify your own phone on the site to check a text arrives.
+3. In `/hq/settings`, turn **Phone verification required** back on. Turn off
+   **A reviewer approves every withdrawal** if you no longer want to check
+   each one.
 
 ## Updating later
 

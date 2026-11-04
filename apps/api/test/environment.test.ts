@@ -346,3 +346,47 @@ test('paid small tasks (jobs) are on unless switched off', () => {
   );
   assert.throws(() => readEnvironment({ ...apiConfig, FEATURE_JOBS: 'yes' }));
 });
+
+test('Termii needs a key, an approved sender name and the account base URL', () => {
+  const termii = {
+    ...apiConfig,
+    SMS_PROVIDER: 'termii',
+    TERMII_API_KEY: 'TLtermii-test-key-0123456789',
+    TERMII_SENDER_ID: 'Acticlaim',
+    TERMII_BASE_URL: 'https://v3.api.termii.com/',
+  };
+  assert.deepEqual(readEnvironment(termii).sms, {
+    provider: 'termii',
+    allowedPrefixes: ['+234'],
+    dailyLimit: 500,
+    termii: {
+      apiKey: 'TLtermii-test-key-0123456789',
+      senderId: 'Acticlaim',
+      baseUrl: 'https://v3.api.termii.com',
+      channel: 'dnd',
+    },
+  });
+  for (const missing of [
+    'TERMII_API_KEY',
+    'TERMII_SENDER_ID',
+    'TERMII_BASE_URL',
+  ])
+    assert.throws(
+      () => readEnvironment({ ...termii, [missing]: undefined }),
+      /Termii needs/,
+      missing,
+    );
+  // Sender names are 3 to 11 letters or numbers.
+  assert.throws(() =>
+    readEnvironment({ ...termii, TERMII_SENDER_ID: 'Acticlaim NG' }),
+  );
+  for (const url of [
+    'http://v3.api.termii.com',
+    'https://key@termii.com',
+    'nonsense',
+  ])
+    assert.throws(
+      () => readEnvironment({ ...termii, TERMII_BASE_URL: url }),
+      url,
+    );
+});

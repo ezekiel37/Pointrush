@@ -5,11 +5,12 @@ import { DatabaseService } from '../database/database.service.js';
 import { PhoneController } from './phone.controller.js';
 import { defaultPhoneConfig, PhoneService } from './phone.service.js';
 import type { PhoneConfig } from './phone.service.js';
-import { TestSmsProvider } from './sms.js';
+import { TestSmsProvider, TermiiSmsProvider } from './sms.js';
 import type { SmsProvider } from './sms.js';
 
 export function smsProvider(config?: SmsEnvironment): SmsProvider | undefined {
-  // A real SMS adapter is added once a provider is chosen.
+  if (config?.provider === 'termii' && config.termii)
+    return new TermiiSmsProvider(config.termii);
   if (config?.provider === 'test') return new TestSmsProvider();
   return undefined;
 }
